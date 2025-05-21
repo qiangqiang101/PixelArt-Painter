@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalRGB WLED Matrix Pixel Art Painter</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1e1e1e;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+
+        #controls {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #tools {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #modal-save-controls,
+        #modal-load-controls {
+            position: relative;
+            display: grid;
+            gap: 10px;
+            align-items: start;
+        }
+
+        #modal-save-controls .button,
+        #modal-load-controls .button {
+            position: absolute;
+            right: 0;
+            bottom: 10px;
+        }
+
+        #modal-load-controls .button.danger {
+            left: 0;
+            right: unset;
+        }
+
+        #modal-save-controls .spacer,
+        #modal-load-controls .spacer {
+            padding-bottom: 50px;
+        }
+
+        button,
+        .button,
+        input[type="radio"]+label {
+            padding: 8px 16px;
+            background-color: #7066e0;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        button:hover,
+        .button:hover,
+        input[type="radio"]+label:hover {
+            background-color: rgb(100, 89, 221);
+        }
+
+        button.success,
+        .button.success {
+            background-color: #28a745;
+        }
+
+        button.danger,
+        .button.danger {
+            background-color: #dc3545;
+        }
+
+        button.success:hover,
+        .button.success:hover {
+            background-color: #48d368;
+        }
+
+        button.danger:hover,
+        .button.danger:hover {
+            background-color: #e77681;
+        }
+
+        input[type="radio"] {
+            position: absolute !important;
+            clip: rect(0, 0, 0, 0);
+            height: 1px;
+            width: 1px;
+            border: 0;
+            overflow: hidden;
+        }
+
+        input[type="radio"]:checked+label {
+            background-color: rgb(100, 89, 221);
+        }
+
+        .input-group {
+            display: flex;
+        }
+
+        .input-group input,
+        .input-group button,
+        .input-group .button {
+            flex-grow: 1;
+        }
+
+        .input-group input:first-child,
+        .input-group label:first-child,
+        .input-group button:first-child,
+        .input-group .button:first-child {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right: 0px solid #555;
+        }
+
+        .input-group input:last-child,
+        .input-group label:last-child,
+        .input-group button:last-child,
+        .input-group .button:last-child {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .input-group input:not(:first-child):not(:last-child),
+        .input-group label:not(:first-child):not(:last-child),
+        .input-group button:not(:first-child):not(:last-child),
+        .input-group .button:not(:first-child):not(:last-child) {
+            border-radius: 0;
+        }
+
+        input[type="text"] {
+            width: 99%;
+            height: 29px;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+        }
+
+        input[type="number"] {
+            width: 50px;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+        }
+
+        #canvas-container {
+            border: 2px solid #555;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #matrix-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .label {
+            margin-right: 5px;
+            font-size: 14px;
+        }
+
+        .swal2-html-container code {
+            display: block;
+            padding: 20px 50px;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            font-size: 12px;
+        }
+
+        .code-container {
+            position: relative;
+        }
+
+        .copy-code {
+            padding: 4px 8px;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: transparent;
+            border: 1px solid #555;
+        }
+
+        .language-selector {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+
+        .force-border-radius {
+            border-top-left-radius: 4px !important;
+            border-bottom-left-radius: 4px !important;
+        }
+
+        .nudgeX {
+            animation: nudgeX-animation 0.3s ease-in-out;
+        }
+
+        .nudgeY {
+            animation: nudgeY-animation 0.3s ease-in-out;
+        }
+
+        @keyframes nudgeX-animation {
+            0% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-10px);
+            }
+
+            40% {
+                transform: translateX(10px);
+            }
+
+            60% {
+                transform: translateX(-5px);
+            }
+
+            80% {
+                transform: translateX(5px);
+            }
+
+            100% {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes nudgeY-animation {
+            0% {
+                transform: translateY(0);
+            }
+
+            20% {
+                transform: translateY(-10px);
+            }
+
+            40% {
+                transform: translateY(10px);
+            }
+
+            60% {
+                transform: translateY(-5px);
+            }
+
+            80% {
+                transform: translateY(5px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        /* modal */
+        .modal-window {
+            position: fixed;
+            background-color: rgba(255, 255, 255, 0.25);
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 999;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s;
+        }
+
+        .modal-window:target {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-window>div {
+            width: 400px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            background: #1e1e1e;
+            border-radius: 5px;
+        }
+
+        .modal-window header {
+            font-weight: bold;
+        }
+
+        .modal-window h1 {
+            font-size: 150%;
+            margin: 0 0 15px;
+        }
+
+        .modal-close {
+            color: #aaa;
+            line-height: 50px;
+            position: absolute;
+            right: 0;
+            text-align: center;
+            top: 0;
+            width: 70px;
+            text-decoration: none;
+            transition: all 0.3s;
+            z-index: 999;
+        }
+
+        .modal-close:hover {
+            color: #fff;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body>
+    <div class="language-selector">
+        <span class="label" id="language-label"><span class="mdi mdi-translate"></span> Language:</span>
+        <select id="language-dropdown">
+            <option value="english">English</option>
+            <option value="chinese">中文</option>
+        </select>
+    </div>
+
+    <h1>SignalRGB Nollie1/WLED Matrix Pixel Art Painter</h1>
+
+    <div id="controls">
+        <span class="label" id="size-label"><span class="mdi mdi-image-size-select-small"></span> Size:</span>
+        <div class="input-group">
+            <input id="size-cols" type="number" value="16" min="1" step="1" />
+            <input id="size-rows" type="number" value="16" min="1" step="1" />
+        </div>
+        <button id="import-btn" onclick="importData();"><span class="mdi mdi-import"></span> Import Data</button>
+        <button id="export-btn" onclick="exportData();"><span class="mdi mdi-export"></span> Export Data</button>
+        <input type="hidden" id="clipboard" />
+
+        <a id="load-btn" class="button" href="#modal-load" onclick="reloadSavedPixelArt();"><span
+                class="mdi mdi-cloud-outline"></span> Load</a>
+        <a id="save-btn" class="button" href="#modal-save"><span class="mdi mdi-content-save-outline"></span> Save</a>
+    </div>
+
+    <div id="tools">
+        <div class="input-group">
+            <input type="radio" id="draw" name="draw-mode" value="draw" checked>
+            <label for="draw" class="force-border-radius"><span class="mdi mdi-draw"></span> Draw</label>
+            <input type="radio" id="fill" name="draw-mode" value="fill">
+            <label for="fill"><span class="mdi mdi-format-color-fill"></span> Fill</label>
+            <input type="radio" id="clear" name="draw-mode" value="clear">
+            <label for="clear"><span class="mdi mdi-eraser"></span> Clear</label>
+            <button id="clear-btn" onclick="fillAll('#000000');"><span class="mdi mdi-trash-can-outline"></span> Clear
+                All</button>
+        </div>
+
+        <button id="invert-btn" onclick="invertAll();"><span class="mdi mdi-invert-colors"></span> Invert</button>
+        <button id="horizontal-btn" onclick="mirrorHorizontal();"><span class="mdi mdi-flip-horizontal"></span> Mirror
+            Horizontal</button>
+        <button id="vertical-btn" onclick="mirrorVertical();"><span class="mdi mdi-flip-vertical"></span> Mirror
+            Vertical</button>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="matrix-canvas"></canvas>
+    </div>
+
+    <div id="matrix-info">
+        <span id="mouse-pos">Position: (-1, -1)</span> |
+        <span id="cell-size">Cell Size: 0x0</span>
+    </div>
+
+    <div id="modal-save" class="modal-window">
+        <div class="modal-content">
+            <a href="#" title="Close" class="modal-close"><span class="mdi mdi-close"></span></a>
+
+            <div id="modal-save-controls">
+                <h2>Save pixel art</h2>
+                <span class="label">What would you like to call this pixel art?</span>
+                <input id="txt-save" type="text" placeholder="my cool pixel art" maxlength="50" />
+                <span class="spacer"></span>
+                <a class="button" href="#" id="save-confirm-btn" onclick="savePixelArt();">Submit</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-load" class="modal-window">
+        <div class="modal-content">
+            <a href="#" title="Close" class="modal-close"><span class="mdi mdi-close"></span></a>
+
+            <div id="modal-load-controls">
+                <h2>Load pixel art</h2>
+                <span class="label">Which pixel art would you like load?</span>
+                <select id="select-load">
+                    <option value="null" disabled selected>Please select...</option>
+                </select>
+                <span class="spacer"></span>
+                <a class="button" href="#" id="load-confirm-btn" onclick="loadPixelArt();">Submit</a>
+                <a class="button danger" href="#" id="remove-confirm-btn" onclick="removePixelArt();">Remove</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const langDB = {
+            language: { en: '<span class="mdi mdi-translate"></span> Language:', zh: '<span class="mdi mdi-translate"></span> 语言:' },
+            header: { en: "SignalRGB WLED/Nollie1 Matrix Pixel Art Painter", zh: "SignalRGB WLED/Nollie1 像素屏画家" },
+            size: { en: '<span class="mdi mdi-image-size-select-small"></span> Size:', zh: '<span class="mdi mdi-image-size-select-small"></span> 大小:' },
+            import: { en: '<span class="mdi mdi-import"></span> Import Data', zh: '<span class="mdi mdi-import"></span> 导入数据' },
+            export: { en: '<span class="mdi mdi-export"></span> Export Data', zh: '<span class="mdi mdi-export"></span> 导出数据' },
+            draw: { en: '<span class="mdi mdi-draw"></span> Draw', zh: '<span class="mdi mdi-draw"></span> 绘画模式' },
+            fill: { en: '<span class="mdi mdi-format-color-fill"></span> Fill', zh: '<span class="mdi mdi-format-color-fill"></span> 填充模式' },
+            erase: { en: '<span class="mdi mdi-eraser"></span> Erase', zh: '<span class="mdi mdi-eraser"></span> 擦除模式' },
+            clear: { en: '<span class="mdi mdi-trash-can-outline"></span> Clear All', zh: '<span class="mdi mdi-trash-can-outline"></span> 清除全部' },
+            invert: { en: '<span class="mdi mdi-invert-colors"></span> Invert', zh: '<span class="mdi mdi-invert-colors"></span> 反转' },
+            horizontal: { en: '<span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal', zh: '<span class="mdi mdi-flip-horizontal"></span> 水平镜像' },
+            vertical: { en: '<span class="mdi mdi-flip-vertical"></span> Mirror Vertical', zh: '<span class="mdi mdi-flip-vertical"></span> 垂直镜像' },
+            position1: { en: 'Position: (-1, -1)', zh: '位置: (-1, -1)' },
+            cellsize1: { en: 'Cell Size: 0x0', zh: '像元大小: 34x34' },
+            position2: { en: 'Position:', zh: '位置:' },
+            cellsize2: { en: 'Cell Size:', zh: '像元大小:' },
+            copycode: { en: 'Copy the code below into SignalRGB', zh: '将以下代码复制到SignalRGB' },
+            copy: { en: 'Copy', zh: '复制' },
+            ok: { en: 'OK', zh: '确认' },
+            copied: { en: 'Code copied to clipboard.', zh: '代码已复制到剪贴板。' },
+            load: { en: '<span class="mdi mdi-cloud-outline"></span> Load', zh: '<span class="mdi mdi-cloud-outline"></span> 载入' },
+            save: { en: '<span class="mdi mdi-content-save-outline"></span> Save', zh: '<span class="mdi mdi-content-save-outline"></span> 保存' },
+            saveTitle: { en: 'Save pixel art', zh: '保存像素屏' },
+            saveSubtitle: { en: 'What would you like to call this pixel art?', zh: '您想将这个像素艺术存档命名为什么？' },
+            submit: { en: 'Submit', zh: '提交' },
+            loadTitle: { en: 'Load pixel art', zh: '载入像素屏' },
+            loadSubtitle: { en: 'Which pixel art would you like load?', zh: '您想要加载哪一个像素存档？' },
+            saved: { en: 'Pixel art saved.', zh: '像素存档保存成功。' },
+            remove: { en: 'Remove', zh: '删除' },
+            pleaseselect: { en: 'Please select...', zh: '请选择...' }
+        };
+
+        $(document).ready(function () {
+            let language = localStorage.getItem('language') || 'english';
+            $('body').attr('data-language', language);
+            changeLanguage(language);
+            $('#language-dropdown').val(language);
+        });
+
+        function changeLanguage(lang, set = false) {
+            localStorage.setItem('language', lang);
+
+            switch (lang) {
+                case 'chinese':
+                    $('#language-label').html(langDB.language.zh);
+                    $('h1').text(langDB.header.zh);
+                    document.title = langDB.header.zh;
+                    $('#size-label').html(langDB.size.zh);
+                    $('#import-btn').html(langDB.import.zh);
+                    $('#export-btn').html(langDB.export.zh);
+                    $('#load-btn').html(langDB.load.zh);
+                    $('#save-btn').html(langDB.save.zh);
+                    $('label[for="draw"]').html(langDB.draw.zh);
+                    $('label[for="fill"]').html(langDB.fill.zh);
+                    $('label[for="clear"]').html(langDB.erase.zh);
+                    $('#clear-btn').html(langDB.clear.zh);
+                    $('#invert-btn').html(langDB.invert.zh);
+                    $('#horizontal-btn').html(langDB.horizontal.zh);
+                    $('#vertical-btn').html(langDB.vertical.zh);
+                    $('#mouse-pos').text(langDB.position1.zh);
+                    $('#cell-size').text(langDB.cellsize1.zh);
+                    $('#modal-save-controls h2').text(langDB.saveTitle.zh);
+                    $('#modal-save-controls span.label').text(langDB.saveSubtitle.zh);
+                    $('#save-confirm-btn').text(langDB.submit.zh);
+                    $('#modal-load-controls h2').text(langDB.loadTitle.zh);
+                    $('#modal-load-controls span.label').text(langDB.loadSubtitle.zh);
+                    $('#load-confirm-btn').text(langDB.submit.zh);
+                    $('#remove-confirm-btn').text(langDB.remove.zh);
+                    break;
+                default:
+                    $('#language-label').html(langDB.language.en);
+                    $('h1').text(langDB.header.en);
+                    document.title = langDB.header.en;
+                    $('#size-label').html(langDB.size.en);
+                    $('#import-btn').html(langDB.import.en);
+                    $('#export-btn').html(langDB.export.en);
+                    $('#load-btn').html(langDB.load.en);
+                    $('#save-btn').html(langDB.save.en);
+                    $('label[for="draw"]').html(langDB.draw.en);
+                    $('label[for="fill"]').html(langDB.fill.en);
+                    $('label[for="clear"]').html(langDB.erase.en);
+                    $('#clear-btn').html(langDB.clear.en);
+                    $('#invert-btn').html(langDB.invert.en);
+                    $('#horizontal-btn').html(langDB.horizontal.en);
+                    $('#vertical-btn').html(langDB.vertical.en);
+                    $('#mouse-pos').text(langDB.position1.en);
+                    $('#cell-size').text(langDB.cellsize1.en);
+                    $('#modal-save-controls h2').text(langDB.saveTitle.en);
+                    $('#modal-save-controls span.label').text(langDB.saveSubtitle.en);
+                    $('#save-confirm-btn').text(langDB.submit.en);
+                    $('#modal-load-controls h2').text(langDB.loadTitle.en);
+                    $('#modal-load-controls span.label').text(langDB.loadSubtitle.en);
+                    $('#load-confirm-btn').text(langDB.submit.en);
+                    $('#remove-confirm-btn').text(langDB.remove.en);
+            }
+        }
+
+        function getCorrectTranslation(lang) {
+            let body = $('body').attr('data-language');
+            switch (body) {
+                case 'chinese':
+                    return langDB[lang].zh
+                    break;
+                default:
+                    return langDB[lang].en
+            }
+            return null;
+        }
+
+        $('#language-dropdown').on('change', function () {
+            changeLanguage($(this).val(), true);
+            $('body').attr('data-language', $(this).val());
+        });
+
+        $('#size-cols, #size-rows').on('input', function (e) {
+            COLS = parseInt($('#size-cols').val());
+            ROWS = parseInt($('#size-rows').val());
+
+            matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+
+            resizeCanvas();
+        });
+
+        $('input[name="draw-mode"]').change(function () {
+            currentMode = this.value;
+        });
+
+        async function importData() {
+            var text = null;
+            try {
+                text = await navigator.clipboard.readText()
+                $('#clipboard').val(text);
+            } catch (error) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    theme: "dark",
+                    text: "Failed to read clipboard. Using execCommand instead.",
+                });
+
+                $('#clipboard').focus();
+                $('#clipboard').val('');
+                text = document.execCommand('paste')
+                $('#clipboard').val(text);
+            }
+            try {
+                matrixData = JSON.parse($('#clipboard').val());
+                matrixData = matrixData.map(row => row.map(value => value === 0 ? "#000000" : "#ffffff"));
+                drawMatrix();
+            } catch(e) {
+                console.log(e);
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    theme: "dark",
+                    text: "Error parsing JSON data.",
+                });
+            }
+        }
+
+        function removePixelArt() {
+            let name = $('#select-load option:selected').text();
+            console.log(name);
+            localStorage.removeItem(`item-${name}`);
+        }
+
+        function loadPixelArt() {
+            try {
+                var $select = $('#select-load option:selected');
+
+                console.log($select.data('size')[0]);
+                console.log($select.data('size')[1]);
+
+                COLS = parseInt($select.data('size')[0]);
+                ROWS = parseInt($select.data('size')[1]);
+
+                matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+                resizeCanvas();
+
+                matrixData = JSON.parse($select.val());
+                matrixData = matrixData.map(row => row.map(value => value === 0 ? "#000000" : "#ffffff"));
+                drawMatrix();
+
+                $('#size-cols').val(COLS);
+                $('#size-rows').val(ROWS);
+            } catch(e) {
+                console.log(e);
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    theme: "dark",
+                    text: "Error parsing JSON data.",
+                });
+            }
+        };
+
+        function savePixelArt() {
+            const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0');
+            const name = $('#txt-save').val();
+            const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
+            localStorage.setItem(`item-${name}`, JSON.stringify(obj));
+
+            Swal.fire({
+                position: "top-end",
+                icon: "success",
+                theme: "dark",
+                title: getCorrectTranslation('saved'),
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            $('#txt-save').val('');
+        };
+
+        function reloadSavedPixelArt() {
+            $('#select-load').find('optgroup').remove();
+            $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseselect')));
+            var values = stringifyLocalStorageExcept(['language']);
+            $.each(values, function (key, item) {
+                $('#select-load').append($(`<option data-size="[${item.size}]" data-group="${item.size[0]}x${item.size[1]}" value="${item.data}">${item.name}</option>`).val(item.data).html(item.name));
+            });
+
+            var optiongroups = {};
+            $("#select-load option[data-group]").each(function () {
+                optiongroups[$.trim($(this).attr("data-group"))] = true;
+            });
+            $.each(optiongroups, function (c) {
+                $("select option[data-group='" + c + "']").wrapAll('<optgroup label="' + c + '">');
+            });
+        };
+
+        function stringifyLocalStorageExcept(keysToSkip) {
+            if (!Array.isArray(keysToSkip)) keysToSkip = [keysToSkip];
+
+            const filtered = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!keysToSkip.includes(key)) {
+                    try {
+                        filtered[key] = JSON.parse(localStorage.getItem(key));
+                    } catch (e) {
+                        filtered[key] = localStorage.getItem(key);
+                    }
+                }
+            }
+            return filtered;
+        }
+    </script>
+
+    <script>
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        const mousePosDisplay = document.getElementById('mouse-pos');
+        const cellSizeDisplay = document.getElementById('cell-size');
+
+        // Matrix dimensions
+        let COLS = parseInt($('#size-cols').val());
+        let ROWS = parseInt($('#size-rows').val());
+        let cellWidth, cellHeight;
+
+        // Matrix data - stores color for each cell
+        let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+
+        // Drawing state
+        let isDrawing = false;
+        let currentMode = $('input[name="draw-mode"]:checked').val();
+
+        // Resize the canvas to fill the screen while maintaining aspect ratio
+        function resizeCanvas() {
+            const maxWidth = window.innerWidth * 0.9;
+            const maxHeight = window.innerHeight * 0.6;
+
+            // Calculate the cell size to fit the matrix in the available space
+            const cellWidthByWidth = maxWidth / COLS;
+            const cellHeightByHeight = maxHeight / ROWS;
+
+            // Use the smaller of the two to ensure the entire matrix fits
+            const cellSize = Math.floor(Math.min(cellWidthByWidth, cellHeightByHeight));
+
+            cellWidth = cellSize;
+            cellHeight = cellSize;
+
+            canvas.width = COLS * cellWidth;
+            canvas.height = ROWS * cellHeight;
+
+            cellSizeDisplay.textContent = `${getCorrectTranslation('cellsize2')} ${cellWidth}x${cellHeight}`;
+
+            // Redraw the matrix with the current data
+            drawMatrix();
+        }
+
+        // Draw the entire matrix
+        function drawMatrix() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw each cell
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const x = col * cellWidth;
+                    const y = row * cellHeight;
+
+                    // Draw the cell background
+                    ctx.fillStyle = matrixData[row][col];
+                    ctx.fillRect(x, y, cellWidth, cellHeight);
+
+                    // Draw the cell border
+                    ctx.strokeStyle = '#333333';
+                    ctx.strokeRect(x, y, cellWidth, cellHeight);
+                }
+            }
+        }
+
+        // Convert mouse position to matrix coordinates
+        function getMatrixCoords(event) {
+            const rect = canvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            const col = Math.floor(x / cellWidth);
+            const row = Math.floor(y / cellHeight);
+
+            // Make sure we're within bounds
+            if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+                return { row, col };
+            }
+
+            return null;
+        }
+
+        // Update a cell's color
+        function updateCell(row, col, color) {
+            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+                matrixData[row][col] = color;
+
+                // Redraw just this cell
+                const x = col * cellWidth;
+                const y = row * cellHeight;
+
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, cellWidth, cellHeight);
+
+                ctx.strokeStyle = '#333333';
+                ctx.strokeRect(x, y, cellWidth, cellHeight);
+            }
+        }
+
+        // Fill all cells with a specific color
+        function fillAll(color) {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    matrixData[row][col] = color;
+                }
+            }
+            drawMatrix();
+        }
+
+        //Invert all cells
+        function invertAll() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (matrixData[row][col] == '#ffffff') {
+                        matrixData[row][col] = '#000000';
+                    } else {
+                        matrixData[row][col] = '#ffffff';
+                    }
+                }
+            }
+            drawMatrix();
+        }
+
+        function mirrorHorizontal() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS / 2; col++) {
+                    matrixData[row][COLS - col - 1] = matrixData[row][col];
+                }
+            }
+            drawMatrix();
+        }
+
+        function mirrorVertical() {
+            for (let row = 0; row < ROWS / 2; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    matrixData[ROWS - row - 1][col] = matrixData[row][col];
+                }
+            }
+            drawMatrix();
+        }
+
+        function copyToClipboard(text) {
+            var $temp = $('<input>');
+            $('body').append($temp);
+            $temp.val(text).select();
+            document.execCommand('copy');
+            $temp.remove();
+
+            Swal.fire({
+                position: "top-end",
+                icon: "success",
+                theme: "dark",
+                title: getCorrectTranslation('copied'),
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
+
+        function moveUp() {
+            for (let row = 0; row < ROWS - 1; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    matrixData[row][col] = matrixData[row + 1][col];
+                    matrixData[row + 1][col] = '#000000';
+                }
+            }
+            drawMatrix();
+            nudgeY();
+        }
+
+        function moveDown() {
+            for (let row = ROWS - 1; row > 0; row--) {
+                for (let col = 0; col < COLS; col++) {
+                    matrixData[row][col] = matrixData[row - 1][col];
+                    matrixData[row - 1][col] = '#000000';
+                }
+            }
+            drawMatrix();
+            nudgeY();
+        }
+
+        function moveLeft() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS - 1; col++) {
+                    matrixData[row][col] = matrixData[row][col + 1];
+                    matrixData[row][col + 1] = '#000000';
+                }
+            }
+            drawMatrix();
+            nudgeX();
+        }
+
+        function moveRight() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = COLS - 1; col > 0; col--) {
+                    matrixData[row][col] = matrixData[row][col - 1];
+                    matrixData[row][col - 1] = '#000000';
+                }
+            }
+            drawMatrix();
+            nudgeX();
+        }
+
+        function nudgeX() {
+            $('#canvas-container').addClass('nudgeX');
+
+            setTimeout(() => {
+                $('#canvas-container').removeClass('nudgeX');
+            }, 700);
+        }
+
+        function nudgeY() {
+            $('#canvas-container').addClass('nudgeY');
+
+            setTimeout(() => {
+                $('#canvas-container').removeClass('nudgeY');
+            }, 700);
+        }
+
+        // Export matrix data as JSON
+        function exportData() {
+            const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0');
+
+            Swal.fire({
+                title: getCorrectTranslation('copycode'),
+                icon: "success",
+                theme: "dark",
+                html: `<div class="code-container"><code>${dataStr}</code><button class="copy-code" onclick="copyToClipboard('${dataStr}');">${getCorrectTranslation('copy')}</button></div>`,
+                showCloseButton: false,
+                showCancelButton: false,
+                focusConfirm: false,
+                confirmButtonText: getCorrectTranslation('ok'),
+                confirmButtonAriaLabel: 'OK',
+                cancelButtonText: 'Cancel',
+                cancelButtonAriaLabel: "Thumbs down"
+            });
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const coords = getMatrixCoords(e);
+            if (coords) {
+                switch (currentMode) {
+                    case 'draw':
+                        updateCell(coords.row, coords.col, '#ffffff');
+                        break;
+                    case 'fill':
+                        fillAll('#ffffff');
+                        break;
+                    case 'clear':
+                        updateCell(coords.row, coords.col, '#000000');
+                        break;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const coords = getMatrixCoords(e);
+            if (coords) {
+
+                mousePosDisplay.textContent = `${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`;
+
+                if (isDrawing) {
+                    switch (currentMode) {
+                        case 'draw':
+                            updateCell(coords.row, coords.col, '#ffffff');
+                            break;
+                        case 'clear':
+                            updateCell(coords.row, coords.col, '#000000');
+                            break;
+                    }
+                }
+            } else {
+                mousePosDisplay.textContent = getCorrectTranslation('position1');
+            }
+        });
+
+        canvas.addEventListener('mouseout', () => {
+            mousePosDisplay.textContent = getCorrectTranslation('position1');
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Initial setup
+        resizeCanvas();
+
+        $(document).keydown(function (e) {
+            switch (e.which) {
+                case 37: // left arrow key
+                    moveLeft();
+                    break;
+                case 38: // up arrow key
+                    moveUp();
+                    break;
+                case 39: // right arrow key
+                    moveRight();
+                    break;
+                case 40: // down arrow key
+                    moveDown();
+                    break;
+                default: return; // exit this handler for other keys
+            }
+
+            e.preventDefault(); // prevent the default action (scroll / move caret)
+        });
+    </script>
+</body>
+
+</html>
