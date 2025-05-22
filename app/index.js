@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.options('/api/data', cors({
-    methods: ['GET', 'POST']
+  methods: ['GET', 'POST']
 }));
 
 // home server
@@ -39,11 +39,11 @@ con.connect(function (err) {
 //con.end();
 
 // In-memory data store (for demonstration purposes)
-let items = [
-  { id: 1, author: '森口友治', name: 'SignalRGB Logo', size: [16, 16], data: '[[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],[0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0],[0,1,1,1,1,1,1,1,1,0,0,0,1,1,0,0],[0,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,0,0,1,1,0],[0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0],[0,0,0,0,0,1,1,0,0,1,1,0,0,1,1,0],[0,0,0,0,1,1,0,0,1,1,0,0,1,1,0,0],[0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],[0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]]' },
-  { id: 2, author: '森口友治', name: 'Nollie Logo', size: [32, 8], data: '[[1,1,0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1],[1,1,0,0,1,1,0,1,1,1,1,1,1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1],[1,1,1,0,1,1,0,1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0],[1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1],[1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1],[1,1,0,1,1,1,0,1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,0,0,0],[1,1,0,0,1,1,0,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1],[1,1,0,0,1,1,0,0,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1]]' },
-  { id: 3, author: '森口友治', name: 'Mofun Logo', size: [32, 8], data: '[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,1,0,0,0,1,1,0,0,1,1,1,0,0,1,1,1,1,1,0,1,1,0,1,1,0,1,1,0,0,1,1],[1,1,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,1],[1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,0,0,0,0,1,1,0,1,1,0,1,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1,1,0,0,1,1,0,1,1,0,1,1,1,1,1,1],[1,1,0,1,0,1,1,0,1,1,1,1,1,0,1,1,0,0,0,0,1,1,1,1,1,0,1,1,0,1,1,1],[1,1,0,0,0,1,1,0,0,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,1,1,0,0,1,1],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]' }
-];
+// let items = [
+//   { id: 1, author: '森口友治', name: 'SignalRGB Logo', size: [16, 16], data: '[[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],[0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0],[0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0],[0,1,1,1,0,0,0,0,0,0,0,0,0,1,1,0],[0,1,1,1,1,1,1,1,1,0,0,0,1,1,0,0],[0,1,1,1,1,1,1,1,1,1,1,0,1,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,0,0,1,1,0],[0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,0],[0,1,1,1,1,1,1,1,1,1,0,1,1,0,0,0],[0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0],[0,0,0,0,0,1,1,0,0,1,1,0,0,1,1,0],[0,0,0,0,1,1,0,0,1,1,0,0,1,1,0,0],[0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],[0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0],[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1]]' },
+//   { id: 2, author: '森口友治', name: 'Nollie Logo', size: [32, 8], data: '[[1,1,0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1],[1,1,0,0,1,1,0,1,1,1,1,1,1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1],[1,1,1,0,1,1,0,1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0,0],[1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1],[1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1],[1,1,0,1,1,1,0,1,1,0,0,1,1,0,1,1,0,0,0,1,1,0,0,0,1,1,0,1,1,0,0,0],[1,1,0,0,1,1,0,1,1,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1],[1,1,0,0,1,1,0,0,1,1,1,1,0,0,1,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,1,1]]' },
+//   { id: 3, author: '森口友治', name: 'Mofun Logo', size: [32, 8], data: '[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,1,0,0,0,1,1,0,0,1,1,1,0,0,1,1,1,1,1,0,1,1,0,1,1,0,1,1,0,0,1,1],[1,1,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1,0,1,1],[1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,0,0,0,0,1,1,0,1,1,0,1,1,1,1,1,1],[1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1,1,0,0,1,1,0,1,1,0,1,1,1,1,1,1],[1,1,0,1,0,1,1,0,1,1,1,1,1,0,1,1,0,0,0,0,1,1,1,1,1,0,1,1,0,1,1,1],[1,1,0,0,0,1,1,0,0,1,1,1,0,0,1,1,0,0,0,0,0,1,1,1,0,0,1,1,0,0,1,1],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]' }
+// ];
 
 // GET API endpoint - Retrieve all items
 app.get('/api/items', (req, res) => {
@@ -109,6 +109,39 @@ app.get('/api/items/:id', (req, res) => {
   });
 });
 
+// GET API endpoint - Retrieve specific item by name
+app.get('/api/search/:name', (req, res) => {
+  const name = req.params.name.toLowerCase();
+  console.log(`GET request received for /api/search/${name}`);
+
+  const sql = `SELECT * FROM items WHERE LOWER(name) LIKE "%${name}%" OR LOWER(author) LIKE "%${name}%" ORDER BY id DESC LIMIT 24`;
+  con.query(sql, (err, results, fields) => {
+    if (err) {
+      console.error(`Error executing query: `, err);
+      return;
+    }
+    console.log('Query results: ', results);
+
+    let data = [];
+    results.forEach((e) => {
+      data.push({
+        id: e.id,
+        author: e.author,
+        name: e.name,
+        size: [e.width, e.height],
+        data: e.data,
+        preview: e.preview
+      });
+    });
+
+    res.status(200).json({
+      success: true,
+      count: results.length,
+      data: data
+    });
+  });
+});
+
 // POST API endpoint - Create a new item
 app.post('/api/items', (req, res) => {
   console.log('POST request received for /api/items');
@@ -122,28 +155,46 @@ app.post('/api/items', (req, res) => {
     });
   }
 
-  // Insert to database
-  const sql = 'INSERT INTO items (author, name, width, height, data, preview) VALUES (?, ?, ?, ?, ?, ?)';
-  const values = [req.body.author, req.body.name, req.body.size[0], req.body.size[1], req.body.data, req.body.preview];
-  con.query(sql, values, (err, result) => {
-    if (err) throw err;
-    console.log(`Data inserted:`, result);
-
-    // Create new item
-    const newItem = {
-      id: result.insertId,
-      author: req.body.author,
-      name: req.body.name,
-      size: req.body.size,
-      data: req.body.data,
-      preview: req.body.preview
-    };
-
-    res.status(201).json({
-      success: true,
-      data: newItem
-    });
+  let dataExist = 0;
+  // Check data existing
+  const sql1 = `SELECT * FROM items WHERE data = '${req.body.data}'`;
+  con.query(sql1, (err, results, fields) => {
+    if (err) {
+      console.error(`Error executing query: `, err);
+      return;
+    }
+    dataExist = results.length;
   });
+
+  if (dataExist == 0) {
+    // Insert to database
+    const sql = 'INSERT INTO items (author, name, width, height, data, preview) VALUES (?, ?, ?, ?, ?, ?)';
+    const values = [req.body.author, req.body.name, req.body.size[0], req.body.size[1], req.body.data, req.body.preview];
+    con.query(sql, values, (err, result) => {
+      if (err) throw err;
+      console.log(`Data inserted:`, result);
+
+      // Create new item
+      const newItem = {
+        id: result.insertId,
+        author: req.body.author,
+        name: req.body.name,
+        size: req.body.size,
+        data: req.body.data,
+        preview: req.body.preview
+      };
+
+      res.status(201).json({
+        success: true,
+        data: newItem
+      });
+    });
+  } else {
+    res.status(201).json({
+        success: false,
+        data: null
+      });
+  }
 });
 
 // Start the server
@@ -155,3 +206,4 @@ app.listen(PORT, () => {
 
 // Export for testing purposes
 module.exports = app;
+
