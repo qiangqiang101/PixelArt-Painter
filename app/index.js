@@ -1,5 +1,6 @@
 // app.js - Simple Node.js API Server with GET and POST endpoints
 const express = require('express');
+const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
 
@@ -10,9 +11,23 @@ const PORT = process.env.PORT || 3001;
 // Middleware to parse JSON bodies
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
+app.options('/api/data', cors({
+    methods: ['GET', 'POST']
+}));
+
+// home server
+// var con = mysql.createConnection({
+//   host: "192.168.0.6",  //localhost
+//   user: "nollie_nodejs",
+//   password: "CzufZrx5bCwRnnf96Q3a",
+//   database: 'nollie_nodejs'
+// });
+
+// server
 var con = mysql.createConnection({
-  host: "192.168.0.6",  //localhost
+  host: "localhost",  //localhost
   user: "nollie_nodejs",
   password: "CzufZrx5bCwRnnf96Q3a",
   database: 'nollie_nodejs'
@@ -34,7 +49,7 @@ let items = [
 app.get('/api/items', (req, res) => {
   console.log('GET request received for /api/items');
 
-  const sql = 'SELECT * FROM items ORDER BY id DESC LIMIT 20';
+  const sql = 'SELECT * FROM items ORDER BY id DESC LIMIT 24';
   con.query(sql, (err, results, fields) => {
     if (err) {
       console.error(`Error executing query: `, err);
