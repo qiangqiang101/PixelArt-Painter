@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
+//const fs = require('fs');
+const config = require('./config.json');
 
 // Initialize Express app
 const app = express();
@@ -19,13 +21,13 @@ app.options('/api/data', cors({
 }));
 
 const databaseConfig = {
-    host: 'localhost', //home use '192.168.0.6'
-    user: "nollie_nodejs",
-    password: "CzufZrx5bCwRnnf96Q3a",
-    database: 'nollie_nodejs',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+  host: config.host,
+  user: config.user,
+  password: config.password,
+  database: config.database,
+  waitForConnections: true,
+  connectionLimit: 30,
+  queueLimit: 20
 };
 
 // GET API endpoint - Retrieve all items
@@ -44,28 +46,28 @@ app.get('/api/allitems/:page', (req, res) => {
     orderDirection: 'DESC',
     search: null
   })
-  .then(result => {
-    console.log(result);
+    .then(result => {
+      console.log(result);
 
-    let data = [];
-    result.data.forEach((e) => {
-      data.push({
-        id: e.id,
-        author: e.author,
-        name: e.name,
-        size: [e.width, e.height],
-        preview: e.preview,
-        submittime: e.submittime
+      let data = [];
+      result.data.forEach((e) => {
+        data.push({
+          id: e.id,
+          author: e.author,
+          name: e.name,
+          size: [e.width, e.height],
+          preview: e.preview,
+          submittime: e.submittime
+        });
       });
-    });
 
-    let hasMore = (parseInt(result.pagination.offset) + parseInt(result.pagination.limit)) < parseInt(result.pagination.total);
-    if (hasMore) nextPage++;
+      let hasMore = (parseInt(result.pagination.offset) + parseInt(result.pagination.limit)) < parseInt(result.pagination.total);
+      if (hasMore) nextPage++;
 
-    res.status(201).json({
-      success: result.success,
-      data: data,
-      pagination: limit ? {
+      res.status(201).json({
+        success: result.success,
+        data: data,
+        pagination: limit ? {
           total: parseInt(result.pagination.total),
           limit: result.pagination.limit,
           offset: parseInt(result.pagination.offset),
@@ -73,41 +75,97 @@ app.get('/api/allitems/:page', (req, res) => {
           currPage: currPage,
           nextPage: nextPage
         } : null
-    });
-  }).catch(error => {
-    console.error(error);
+      });
+    }).catch(error => {
+      console.error(error);
 
-    res.status(201).json({
-      success: false,
-      data: error
+      res.status(201).json({
+        success: false,
+        data: error
+      });
     });
-  });
+});
+
+// GET API endpoint - Retrieve items by id array
+app.get('/api/items/:id_array/:page', (req, res) => {
+  const currPage = parseInt(req.params.page);
+  const idArray = JSON.parse(req.params.id_array);
+  console.log(`GET request received for /api/items/${idArray}/${currPage}`);
+  const offset = currPage * limit;
+  var nextPage = currPage;
+
+  const itemService = new ItemService(databaseConfig);
+
+  itemService.getItemsByIdArray(idArray, {
+    limit: limit,
+    offset: offset,
+    orderBy: 'id',
+    orderDirection: 'DESC',
+  })
+    .then(result => {
+      console.log(result);
+
+      let data = [];
+      result.data.forEach((e) => {
+        data.push({
+          id: e.id,
+          author: e.author,
+          name: e.name,
+          size: [e.width, e.height],
+          preview: e.preview,
+          submittime: e.submittime
+        });
+      });
+
+      let hasMore = (parseInt(result.pagination.offset) + parseInt(result.pagination.limit)) < parseInt(result.pagination.total);
+      if (hasMore) nextPage++;
+
+      res.status(201).json({
+        success: result.success,
+        data: data,
+        pagination: limit ? {
+          total: parseInt(result.pagination.total),
+          limit: result.pagination.limit,
+          offset: parseInt(result.pagination.offset),
+          hasMore: hasMore,
+          currPage: currPage,
+          nextPage: nextPage
+        } : null
+      });
+    }).catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      });
+    });
 });
 
 // GET API endpoint - Retrieve specific item by ID
-app.get('/api/items/:id', (req, res) => {
+app.get('/api/item/:id', (req, res) => {
   const id = parseInt(req.params.id);
   console.log(`GET request received for /api/items/${id}`);
 
   const itemService = new ItemService(databaseConfig);
 
   itemService.getItemById(id)
-  .then(result => {
-    console.log(result);
+    .then(result => {
+      console.log(result);
 
-    res.status(201).json({
-      success: result.success,
-      data: result.data
-    });
-  })
-  .catch(error => {
-    console.error(error);
+      res.status(201).json({
+        success: result.success,
+        data: result.data
+      });
+    })
+    .catch(error => {
+      console.error(error);
 
-    res.status(201).json({
-      success: false,
-      data: error
+      res.status(201).json({
+        success: false,
+        data: error
+      });
     });
-  });
 });
 
 // GET API endpoint - Retrieve specific items by name or author
@@ -127,28 +185,28 @@ app.get('/api/search/:search_string/:page', (req, res) => {
     orderDirection: 'DESC',
     search: search_string
   })
-  .then(result => {
-    console.log(result);
+    .then(result => {
+      console.log(result);
 
-    let data = [];
-    result.data.forEach((e) => {
-      data.push({
-        id: e.id,
-        author: e.author,
-        name: e.name,
-        size: [e.width, e.height],
-        preview: e.preview,
-        submittime: e.submittime
+      let data = [];
+      result.data.forEach((e) => {
+        data.push({
+          id: e.id,
+          author: e.author,
+          name: e.name,
+          size: [e.width, e.height],
+          preview: e.preview,
+          submittime: e.submittime
+        });
       });
-    });
 
-    let hasMore = (parseInt(result.pagination.offset) + parseInt(result.pagination.limit)) < parseInt(result.pagination.total);
-    if (hasMore) nextPage++;
+      let hasMore = (parseInt(result.pagination.offset) + parseInt(result.pagination.limit)) < parseInt(result.pagination.total);
+      if (hasMore) nextPage++;
 
-    res.status(201).json({
-      success: result.success,
-      data: data,
-      pagination: limit ? {
+      res.status(201).json({
+        success: result.success,
+        data: data,
+        pagination: limit ? {
           total: parseInt(result.pagination.total),
           limit: result.pagination.limit,
           offset: parseInt(result.pagination.offset),
@@ -156,15 +214,15 @@ app.get('/api/search/:search_string/:page', (req, res) => {
           currPage: currPage,
           nextPage: nextPage
         } : null
-    });
-  }).catch(error => {
-    console.error(error);
+      });
+    }).catch(error => {
+      console.error(error);
 
-    res.status(201).json({
-      success: false,
-      data: error
+      res.status(201).json({
+        success: false,
+        data: error
+      });
     });
-  });
 });
 
 // POST API endpoint - Create a new item
@@ -186,7 +244,7 @@ app.post('/api/items', (req, res) => {
 
       res.status(201).json({
         success: result.success,
-        data: result 
+        data: result
       });
     })
     .catch(error => {
@@ -194,7 +252,7 @@ app.post('/api/items', (req, res) => {
 
       res.status(201).json({
         success: false,
-        data: error 
+        data: error
       });
     });
 
@@ -298,6 +356,70 @@ class ItemService {
       }
 
       if (totalCount == 0) totalCount = rows.length;
+
+      return {
+        success: true,
+        data: rows,
+        pagination: limit ? {
+          total: totalCount,
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          hasMore: (parseInt(offset) + parseInt(limit)) < totalCount
+        } : null
+      };
+    } catch (error) {
+      console.error('Database error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve items',
+        error: error.message
+      };
+    } finally {
+      connection.release();
+    }
+  }
+
+  async getItemsByIdArray(itemIds = [], options = {}) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      const {
+        limit = null,
+        offset = 0,
+        orderBy = 'id',
+        orderDirection = 'DESC'
+      } = options;
+
+      // Build base query
+      let query = 'SELECT * FROM items WHERE id IN (?)';
+      let queryParams = itemIds;
+
+      // Add ordering
+      const validOrderColumns = ['id', 'name', 'author', 'submittime'];
+      const validDirections = ['ASC', 'DESC'];
+
+      if (validOrderColumns.includes(orderBy) && validDirections.includes(orderDirection.toUpperCase())) {
+        query += ` ORDER BY ${orderBy} ${orderDirection.toUpperCase()}`;
+      }
+
+      // Add pagination if limit is specified
+      if (limit) {
+        query += ' LIMIT ?';
+        queryParams.push(parseInt(limit));
+
+        if (offset > 0) {
+          query += ' OFFSET ?';
+          queryParams.push(parseInt(offset));
+        }
+      }
+
+      console.log('Executing query:', query);
+      console.log('With params:', queryParams);
+
+      const [rows] = await connection.execute(query, queryParams);
+
+      // Get total count for pagination info
+      let totalCount = rows.length;
 
       return {
         success: true,
@@ -466,8 +588,15 @@ class ItemService {
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`GET endpoints: http://localhost:${PORT}/api/allitems/:page, http://localhost:${PORT}/api/items/:id and http://localhost:${PORT}/api/search/:search_string/:page`);
-  console.log(`POST endpoint: http://localhost:${PORT}/api/items`);
+  console.log('GET endpoints:');
+  console.log(`http://localhost:${PORT}/api/allitems/:page`);
+  console.log(`http://localhost:${PORT}/api/item/:id`);
+  console.log(`http://localhost:${PORT}/api/items/:idarray/:page`);
+  console.log(`http://localhost:${PORT}/api/search/:search_string/:page`);
+  console.log('');
+  console.log('POST endpoint:');
+  console.log(`http://localhost:${PORT}/api/items`);
+  console.log(databaseConfig);
 });
 
 // Export for testing purposes
