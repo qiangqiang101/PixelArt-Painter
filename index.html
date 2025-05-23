@@ -88,7 +88,8 @@
                     <button class="btn btn-primary" id="share-btn" type="button" data-bs-toggle="modal"
                         data-bs-target="#modal-share"><span class="mdi mdi-share-variant-outline"></span> Share</button>
                     <button class="btn btn-primary" id="community-btn" type="button" data-bs-toggle="offcanvas"
-                        data-bs-target="#community" aria-controls="community" onclick="getCommunityItems();">
+                        data-bs-target="#community" aria-controls="community"
+                        onclick="getCommunityItems(); getFavoritesCommunityItems();">
                         <span class="mdi mdi-account-group-outline"></span> Community Pixel Art
                     </button>
                 </div>
@@ -217,6 +218,49 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modal-info" tabindex="-1" aria-labelledby="modal-info-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal-info-label">Item</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-lg-6 col-md-12 mb-lg-0 mb-3">
+                            <label for="txtInfoName" class="form-label">Name</label>
+                            <input id="txtInfoName" type="text" class="form-control" value="" disabled />
+                        </div>
+                        <div class="col-lg-6 col-md-12 mb-lg-0 mb-3">
+                            <label for="txtInfoAuthor" class="form-label">Author</label>
+                            <input id="txtInfoAuthor" type="text" class="form-control" value="" disabled />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-lg-6 col-md-12 mb-lg-0 mb-3">
+                            <label for="txtInfoDate" class="form-label">Created</label>
+                            <input id="txtInfoDate" type="datetime-local" class="form-control" value="" disabled />
+                        </div>
+                        <div class="col-lg-6 col-md-12 mb-lg-0 mb-3">
+                            <label for="txtInfoSize" class="form-label">Size</label>
+                            <input id="txtInfoSize" type="text" class="form-control" value="" disabled />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <label for="txtInfoData" class="form-label">Code</label>
+                            <div class="input-group">
+                                <textarea id="txtInfoData" class="form-control" rows="6" disabled></textarea>
+                                <button class="btn btn-outline-secondary" type="button"
+                                    id="btnInfoDataCopy" onclick="copyToClipboard('');">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="offcanvas offcanvas-end w-75" tabindex="-1" id="community" aria-labelledby="community-Label">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="community-Label">Browse Community Pixel Art</h5>
@@ -228,18 +272,30 @@
                     <button class="nav-link active" id="new-items-tab" data-bs-toggle="tab"
                         data-bs-target="#new-items">Latest</button>
                 </li>
+
                 <li class="nav-item">
                     <button class="nav-link" id="search-items-tab" data-bs-toggle="tab"
                         data-bs-target="#search-items">Search</button>
+                </li>
+
+                <li class="nav-item">
+                    <button class="nav-link" id="favorites-items-tab" data-bs-toggle="tab"
+                        data-bs-target="#favorite-items">Favorites</button>
                 </li>
             </ul>
 
             <div class="tab-content mt-3" id="stepTabContent">
                 <div class="tab-pane fade show active" id="new-items">
-                    <div class="row" id="community-container">
-                        <!-- <div class="row row-cols-1 row-cols-sm-4 row-cols-md-6 g-3" id="community-container"> -->
+                    <div class="row mb-3" id="community-container">
+                    </div>
+                    <div class="row">
+                        <div class="d-grid gap-2 col-auto mx-auto">
+                            <button class="btn btn-outline-primary" type="button" data-page="0"
+                                id="community-load-more-btn" disabled>Load More</button>
+                        </div>
                     </div>
                 </div>
+
                 <div class="tab-pane fade" id="search-items">
                     <div class="row mb-3">
                         <div class="col">
@@ -255,6 +311,23 @@
                     </div>
                     <div class="row" id="community-search-container">
                     </div>
+                    <div class="row">
+                        <div class="d-grid gap-2 col-auto mx-auto">
+                            <button class="btn btn-outline-primary" type="button" data-page="0"
+                                id="search-load-more-btn" disabled>Load More</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="favorite-items">
+                    <div class="row" id="community-favorites-container">
+                    </div>
+                    <div class="row">
+                        <div class="d-grid gap-2 col-auto mx-auto">
+                            <button class="btn btn-outline-primary" type="button" data-page="0"
+                                id="favorites-load-more-btn" disabled>Load More</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -269,8 +342,7 @@
             customClass: {
                 confirmButton: 'btn btn-primary',
                 cancelButton: 'btn btn-secondary'
-            },
-            buttonStyling: false
+            }
         });
 
         const langDB = {
@@ -314,13 +386,24 @@
             communityTitle: { en: 'Browse Community Pixel Art', zh: '浏览社区像素作品' },
             search: { en: 'Search...', zh: '搜索...' },
             itemExists: { en: 'The pixel art you are trying to share already exists on the server.', zh: '您尝试分享的像素作品已存在于服务器中。' },
-            latest: { en: 'Latest', zh: '最新' },
-            search2: { en: 'Search', zh: '搜索' }
+            latest: { en: '<span class="mdi mdi-fire"></span> Latest', zh: '<span class="mdi mdi-fire"></span> 最新' },
+            search2: { en: '<span class="mdi mdi-magnify"></span> Search', zh: '<span class="mdi mdi-magnify"></span> 搜索' },
+            loadMore: { en: '<span class="mdi mdi-plus"></span> Load More', zh: '<span class="mdi mdi-plus"></span> 加载更多' },
+            favorites: { en: '<span class="mdi mdi-heart-outline"></span> Favorites', zh: '<span class="mdi mdi-heart-outline"></span> 收藏夹' },
+            infoName: { en: 'Name', zh: '名字' },
+            infoAuthor: { en: 'Author', zh: '作者' },
+            infoCreated: { en: 'Created', zh: '提交时间' },
+            infoSize: { en: 'Size', zh: '大小' },
+            infoCode: { en: 'Code', zh: '代码' }
         };
+
+        var favorites = [];
 
         $(document).ready(function () {
             let language = localStorage.getItem('language') || 'english';
             let author = localStorage.getItem('author') || null;
+            favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
             $('body').attr('data-language', language);
             $('#txt-share-author').val(author);
             changeLanguage(language);
@@ -360,8 +443,16 @@
                     $('label[for="txt-share-author"]').text(langDB.shareAuthor.zh);
                     $('#community-Label').text(langDB.communityTitle.zh);
                     $('#txt-search').attr('placeholder', langDB.search.zh);
-                    $('#new-items-tab').text(langDB.latest.zh);
-                    $('#search-items-tab').text(langDB.search2.zh);
+                    $('#new-items-tab').html(langDB.latest.zh);
+                    $('#search-items-tab').html(langDB.search2.zh);
+                    $('#community-load-more-btn, #search-load-more-btn, #favorites-load-more-btn').html(langDB.loadMore.zh);
+                    $('#favorites-items-tab').html(langDB.favorites.zh);
+                    $('label[for="txtInfoName"]').text(langDB.infoName.zh);
+                    $('label[for="txtInfoAuthor"]').text(langDB.infoAuthor.zh);
+                    $('label[for="txtInfoDate"]').text(langDB.infoCreated.zh);
+                    $('label[for="txtInfoSize"]').text(langDB.infoSize.zh);
+                    $('label[for="txtInfoData"]').text(langDB.infoCode.zh);
+                    $('#btnInfoDataCopy').text(langDB.copy.zh);
                     break;
                 default:
                     $('#ddLanguage').html(langDB.language.en);
@@ -393,8 +484,16 @@
                     $('label[for="txt-share-author"]').text(langDB.shareAuthor.en);
                     $('#community-Label').text(langDB.communityTitle.en);
                     $('#txt-search').attr('placeholder', langDB.search.en);
-                    $('#new-items-tab').text(langDB.latest.en);
-                    $('#search-items-tab').text(langDB.search2.en);
+                    $('#new-items-tab').html(langDB.latest.en);
+                    $('#search-items-tab').html(langDB.search2.en);
+                    $('#community-load-more-btn, #search-load-more-btn, #favorites-load-more-btn').html(langDB.loadMore.en);
+                    $('#favorites-items-tab').html(langDB.favorites.en);
+                    $('label[for="txtInfoName"]').text(langDB.infoName.en);
+                    $('label[for="txtInfoAuthor"]').text(langDB.infoAuthor.en);
+                    $('label[for="txtInfoDate"]').text(langDB.infoCreated.en);
+                    $('label[for="txtInfoSize"]').text(langDB.infoSize.en);
+                    $('label[for="txtInfoData"]').text(langDB.infoCode.en);
+                    $('#btnInfoDataCopy').text(langDB.copy.en);
             }
 
             $('body').attr('data-language', lang);
@@ -533,7 +632,7 @@
         function reloadSavedPixelArt() {
             $('#select-load').find('optgroup').remove();
             $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')));
-            var values = stringifyLocalStorageExcept(['language']);
+            var values = stringifyLocalStorageExcept(['language', 'author', 'favorites']);
             $.each(values, function (key, item) {
                 $('#select-load').append($(`<option data-size="[${item.size}]" data-group="${item.size[0]}x${item.size[1]}" value="${item.data}">${item.name}</option>`).val(item.data).html(item.name));
             });
@@ -563,73 +662,104 @@
             }
             return filtered;
         }
-
-        $('#community-search').click(function (evt) {
-            if ($('#txt-search').val()) {
-                $.ajax({
-                    url: `${api}search/${$('#txt-search').val()}`,
-                    type: 'GET',
-                    contentType: 'application/json; charset=utf-8',
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.success === true && response.count >= 1) {
-                            $('#community-search-container').empty();
-                            var children = [];
-
-                            $.each(response.data, function (key, item) {
-                                var child = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">` +
-                                    `<div class="card shadow-sm">` +
-                                    `<img src="${item.preview}" class="image-fluid card-img-top" />` +
-                                    `<div class="card-body">` +
-                                    `<p class="card-text">${item.name}</p>` +
-                                    `<div class="d-flex justify-content-between align-items-center mt-auto">` +
-                                    `<button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadItem(${item.id});">` +
-                                    `<span class="mdi mdi-download"></span>` +
-                                    `</button>` +
-                                    `<small class="text-muted">${item.author}</small>` +
-                                    `</div>` +
-                                    `</div>` +
-                                    `</div>` +
-                                    `</div>`;
-                                children.push(child);
-                            });
-                            $('#community-search-container').append(children);
-                        }
-                    },
-                    error: function (err) {
-                        console.log(err);
-                        swalBS.fire({
-                            icon: "error",
-                            title: getCorrectTranslation('oops'),
-                            theme: "dark",
-                            text: err.statusText,
-                        });
-                    }
-                });
-            }
-        });
-
-        function getCommunityItems() {
+        function searchCommunityItems(search_string, page = 0) {
             $.ajax({
-                url: `${api}items`,
+                url: `${api}search/${search_string}/${page}`,
                 type: 'GET',
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
                 success: function (response) {
-                    if (response.success === true && response.count >= 1) {
-                        $('#community-container').empty();
+                    console.log(response);
+
+                    if (response.success === true && response.pagination.total >= 1) {
+                        if (page === 0) $('#community-search-container').empty();
                         var children = [];
 
                         $.each(response.data, function (key, item) {
+                            let isFavorite = favorites.includes(item.id);
                             var child = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">` +
                                 `<div class="card shadow-sm">` +
                                 `<img src="${item.preview}" class="image-fluid card-img-top" />` +
                                 `<div class="card-body">` +
                                 `<p class="card-text">${item.name}</p>` +
                                 `<div class="d-flex justify-content-between align-items-center mt-auto">` +
-                                `<button type="button" class="btn btn-sm btn-outline-secondary" onclick="downloadItem(${item.id});">` +
+                                `<div class="btn-group" role="group">` +
+                                `<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${item.id});">` +
                                 `<span class="mdi mdi-download"></span>` +
                                 `</button>` +
+                                `<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modal-info" onclick="itemInfo(${item.id});">` +
+                                `<span class="mdi mdi-dots-horizontal"></span>` +
+                                `</button>` +
+                                `<button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${item.id});">` +
+                                `<span class="mdi mdi-heart"></span>` +
+                                `</button>` +
+                                `</div>` +
+                                `<small class="text-muted">${item.author}</small>` +
+                                `</div>` +
+                                `</div>` +
+                                `</div>` +
+                                `</div>`;
+                            children.push(child);
+                        });
+
+                        $('#community-search-container').append(children);
+                        if (response.pagination.hasMore) {
+                            $('#search-load-more-btn').attr('data-page', response.pagination.nextPage);
+                            $('#search-load-more-btn').prop('disabled', false);
+                        } else {
+                            $('#search-load-more-btn').prop('disabled', true);
+                        }
+                    }
+                },
+                error: function (err) {
+                    console.log(err);
+                    swalBS.fire({
+                        icon: "error",
+                        title: getCorrectTranslation('oops'),
+                        theme: "dark",
+                        text: err.statusText,
+                    });
+                }
+            });
+        }
+
+        $('#community-search').click(function (evt) {
+            if ($('#txt-search').val()) {
+                $('#search-load-more-btn').attr('data-page', 0);
+                searchCommunityItems($('#txt-search').val());
+            }
+        });
+
+        function getCommunityItems(page = 0) {
+            $.ajax({
+                url: `${api}allitems/${page}`,
+                type: 'GET',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success === true && response.pagination.total >= 1) {
+                        if (page === 0) $('#community-container').empty();
+                        var children = [];
+
+                        $.each(response.data, function (key, item) {
+                            let isFavorite = favorites.includes(item.id);
+                            var child = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">` +
+                                `<div class="card shadow-sm">` +
+                                `<img src="${item.preview}" class="image-fluid card-img-top" />` +
+                                `<div class="card-body">` +
+                                `<p class="card-text">${item.name}</p>` +
+                                `<div class="d-flex justify-content-between align-items-center mt-auto">` +
+                                `<div class="btn-group" role="group">` +
+                                `<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${item.id});">` +
+                                `<span class="mdi mdi-download"></span>` +
+                                `</button>` +
+                                `<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modal-info" onclick="itemInfo(${item.id});">` +
+                                `<span class="mdi mdi-dots-horizontal"></span>` +
+                                `</button>` +
+                                `<button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${item.id});">` +
+                                `<span class="mdi mdi-heart"></span>` +
+                                `</button>` +
+                                `</div>` +
                                 `<small class="text-muted">${item.author}</small>` +
                                 `</div>` +
                                 `</div>` +
@@ -639,6 +769,71 @@
                         });
 
                         $('#community-container').append(children);
+                        if (response.pagination.hasMore) {
+                            $('#community-load-more-btn').attr('data-page', response.pagination.nextPage);
+                            $('#community-load-more-btn').prop('disabled', false);
+                        } else {
+                            $('#community-load-more-btn').prop('disabled', true);
+                        }
+                    }
+                },
+                error: function (err) {
+                    console.log(err);
+                    swalBS.fire({
+                        icon: "error",
+                        title: getCorrectTranslation('oops'),
+                        theme: "dark",
+                        text: err.statusText,
+                    });
+                }
+            });
+        }
+
+        function getFavoritesCommunityItems(page = 0) {
+            $.ajax({
+                url: `${api}items/${JSON.stringify(favorites)}/${page}`,
+                type: 'GET',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success === true && response.pagination.total >= 1) {
+                        if (page === 0) $('#community-favorites-container').empty();
+                        var children = [];
+
+                        $.each(response.data, function (key, item) {
+                            let isFavorite = favorites.includes(item.id);
+                            var child = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">` +
+                                `<div class="card shadow-sm">` +
+                                `<img src="${item.preview}" class="image-fluid card-img-top" />` +
+                                `<div class="card-body">` +
+                                `<p class="card-text">${item.name}</p>` +
+                                `<div class="d-flex justify-content-between align-items-center mt-auto">` +
+                                `<div class="btn-group" role="group">` +
+                                `<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${item.id});">` +
+                                `<span class="mdi mdi-download"></span>` +
+                                `</button>` +
+                                `<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modal-info" onclick="itemInfo(${item.id});">` +
+                                `<span class="mdi mdi-dots-horizontal"></span>` +
+                                `</button>` +
+                                `<button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${item.id});">` +
+                                `<span class="mdi mdi-heart"></span>` +
+                                `</button>` +
+                                `</div>` +
+                                `<small class="text-muted">${item.author}</small>` +
+                                `</div>` +
+                                `</div>` +
+                                `</div>` +
+                                `</div>`;
+                            children.push(child);
+                        });
+
+                        $('#community-favorites-container').append(children);
+                        if (response.pagination.hasMore) {
+                            $('#favorites-load-more-btn').attr('data-page', response.pagination.nextPage);
+                            $('#favorites-load-more-btn').prop('disabled', false);
+                        } else {
+                            $('#favorites-load-more-btn').prop('disabled', true);
+                        }
                     }
                 },
                 error: function (err) {
@@ -722,13 +917,13 @@
 
         function downloadItem(id) {
             $.ajax({
-                url: `${api}items/${id}`,
+                url: `${api}item/${id}`,
                 type: 'GET',
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
                 success: function (response) {
-                    if (response.success === true && !response.count == 0) {
-                        let $item = response.data[0];
+                    if (response.success === true) {
+                        let $item = response.data;
 
                         COLS = $item.size[0];
                         ROWS = $item.size[1];
@@ -764,6 +959,62 @@
                 event.preventDefault()
             }
         });
+
+        $('#community-load-more-btn').click(function (evt) {
+            getCommunityItems(parseInt($(this).attr('data-page')));
+        });
+
+        $('#search-load-more-btn').click(function (evt) {
+            searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')));
+        });
+
+        $('#favorites-load-more-btn').click(function (evt) {
+            getFavoritesCommunityItems($(this.attr('data-page')));
+        })
+
+        function addToFavorite(id) {
+            if (!favorites.includes(id)) {
+                favorites.push(id);
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-outline-danger').addClass('btn-danger');
+            } else {
+                favorites.splice($.inArray(id, favorites), 1);
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-danger').addClass('btn-outline-danger');
+            }
+        }
+
+        function itemInfo(id) {
+            $.ajax({
+                url: `${api}item/${id}`,
+                type: 'GET',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success === true) {
+                        let item = response.data;
+                        const datetimeLocal = item.submittime.slice(0, -5);
+
+                        $('#modal-info-label').text(`${item.id}: ${item.name}`);
+                        $('#txtInfoName').val(item.name);
+                        $('#txtInfoAuthor').val(item.author);
+                        $('#txtInfoSize').val(`${item.size[0]}x${item.size[1]}`);
+                        $('#txtInfoDate').val(datetimeLocal);
+                        $('#txtInfoData').val(item.data);
+                        $('#btnInfoDataCopy').attr('onclick', `copyToClipboard('${item.data}');`);
+                    }
+                },
+                error: function (err) {
+                    console.log(err);
+                    swalBS.fire({
+                        icon: "error",
+                        title: getCorrectTranslation('oops'),
+                        theme: "dark",
+                        text: err.statusText,
+                    });
+                }
+            });
+        }
     </script>
 
     <script>
@@ -906,6 +1157,7 @@
         }
 
         function copyToClipboard(text) {
+            console.log(text);
             var $temp = $('<input>');
             $('body').append($temp);
             $temp.val(text).select();
