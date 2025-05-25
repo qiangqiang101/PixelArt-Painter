@@ -379,7 +379,7 @@ class ItemService {
     }
   }
 
-  async getItemsByIdArray(itemIds = [], options = {}) {
+  async getItemsByIdArray(itemIds, options = {}) {
     const connection = await this.pool.getConnection();
 
     try {
@@ -391,8 +391,8 @@ class ItemService {
       } = options;
 
       // Build base query
-      let query = 'SELECT * FROM items WHERE id IN (?)';
-      let queryParams = itemIds;
+      let query = `SELECT * FROM items WHERE id IN (${itemIds.join(',')})`;
+      let queryParams = [];
 
       // Add ordering
       const validOrderColumns = ['id', 'name', 'author', 'submittime'];
