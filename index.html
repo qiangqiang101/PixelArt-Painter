@@ -404,7 +404,8 @@
             infoSize: { en: 'Size', zh: '大小' },
             infoCode: { en: 'Code', zh: '代码' },
             colorFull: { en: '<span class="mdi mdi-water"></span> Full Color', zh: '<span class="mdi mdi-water"></span> 全色' },
-            colorTransparent: { en: '<span class="mdi mdi-water-opacity"></span> Transparent', zh: '<span class="mdi mdi-water-opacity"></span> 透明' }
+            colorTransparent: { en: '<span class="mdi mdi-water-opacity"></span> Transparent', zh: '<span class="mdi mdi-water-opacity"></span> 透明' },
+            inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' }
         };
 
         var favorites = [];
@@ -512,6 +513,9 @@
 
             $('body').attr('data-language', lang);
         };
+
+        const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
+            'dick', 'dumb', 'fag', 'nigga', 'piss', 'slut', 'wanker', 'ccp', '共产党', '傻逼', '维尼', 'pooh', '西藏', '防火墙', '天安门'];
 
         function getCorrectTranslation(lang) {
             let body = $('body').attr('data-language');
@@ -626,6 +630,16 @@
         $('#save-confirm-btn').click(function (evt) {
             if (!$('#txt-save').val()) {
                 $('#txt-save').addClass('is-invalid');
+                $('#txt-save').focus();
+            } else if (naughtyWords.includes($('#txt-save').val())) {
+                $('#txt-save').addClass('is-invalid');
+                $('#txt-save').focus();
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('inappropriateTextWarning'),
+                });
             } else {
                 const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
                 const name = $('#txt-save').val();
@@ -923,8 +937,28 @@
         $('#share-confirm-btn').click(function (evt) {
             if (!$('#txt-share-author').val()) {
                 $('#txt-share-author').addClass('is-invalid');
+                $('#txt-share-author').focus();
+            } else if (naughtyWords.includes($('#txt-share-author').val())) {
+                $('#txt-share-author').addClass('is-invalid');
+                $('#txt-share-author').focus();
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('inappropriateTextWarning'),
+                });
             } else if (!$('#txt-share-name').val()) {
                 $('#txt-share-name').addClass('is-invalid');
+                $('#txt-share-name').focus();
+            } else if (naughtyWords.includes($('#txt-share-name').val())) {
+                $('#txt-share-name').addClass('is-invalid');
+                $('#txt-share-name').focus();
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('inappropriateTextWarning'),
+                });
             } else {
                 const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
                 var json = {
