@@ -562,7 +562,7 @@
             }
             try {
                 matrixData = JSON.parse($('#clipboard').val());
-                matrixData = matrixData.map(row => row.map(value => value === 0 ? "#000000" : "#ffffff"));
+                matrixData = matrixData.map(row => row.map(value => value === 0 ? "#000000" : (value === 1 ? "#ffffff" : "#808080")));
                 drawMatrix();
             } catch (e) {
                 console.log(e);
@@ -794,7 +794,7 @@
 
         function getCommunityItems(page = 0) {
             if (page === 0) $('#community-container').empty().append(appendPlaceholders(Math.random() * 30));
-            
+
             $.ajax({
                 url: `${api}allitems/${page}`,
                 type: 'GET',
