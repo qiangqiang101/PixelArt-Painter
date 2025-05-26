@@ -99,10 +99,6 @@ canvas {
     }
 }
 
-.nollie-logo {
-    width: 10%;
-    height: auto;
-    margin-top: -.5rem;
-    margin-bottom: -.5rem;
-    margin-right: 2rem;
+form.dropdown-menu {
+    width: 18rem;
 }

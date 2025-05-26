@@ -19,41 +19,84 @@
 
 <body>
     <header>
-        <div class="bg-dark collapse" id="navbarHeader">
+        <nav class="navbar navbar-expand-lg bg-body-tertiary bg-dark border-bottom border-body">
             <div class="container">
-                <div class="row">
-                    <div class="col-sm-8 col-md-7 py-4">
-
-                    </div>
-                    <div class="col-sm-4 offset-md-1 py-4 text-end">
-                        <div class="dropdown">
-                            <button class="btn btn-primary dropdown-toggle" type="button" id="ddLanguage"
-                                data-bs-toggle="dropdown" aria-expanded="false"><span class="mdi mdi-translate"></span>
-                                Language:</button>
-                            <ul class="dropdown-menu" aria-labelledby="ddLanguage">
+                <a class="navbar-brand" href="index.html">
+                    <img src="https://nolliergb.com/wp-content/uploads/2024/08/NOLLIE-RGB-1.png" alt="nollie" width="80"
+                        height="auto" />
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://nolliergb.com">Nollie Official Website</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="ddLanguage" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="mdi mdi-translate"></span> Language
+                            </a>
+                            <ul class="dropdown-menu">
                                 <li><button class="dropdown-item" onclick="changeLanguage('english');">English</button>
                                 </li>
                                 <li><button class="dropdown-item" onclick="changeLanguage('chinese');">中文</button></li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <div class="d-flex gap-2">
+                        <div class="dropdown" id="ddLogin">
+                            <button type="button" class="btn btn-outline-primary dropdown-toggle" id="btnLogin"
+                                data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"><span
+                                    class="mdi mdi-login"></span> Login</button>
+                            <form class="dropdown-menu p-4">
+                                <div class="mb-3">
+                                    <label for="txtLoginUsername" class="form-label">Username</label>
+                                    <input type="email" class="form-control" id="txtLoginUsername" maxlength="30"
+                                        placeholder="Username">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="txtLoginPassword" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="txtLoginPassword" maxlength="30"
+                                        placeholder="Password">
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="chkLoginRemember">
+                                        <label class="form-check-label" for="chkLoginRemember">
+                                            Remember me
+                                        </label>
+                                    </div>
+                                </div>
+                                <button id="btnLoginConfirm" type="button" class="btn btn-primary">Sign in</button>
+                            </form>
+                        </div>
+                        <button class="btn btn-primary" type="button" data-bs-toggle="modal" id="btnSignup"
+                            data-bs-target="#modal-signup"><span class="mdi mdi-account-plus-outline"></span> Sign
+                            Up</button>
+                        <div class="btn-group" id="member" style="display: none;">
+                            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                                Username
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Profile</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item" href="#">Logout</a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="navbar navbar-dark bg-dark bg-gradient shadow-sm">
-            <div class="container">
-                <a href="#" class="navbar-brand d-flex align-items-center">
-                    <img src="https://nolliergb.com/wp-content/uploads/2024/08/NOLLIE-RGB-1.png"
-                        class="image-fluid nollie-logo" />
-                    <strong>SignalRGB WLED/Nollie1 Matrix Pixel Art Painter</strong>
-                </a>
-                <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false"
-                    aria-label="Toggle navigation">
-                    <span class="mdi mdi-menu"></span>
-                </button>
-            </div>
-        </div>
+        </nav>
     </header>
 
     <main>
@@ -269,6 +312,43 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modal-signup" tabindex="-1" aria-labelledby="modal-signup-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal-signup-label">Sign Up</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="txtSignupEmail" class="form-label">Email</label>
+                            <input id="txtSignupEmail" type="text" class="form-control" placeholder="email@example.com"
+                                maxlength="100" />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="txtSignupUsername" class="form-label">Username</label>
+                            <input id="txtSignupUsername" type="text" class="form-control" placeholder="Username"
+                                maxlength="30" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <label for="txtSignupPassword" class="form-label">Password</label>
+                            <input id="txtSignupPassword" type="password" class="form-control" placeholder="Password"
+                                maxlength="30" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="btnSignupConfirm">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="offcanvas offcanvas-end w-75" tabindex="-1" id="community" aria-labelledby="community-Label">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="community-Label">Browse Community Pixel Art</h5>
@@ -343,8 +423,8 @@
     </div>
 
     <script>
-        //const api = 'http://localhost:3001/api/';
-        const api = 'https://pixelart.nolliergb.com/api/';
+        const api = 'http://localhost:3001/api/';
+        //const api = 'https://pixelart.nolliergb.com/api/';
 
         const swalBS = Swal.mixin({
             customClass: {
@@ -405,7 +485,16 @@
             infoCode: { en: 'Code', zh: '代码' },
             colorFull: { en: '<span class="mdi mdi-water"></span> Full Color', zh: '<span class="mdi mdi-water"></span> 全色' },
             colorTransparent: { en: '<span class="mdi mdi-water-opacity"></span> Transparent', zh: '<span class="mdi mdi-water-opacity"></span> 透明' },
-            inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' }
+            inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' },
+            nollieweb: { en: 'Nollie Official Website', zh: '诺莉官方网站（海外）' },
+            navLogin: { en: '<span class="mdi mdi-login"></span> Login', zh: '<span class="mdi mdi-login"></span> 登入' },
+            navSignUp: { en: '<span class="mdi mdi-account-plus-outline"></span> Sign Up', zh: '<span class="mdi mdi-account-plus-outline"></span> 注册' },
+            email: { en: 'Email', zh: '电邮' },
+            username: { en: 'Username', zh: '用户名' },
+            password: { en: 'Password', zh: '密码' },
+            rememberMe: { en: 'Remember me', zh: '记住我' },
+            login: { en: 'Login', zh: '登入' },
+            signup: { en: 'Sign Up', zh: '注册' }
         };
 
         var favorites = [];
@@ -426,7 +515,8 @@
             switch (lang) {
                 case 'chinese':
                     $('#ddLanguage').html(langDB.language.zh);
-                    $('.navbar-brand strong').text(langDB.header.zh);
+                    $('li.nav-item a.nav-link[href="index.html"]').text(langDB.header.zh);
+                    $('li.nav-item a.nav-link[href="https://nolliergb.com"]').text(langDB.nollieweb.zh);
                     document.title = langDB.header.zh;
                     $('#size-label').html(langDB.size.zh);
                     $('#import-btn').html(langDB.import.zh);
@@ -466,10 +556,20 @@
                     $('#btnInfoDataCopy').text(langDB.copy.zh);
                     $('label[for="draw-full"]').html(langDB.colorFull.zh);
                     $('label[for="draw-transparent"]').html(langDB.colorTransparent.zh);
+                    $('#btnLogin').html(langDB.navLogin.zh);
+                    $('#btnSignup').html(langDB.navSignUp.zh);
+                    $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.zh);
+                    $('label[for="txtLoginPassword"], label[for="txtSignupPassword"]').text(langDB.password.zh);
+                    $('label[for="txtSignupEmail"]').text(langDB.email.zh);
+                    $('label[for="chkLoginRemember"]').text(langDB.rememberMe.zh);
+                    $('#btnLoginConfirm').text(langDB.login.zh);
+                    $('#modal-signup-label').text(langDB.signup.zh);
+                    $('#btnSignupConfirm').text(langDB.signup.zh);
                     break;
                 default:
                     $('#ddLanguage').html(langDB.language.en);
-                    $('.navbar-brand strong').text(langDB.header.en);
+                    $('li.nav-item a.nav-link[href="index.html"]').text(langDB.header.en);
+                    $('li.nav-item a.nav-link[href="https://nolliergb.com"]').text(langDB.nollieweb.en);
                     document.title = langDB.header.en;
                     $('#size-label').html(langDB.size.en);
                     $('#import-btn').html(langDB.import.en);
@@ -509,6 +609,15 @@
                     $('#btnInfoDataCopy').text(langDB.copy.en);
                     $('label[for="draw-full"]').html(langDB.colorFull.en);
                     $('label[for="draw-transparent"]').html(langDB.colorTransparent.en);
+                    $('#btnLogin').html(langDB.navLogin.en);
+                    $('#btnSignup').html(langDB.navSignUp.en);
+                    $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.en);
+                    $('label[for="txtLoginPassword"], label[for="txtSignupPassword"]').text(langDB.password.en);
+                    $('label[for="txtSignupEmail"]').text(langDB.email.en);
+                    $('label[for="chkLoginRemember"]').text(langDB.rememberMe.en);
+                    $('#btnLoginConfirm').text(langDB.login.en);
+                    $('#modal-signup-label').text(langDB.signup.en);
+                    $('#btnSignupConfirm').text(langDB.signup.en);
             }
 
             $('body').attr('data-language', lang);
@@ -728,7 +837,7 @@
             if (page === 0) $('#community-search-container').empty().append(appendPlaceholders(Math.random() * 30));
 
             $.ajax({
-                url: `${api}search/${search_string}/${page}`,
+                url: `${api}searchitem/${search_string}/${page}`,
                 type: 'GET',
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
