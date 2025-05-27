@@ -39,6 +39,20 @@
                             <a class="nav-link" href="https://nolliergb.com">Nollie Official Website</a>
                         </li>
                         <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" id="ddInstall" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="mdi mdi-tools"></span> Install Pixel Art Addon
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item"
+                                        href="https://srgbmods.net/s?p=addon/install?url=https://gitlab.com/nollie/nolliecontroller"
+                                        target="_blank">Nollie</a></li>
+                                <li><a class="dropdown-item"
+                                        href="https://srgbmods.net/s?p=addon/install?url=https://github.com/qiangqiang101/SRGB-Plugins"
+                                        target="_blank">WLED</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" id="ddLanguage" href="#" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-translate"></span> Language
@@ -55,10 +69,10 @@
                             <button type="button" class="btn btn-outline-primary dropdown-toggle" id="btnLogin"
                                 data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"><span
                                     class="mdi mdi-login"></span> Login</button>
-                            <form class="dropdown-menu p-4">
+                            <form id="frmLogin" class="dropdown-menu p-4">
                                 <div class="mb-3">
                                     <label for="txtLoginUsername" class="form-label">Username</label>
-                                    <input type="email" class="form-control" id="txtLoginUsername" maxlength="30"
+                                    <input type="text" class="form-control" id="txtLoginUsername" maxlength="30"
                                         placeholder="Username">
                                 </div>
                                 <div class="mb-3">
@@ -83,14 +97,15 @@
                         <div class="btn-group" id="member" style="display: none;">
                             <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                                 aria-expanded="false">
-                                Username
+                                Guest
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#">Profile</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                        data-bs-target="#modal-change-password" id="aPassword">Password</a></li>
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
-                                <li><a class="dropdown-item" href="#">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" id="aLogout">Logout</a></li>
                             </ul>
                         </div>
                     </div>
@@ -128,8 +143,7 @@
                     </button>
                 </div>
                 <div class="col-auto">
-                    <button class="btn btn-primary" id="share-btn" type="button" data-bs-toggle="modal"
-                        data-bs-target="#modal-share"><span class="mdi mdi-share-variant-outline"></span> Share</button>
+                    <button class="btn btn-primary" id="share-btn" type="button"><span class="mdi mdi-share-variant-outline"></span> Share</button> <!--data-bs-toggle="modal" data-bs-target="#modal-share"-->
                     <button class="btn btn-primary" id="community-btn" type="button" data-bs-toggle="offcanvas"
                         data-bs-target="#community" aria-controls="community" onclick="getCommunityItems();">
                         <span class="mdi mdi-account-group-outline"></span> Community Pixel Art
@@ -246,24 +260,17 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label for="txt-share-author" class="form-label">Who are you?</label>
-                            <input id="txt-share-author" type="text" class="form-control" placeholder="John Smith"
-                                maxlength="25" />
-                        </div>
-                    </div>
                     <div class="row">
                         <div class="col-12">
-                            <label for="txt-share-name" class="form-label">What would you like to call this pixel
+                            <label for="txtShareName" class="form-label">What would you like to call this pixel
                                 art?</label>
-                            <input id="txt-share-name" type="text" class="form-control" placeholder="my cool pixel art"
+                            <input id="txtShareName" type="text" class="form-control" placeholder="my cool pixel art"
                                 maxlength="50" />
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="share-confirm-btn">Submit</button>
+                    <button type="button" class="btn btn-primary" id="btnShareConfirm">Submit</button>
                 </div>
             </div>
         </div>
@@ -334,16 +341,61 @@
                                 maxlength="30" />
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row mb-3">
                         <div class="col-12">
                             <label for="txtSignupPassword" class="form-label">Password</label>
                             <input id="txtSignupPassword" type="password" class="form-control" placeholder="Password"
                                 maxlength="30" />
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <label for="txtSignupConfirmPassword" class="form-label">Confirm Password</label>
+                            <input id="txtSignupConfirmPassword" type="password" class="form-control"
+                                placeholder="Password" maxlength="30" />
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" id="btnSignupConfirm">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modal-change-password" tabindex="-1" aria-labelledby="modal-change-password-label"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modal-change-password-label">Change Password</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="txtCurrentPassword" class="form-label">Current Password</label>
+                            <input id="txtCurrentPassword" type="password" class="form-control" placeholder="Password"
+                                maxlength="30" />
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="txtNewPassword" class="form-label">New Password</label>
+                            <input id="txtNewPassword" type="password" class="form-control" placeholder="Password"
+                                maxlength="30" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <label for="txtConfirmNewPassword" class="form-label">Confirm Password</label>
+                            <input id="txtConfirmNewPassword" type="password" class="form-control"
+                                placeholder="Password" maxlength="30" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="btnChangePasswordConfirm">Submit</button>
                 </div>
             </div>
         </div>
@@ -435,6 +487,7 @@
 
         const langDB = {
             language: { en: '<span class="mdi mdi-translate"></span> Language', zh: '<span class="mdi mdi-translate"></span> 语言' },
+            installAddon: { en: '<span class="mdi mdi-tools"></span> Install Pixel Art Addon', zh: '<span class="mdi mdi-tools"></span> 安装像素屏插件' },
             header: { en: "SignalRGB WLED/Nollie1 Matrix Pixel Art Painter", zh: "SignalRGB WLED/Nollie1 像素屏画家" },
             size: { en: '<span class="mdi mdi-image-size-select-small"></span> Size', zh: '<span class="mdi mdi-image-size-select-small"></span> 大小' },
             import: { en: '<span class="mdi mdi-import"></span> Import', zh: '<span class="mdi mdi-import"></span> 导入' },
@@ -486,26 +539,50 @@
             colorFull: { en: '<span class="mdi mdi-water"></span> Full Color', zh: '<span class="mdi mdi-water"></span> 全色' },
             colorTransparent: { en: '<span class="mdi mdi-water-opacity"></span> Transparent', zh: '<span class="mdi mdi-water-opacity"></span> 透明' },
             inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' },
-            nollieweb: { en: 'Nollie Official Website', zh: '诺莉官方网站（海外）' },
+            nollieweb: { en: 'Nollie Official Website', zh: '诺莉官方网站' },
             navLogin: { en: '<span class="mdi mdi-login"></span> Login', zh: '<span class="mdi mdi-login"></span> 登入' },
             navSignUp: { en: '<span class="mdi mdi-account-plus-outline"></span> Sign Up', zh: '<span class="mdi mdi-account-plus-outline"></span> 注册' },
             email: { en: 'Email', zh: '电邮' },
             username: { en: 'Username', zh: '用户名' },
             password: { en: 'Password', zh: '密码' },
+            confirmPassword: { en: 'Confirm Password', zh: '确认密码' },
             rememberMe: { en: 'Remember me', zh: '记住我' },
             login: { en: 'Login', zh: '登入' },
-            signup: { en: 'Sign Up', zh: '注册' }
+            signup: { en: 'Sign Up', zh: '注册' },
+            passwordNotMatch: { en: 'Password and Confirm Password does not match.', zh: '密码和确认密码不匹配。' },
+            signedUp: { en: 'Thanks for signing up. Welcome to our community. We are happy to have you on board.', zh: '感谢您注册。欢迎加入我们的社区。我们非常高兴您能加入我们。' },
+            invalidEmail: { en: 'Invalid email format.', zh: '电子邮件格式无效。' },
+            usernameTaken: { en: 'The username is already taken.', zh: '该用户名已被使用。' },
+            emailTaken: { en: 'Email Already Registered.', zh: '电子邮件已注册。' },
+            incorrectUsernamePassword: { en: 'The username or password is incorrect.', zh: '用户名或密码不正确。' },
+            welcomeUser: { en: 'Welcome back, {user}.', zh: '欢迎回来，{user}。' },
+            failedValidateUser: { en: 'Unable to authenticate user.', zh: '无法验证用户。' },
+            logout: { en: '<span class="mdi mdi-logout"></span> Logout', zh: '<span class="mdi mdi-logout"></span> 退出登录' },
+            navChangePassword: { en: '<span class="mdi mdi-lock-reset"></span> Change Password', zh: '<span class="mdi mdi-lock-reset"></span> 更换密码' },
+            changePassword: { en: 'Change Password', zh: '更换密码' },
+            currentPassword: { en: 'Current Password', zh: '当前密码' },
+            newPassword: { en: 'New Password', zh: '新密码' },
+            passwordChanged: { en: 'Password changed successfully. Please log in again.', zh: '密码修改成功，请重新登录。' },
+            userNotFound: { en: 'User not found.', zh: '未找到用户。' },
+            incorrectPassword: { en: 'The current password is incorrect.', zh: '当前密码不正确。' }
         };
 
         var favorites = [];
 
         $(document).ready(function () {
+            let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
+            if (loggedIn.userid != null && loggedIn.username != null) loginUser(loggedIn.userid, loggedIn.username);
+
+            let remember = localStorage.getItem('remember') || false;
             let language = localStorage.getItem('language') || 'english';
-            let author = localStorage.getItem('author') || null;
             favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
             $('body').attr('data-language', language);
-            $('#txt-share-author').val(author);
+            if (remember) {
+                $('#txtLoginUsername').val(localStorage.getItem('username'));
+                $('#txtLoginPassword').val(localStorage.getItem('password'));
+                $('#chkLoginRemember').prop('checked', true);
+            }
             changeLanguage(language);
         });
 
@@ -515,6 +592,7 @@
             switch (lang) {
                 case 'chinese':
                     $('#ddLanguage').html(langDB.language.zh);
+                    $('#ddInstall').html(langDB.installAddon.zh);
                     $('li.nav-item a.nav-link[href="index.html"]').text(langDB.header.zh);
                     $('li.nav-item a.nav-link[href="https://nolliergb.com"]').text(langDB.nollieweb.zh);
                     document.title = langDB.header.zh;
@@ -533,15 +611,14 @@
                     $('#mouse-pos').text(langDB.position1.zh);
                     $('#cell-size').text(langDB.cellsize1.zh);
                     $('#modal-save-label').text(langDB.saveTitle.zh);
-                    $('label[for="txt-save"], label[for="txt-share-name"]').text(langDB.saveSubtitle.zh);
-                    $('#save-confirm-btn, #share-confirm-btn, #load-confirm-btn').text(langDB.submit.zh);
+                    $('label[for="txt-save"], label[for="txtShareName"]').text(langDB.saveSubtitle.zh);
+                    $('#save-confirm-btn, #btnShareConfirm, #load-confirm-btn, #btnChangePasswordConfirm').text(langDB.submit.zh);
                     $('#modal-load-label').text(langDB.loadTitle.zh);
                     $('label[for="select-load"]').text(langDB.loadSubtitle.zh);
                     $('#remove-confirm-btn').text(langDB.remove.zh);
                     $('#community-btn').html(langDB.community.zh);
                     $('#share-btn').html(langDB.share.zh);
                     $('#modal-share-label').text(langDB.shareTitle.zh);
-                    $('label[for="txt-share-author"]').text(langDB.shareAuthor.zh);
                     $('#community-Label').text(langDB.communityTitle.zh);
                     $('#txt-search').attr('placeholder', langDB.search.zh);
                     $('#new-items-tab').html(langDB.latest.zh);
@@ -560,14 +637,21 @@
                     $('#btnSignup').html(langDB.navSignUp.zh);
                     $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.zh);
                     $('label[for="txtLoginPassword"], label[for="txtSignupPassword"]').text(langDB.password.zh);
+                    $('label[for=txtSignupConfirmPassword], label[for="txtConfirmNewPassword"]').text(langDB.confirmPassword.zh);
                     $('label[for="txtSignupEmail"]').text(langDB.email.zh);
                     $('label[for="chkLoginRemember"]').text(langDB.rememberMe.zh);
                     $('#btnLoginConfirm').text(langDB.login.zh);
                     $('#modal-signup-label').text(langDB.signup.zh);
                     $('#btnSignupConfirm').text(langDB.signup.zh);
+                    $('#aLogout').html(langDB.logout.zh);
+                    $('#aPassword').html(langDB.navChangePassword.zh);
+                    $('#modal-change-password-label').text(langDB.changePassword.zh);
+                    $('label[for="txtCurrentPassword"]').text(langDB.currentPassword.zh);
+                    $('label[for="txtNewPassword"]').text(langDB.newPassword.zh);
                     break;
                 default:
                     $('#ddLanguage').html(langDB.language.en);
+                    $('#ddInstall').html(langDB.installAddon.en);
                     $('li.nav-item a.nav-link[href="index.html"]').text(langDB.header.en);
                     $('li.nav-item a.nav-link[href="https://nolliergb.com"]').text(langDB.nollieweb.en);
                     document.title = langDB.header.en;
@@ -586,15 +670,14 @@
                     $('#mouse-pos').text(langDB.position1.en);
                     $('#cell-size').text(langDB.cellsize1.en);
                     $('#modal-save-label').text(langDB.saveTitle.en);
-                    $('label[for="txt-save"], label[for="txt-share-name"]').text(langDB.saveSubtitle.en);
-                    $('#save-confirm-btn, #share-confirm-btn, #load-confirm-btn').text(langDB.submit.en);
+                    $('label[for="txt-save"], label[for="txtShareName"]').text(langDB.saveSubtitle.en);
+                    $('#save-confirm-btn, #btnShareConfirm, #load-confirm-btn, #btnChangePasswordConfirm').text(langDB.submit.en);
                     $('#modal-load-label').text(langDB.loadTitle.en);
                     $('label[for="select-load"]').text(langDB.loadSubtitle.en);
                     $('#remove-confirm-btn').text(langDB.remove.en);
                     $('#community-btn').html(langDB.community.en);
                     $('#share-btn').html(langDB.share.en);
                     $('#modal-share-label').text(langDB.shareTitle.en);
-                    $('label[for="txt-share-author"]').text(langDB.shareAuthor.en);
                     $('#community-Label').text(langDB.communityTitle.en);
                     $('#txt-search').attr('placeholder', langDB.search.en);
                     $('#new-items-tab').html(langDB.latest.en);
@@ -613,11 +696,17 @@
                     $('#btnSignup').html(langDB.navSignUp.en);
                     $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.en);
                     $('label[for="txtLoginPassword"], label[for="txtSignupPassword"]').text(langDB.password.en);
+                    $('label[for=txtSignupConfirmPassword], label[for="txtConfirmNewPassword"]').text(langDB.confirmPassword.zh);
                     $('label[for="txtSignupEmail"]').text(langDB.email.en);
                     $('label[for="chkLoginRemember"]').text(langDB.rememberMe.en);
                     $('#btnLoginConfirm').text(langDB.login.en);
                     $('#modal-signup-label').text(langDB.signup.en);
                     $('#btnSignupConfirm').text(langDB.signup.en);
+                    $('#aLogout').html(langDB.logout.en);
+                    $('#aPassword').html(langDB.navChangePassword.en);
+                    $('#modal-change-password-label').text(langDB.changePassword.en);
+                    $('label[for="txtCurrentPassword"]').text(langDB.currentPassword.en);
+                    $('label[for="txtNewPassword"]').text(langDB.newPassword.en);
             }
 
             $('body').attr('data-language', lang);
@@ -773,7 +862,7 @@
         function reloadSavedPixelArt() {
             $('#select-load').find('optgroup').remove();
             $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')));
-            var values = stringifyLocalStorageExcept(['language', 'author', 'favorites']);
+            var values = stringifyLocalStorageExcept(['language', 'username', 'password', 'remember', 'favorites']);
             $.each(values, function (key, item) {
                 $('#select-load').append($(`<option data-size="[${item.size}]" data-group="${item.size[0]}x${item.size[1]}" value="${item.data}">${item.name}</option>`).val(item.data).html(item.name));
             });
@@ -1043,25 +1132,13 @@
             return base64String;
         }
 
-        $('#share-confirm-btn').click(function (evt) {
-            if (!$('#txt-share-author').val()) {
-                $('#txt-share-author').addClass('is-invalid');
-                $('#txt-share-author').focus();
-            } else if (naughtyWords.includes($('#txt-share-author').val())) {
-                $('#txt-share-author').addClass('is-invalid');
-                $('#txt-share-author').focus();
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: getCorrectTranslation('inappropriateTextWarning'),
-                });
-            } else if (!$('#txt-share-name').val()) {
-                $('#txt-share-name').addClass('is-invalid');
-                $('#txt-share-name').focus();
-            } else if (naughtyWords.includes($('#txt-share-name').val())) {
-                $('#txt-share-name').addClass('is-invalid');
-                $('#txt-share-name').focus();
+        $('#btnShareConfirm').click(function (evt) {
+            if (!$('#txtShareName').val()) {
+                $('#txtShareName').addClass('is-invalid');
+                $('#txtShareName').focus();
+            } else if (naughtyWords.includes($('#txtShareName').val())) {
+                $('#txtShareName').addClass('is-invalid');
+                $('#txtShareName').focus();
                 swalBS.fire({
                     icon: "error",
                     title: getCorrectTranslation('oops'),
@@ -1071,8 +1148,8 @@
             } else {
                 const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
                 var json = {
-                    author: $('#txt-share-author').val(),
-                    name: $('#txt-share-name').val(),
+                    author: sessionStorage.getItem('username'),
+                    name: $('#txtShareName').val(),
                     size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
                     data: dataStr,
                     preview: canvasToBase64()
@@ -1096,11 +1173,8 @@
                                 timer: 1500
                             });
 
-                            localStorage.setItem('author', $('#txt-share-author').val());
-
-                            $('#txt-share-name').val('');
-                            if ($('#txt-share-author').hasClass('is-invalid')) $('#txt-share-author').removeClass('is-invalid');
-                            if ($('#txt-share-name').hasClass('is-invalid')) $('#txt-share-name').removeClass('is-invalid');
+                            $('#txtShareName').val('');
+                            if ($('#txtShareName').hasClass('is-invalid')) $('#txtShareName').removeClass('is-invalid');
 
                             $('#modal-share').modal('hide');
                         } else {
@@ -1558,6 +1632,255 @@
             }
 
             e.preventDefault(); // prevent the default action (scroll / move caret)
+        });
+    </script>
+
+    <!-- User functions -->
+    <script>
+        function loginUser(id, username) {
+            sessionStorage.setItem('id', id);
+            sessionStorage.setItem('username', username);
+
+            $('#ddLogin, #btnSignup').css('display', 'none');
+            $('#member').css('display', 'block');
+            $('#member button.dropdown-toggle').text(username);
+        }
+
+        $('#btnLoginConfirm').click(function (evt) {
+            if (!$('#txtLoginUsername').val()) {
+                $('#txtLoginUsername').addClass('is-invalid');
+                $('#txtLoginUsername').focus();
+            } else if (!$('#txtLoginPassword').val()) {
+                $('#txtLoginPassword').addClass('is-invalid');
+                $('#txtLoginPassword').focus();
+            } else {
+                $.ajax({
+                    url: `${api}loginuser/${$('#txtLoginUsername').val()}/${$('#txtLoginPassword').val()}`,
+                    type: 'GET',
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success === true) {
+                            swalBS.fire({
+                                position: "top-end",
+                                icon: "success",
+                                theme: "dark",
+                                title: getCorrectTranslation('welcomeUser').replace('{user}', response.data.data.username),
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+
+                            loginUser(response.data.data.id, $('#txtLoginUsername').val());
+
+                            if ($('#chkLoginRemember').is(':checked')) {
+                                localStorage.setItem('username', $('#txtLoginUsername').val());
+                                localStorage.setItem('password', $('#txtLoginPassword').val());
+                                localStorage.setItem('remember', true);
+                            }
+
+                            $('#txtLoginUsername, #txtLoginPassword').val('');
+                            if ($('#txtLoginUsername').hasClass('is-invalid')) $('#txtLoginUsername').removeClass('is-invalid');
+                            if ($('#txtLoginPassword').hasClass('is-invalid')) $('#txtLoginPassword').removeClass('is-invalid');
+
+                            //if ($('#frmLogin').hasClass('show')) $('#frmLogin').removeClass('show');
+                            $('#frmLogin').dropdown('hide');
+                        } else {
+                            swalBS.fire({
+                                icon: "error",
+                                title: getCorrectTranslation('oops'),
+                                theme: "dark",
+                                text: getCorrectTranslation(response.data.code),
+                            });
+                        }
+                    },
+                    error: function(err) {
+                        swalBS.fire({
+                            icon: "error",
+                            title: getCorrectTranslation('oops'),
+                            theme: "dark",
+                            text: err.statusText,
+                        });
+                    }
+                })
+            }
+        });
+
+        $('#btnSignupConfirm').click(function (evt) {
+            if (!$('#txtSignupEmail').val()) {
+                $('#txtSignupEmail').addClass('is-invalid');
+                $('#txtSignupEmail').focus();
+            } else if (!$('#txtSignupUsername').val()) {
+                $('#txtSignupUsername').addClass('is-invalid');
+                $('#txtSignupUsername').focus();
+            } else if (naughtyWords.includes($('#txtSignupUsername').val())) {
+                $('#txtSignupUsername').addClass('is-invalid');
+                $('#txtSignupUsername').focus();
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('inappropriateTextWarning'),
+                });
+            } else if (!$('#txtSignupPassword').val()) {
+                $('#txtSignupPassword').addClass('is-invalid');
+                $('#txtSignupPassword').focus();
+            } else if (!$('#txtSignupConfirmPassword').val()) {
+                $('#txtSignupConfirmPassword').addClass('is-invalid');
+                $('#txtSignupConfirmPassword').focus();
+            } else if ($('#txtSignupPassword').val() != $('#txtSignupConfirmPassword').val()) {
+                $('#txtSignupPassword').addClass('is-invalid');
+                $('#txtSignupConfirmPassword').addClass('is-invalid');
+                $('#txtSignupPassword').focus();
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('passwordNotMatch'),
+                });
+            } else {
+                var json = {
+                    username: $('#txtSignupUsername').val(),
+                    email: $('#txtSignupEmail').val(),
+                    password: $('#txtSignupConfirmPassword').val()
+                };
+                var jsonData = JSON.stringify(json);
+
+                $.ajax({
+                    url: `${api}users`,
+                    type: 'POST',
+                    data: jsonData,
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success === true) {
+                            swalBS.fire({
+                                position: "top-end",
+                                icon: "success",
+                                theme: "dark",
+                                title: getCorrectTranslation('signedUp'),
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+
+                            loginUser(response.id, $('#txtSignupUsername').val());
+
+                            $('#txtSignupEmail, #txtSignupUsername, #txtSignupConfirmPassword, #txtSignupPassword').val('');
+                            if ($('#txtSignupEmail').hasClass('is-invalid')) $('#txtSignupEmail').removeClass('is-invalid');
+                            if ($('#txtSignupUsername').hasClass('is-invalid')) $('#txtSignupUsername').removeClass('is-invalid');
+                            if ($('#txtSignupConfirmPassword').hasClass('is-invalid')) $('#txtSignupConfirmPassword').removeClass('is-invalid');
+                            if ($('#txtSignupPassword').hasClass('is-invalid')) $('#txtSignupPassword').removeClass('is-invalid');
+
+                            $('#modal-signup').modal('hide');
+                        } else {
+                            swalBS.fire({
+                                icon: "error",
+                                title: getCorrectTranslation('oops'),
+                                theme: "dark",
+                                text: getCorrectTranslation(response.data.code),
+                            });
+                        }
+                    },
+                    error: function (err) {
+                        swalBS.fire({
+                            icon: "error",
+                            title: getCorrectTranslation('oops'),
+                            theme: "dark",
+                            text: err.statusText,
+                        });
+                    }
+                });
+            }
+        });
+
+        $('#btnChangePasswordConfirm').click(function (evt) {
+            if (!$('#txtCurrentPassword').val()) {
+                $('#txtCurrentPassword').addClass('is-invalid');
+                $('#txtCurrentPassword').focus();
+            } else if (!$('#txtNewPassword').val()) {
+                $('#txtNewPassword').addClass('is-invalid');
+                $('#txtNewPassword').focus();
+            } else if (!$('#txtConfirmNewPassword').val()) {
+                $('#txtConfirmNewPassword').addClass('is-invalid');
+                $('#txtConfirmNewPassword').focus();
+            } else if ($('#txtNewPassword').val() != $('#txtConfirmNewPassword').val()) {
+                $('#txtSignupPassword').addClass('is-invalid');
+                $('#txtConfirmNewPassword').addClass('is-invalid');
+                $('#txtNewPassword').focus();
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('passwordNotMatch'),
+                });
+            } else {
+                var json = { currentPassword: $('#txtCurrentPassword').val(), newPassword: $('#txtConfirmNewPassword').val() };
+                var jsonData = JSON.stringify(json);
+
+                $.ajax({
+                    url: `${api}updateuser/${parseInt(sessionStorage.getItem('id') || -1)}`,
+                    type: 'POST',
+                    data: jsonData,
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success === true) {
+                            swalBS.fire({
+                                position: "top-end",
+                                icon: "success",
+                                theme: "dark",
+                                title: getCorrectTranslation('passwordChanged'),
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+
+                            sessionStorage.clear();
+
+                            $('#ddLogin, #btnSignup').css('display', 'block');
+                            $('#member').css('display', 'none');
+                            $('#member button.dropdown-toggle').text('Guest');
+
+                            $('#txtCurrentPassword, #txtNewPassword, #txtConfirmNewPassword').val('');
+                            if ($('#txtCurrentPassword').hasClass('is-invalid')) $('#txtCurrentPassword').removeClass('is-invalid');
+                            if ($('#txtNewPassword').hasClass('is-invalid')) $('#txtNewPassword').removeClass('is-invalid');
+                            if ($('#txtConfirmNewPassword').hasClass('is-invalid')) $('#txtConfirmNewPassword').removeClass('is-invalid');
+
+                            $('#modal-change-password').modal('hide');
+                        } else {
+                            swalBS.fire({
+                                icon: "error",
+                                title: getCorrectTranslation('oops'),
+                                theme: "dark",
+                                text: getCorrectTranslation(response.data.code),
+                            });
+                        }
+                    },
+                    error: function (err) {
+                        swalBS.fire({
+                            icon: "error",
+                            title: getCorrectTranslation('oops'),
+                            theme: "dark",
+                            text: err.statusText,
+                        });
+                    }
+                });
+            }
+        });
+
+        $('#aLogout').click(function (evt) {
+            sessionStorage.clear();
+
+            $('#ddLogin, #btnSignup').css('display', 'block');
+            $('#member').css('display', 'none');
+            $('#member button.dropdown-toggle').text('Guest');
+        });
+
+        $('#share-btn').click(function(evt) {
+            let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
+            if (loggedIn.userid != null && loggedIn.username != null) {
+                $('#modal-share').modal('show');
+            } else {
+                $('#frmLogin').dropdown('show');
+            }
         });
     </script>
 </body>

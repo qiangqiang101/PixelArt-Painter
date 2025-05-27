@@ -146,7 +146,7 @@ app.get('/api/items/:id_array/:page', (req, res) => {
 // GET API endpoint - Retrieve specific item by ID
 app.get('/api/item/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  console.log(`GET request received for /api/items/${id}`);
+  console.log(`GET request received for /api/item/${id}`);
 
   const itemService = new ItemService(databaseConfig);
 
@@ -172,8 +172,8 @@ app.get('/api/item/:id', (req, res) => {
 // GET API endpoint - Retrieve specific items by name or author
 app.get('/api/searchitem/:search_string/:page', (req, res) => {
   const currPage = parseInt(req.params.page);
-  const search_string = req.params.search_string
-  console.log(`GET request received for /api/search/${search_string}/${currPage}`);
+  const search_string = req.params.search_string;
+  console.log(`GET request received for /api/searchitem/${search_string}/${currPage}`);
   const offset = currPage * limit;
   var nextPage = currPage;
 
@@ -259,20 +259,215 @@ app.post('/api/items', (req, res) => {
 
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log('GET endpoints:');
-  console.log(`http://localhost:${PORT}/api/allitems/:page`);
-  console.log(`http://localhost:${PORT}/api/item/:id`);
-  console.log(`http://localhost:${PORT}/api/items/:idarray/:page`);
-  console.log(`http://localhost:${PORT}/api/search/:search_string/:page`);
-  console.log('');
-  console.log('POST endpoint:');
-  console.log(`http://localhost:${PORT}/api/items`);
-  console.log(databaseConfig);
+// GET API endpoint - Retrieve all users
+app.get('/api/allusers', (req, res) => {
+  console.log(`GET request received for /api/allusers`);
+
+  const userService = new UserService(databaseConfig);
+  userService.getAllUsers({
+    limit: 200,
+    offset: 0,
+    orderBy: 'id',
+    orderDirection: 'DESC',
+    search: null
+  })
+    .then(result => {
+      console.log(result);
+
+      let data = [];
+      result.data.forEach((e) => {
+        data.push({
+          id: e.id,
+          username: e.username,
+          email: e.email,
+          signuptime: e.signuptime
+        });
+      });
+
+      res.status(201).json({
+        success: result.success,
+        data: data
+      });
+    }).catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      })
+    })
 });
 
-// Export for testing purposes
-module.exports = app;
+// GET API endpoint - Retrieve specific user by ID
+app.get('/api/user/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  console.log(`GET request received for /api/user/${id}`);
 
+  const userService = new UserService(databaseConfig);
+  userService.getUserById(id)
+    .then(result => {
+      console.log(result);
+
+      res.status(201).json({
+        success: result.success,
+        data: result.data
+      });
+    })
+    .catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      });
+    });
+});
+
+// GET API endpoint - Retrieve specific users by username or email
+app.get('/api/searchuser/:search_string', (req, res) => {
+  const search_string = req.params.search_string;
+  console.log(`GET request received for /api/searchuser/${search_string}`);
+
+  const userService = new UserService(databaseConfig);
+  userService.getAllItems({
+    limit: 200,
+    offset: 0,
+    orderBy: 'id',
+    orderDirection: 'DESC',
+    search: search_string
+  })
+    .then(result => {
+      console.log(result);
+
+      let data = [];
+      result.data.forEach((e) => {
+        data.push({
+          id: e.id,
+          username: e.username,
+          email: e.email,
+          signuptime: e.signuptime
+        });
+      });
+
+      res.status(201).json({
+        success: result.success,
+        data: data
+      });
+    }).catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      });
+    });
+});
+
+// GET API endpoint - Validate user by username and password
+app.get('/api/loginuser/:username/:password', (req, res) => {
+  const username = req.params.username;
+  const password = req.params.password;
+  console.log(`GET request received for /api/loginuser/${username}/password`);
+
+  const userService = new UserService(databaseConfig);
+  userService.userLogin(username, password)
+    .then(result => {
+      console.log(result);
+
+      res.status(201).json({
+        success: result.success,
+        data: result
+      });
+    })
+    .catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      });
+    });
+
+});
+
+// POST API endpoint - Create a new user
+app.post('/api/users', (req, res) => {
+  console.log('POST request received for /api/users');
+  console.log('Request body:', req.body);
+
+  const userService = new UserService(databaseConfig);
+
+  userService.insertUser({
+    username: req.body.username,
+    password: req.body.password,
+    email: req.body.email
+  })
+    .then(result => {
+      console.log(result);
+
+      res.status(201).json({
+        success: result.success,
+        data: result
+      });
+    })
+    .catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      });
+    });
+});
+
+// POST API endpoint - Update user
+app.post('/api/updateuser/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  console.log(`POST request received for /api/updateuser/${id}`);
+  console.log('Request body:', req.body);
+
+  const userService = new UserService(databaseConfig);
+  userService.updateUser(id, {
+    currentPassword: req.body.currentPassword,
+    newPassword: req.body.newPassword
+  })
+    .then(result => {
+      console.log(result);
+
+      res.status(201).json({
+        success: result.success,
+        data: result
+      });
+    })
+    .catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      });
+    });
+  });
+
+  // Start the server
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log('GET endpoints:');
+    console.log(`http://localhost:${PORT}/api/allitems/:page`);
+    console.log(`http://localhost:${PORT}/api/item/:id`);
+    console.log(`http://localhost:${PORT}/api/items/:idarray/:page`);
+    console.log(`http://localhost:${PORT}/api/search/:search_string/:page`);
+    console.log(`http://localhost:${PORT}/api/allusers`);
+    console.log(`http://localhost:${PORT}/api/user/:id`);
+    console.log(`http://localhost:${PORT}/api/search/:search_string`);
+    console.log(`http://localhost:${PORT}/api/loginuser/:username/:password`);
+    console.log('');
+    console.log('POST endpoint:');
+    console.log(`http://localhost:${PORT}/api/items`);
+    console.log(`http://localhost:${PORT}/api/users`);
+    console.log(`http://localhost:${PORT}/api/updateuser/:id`);
+    console.log(databaseConfig);
+  });
+
+  // Export for testing purposes
+  module.exports = app;

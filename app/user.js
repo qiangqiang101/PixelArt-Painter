@@ -2,12 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
-const config = require('./config.json');
+const crypto = require('crypto');
 
 // Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 3001;
-const limit = 30; //normally 30
 
 // Middleware to parse JSON bodies
 app.use(bodyParser.json());
@@ -18,16 +16,6 @@ app.options('/api/data', cors({
   methods: ['GET', 'POST']
 }));
 
-const databaseConfig = {
-  host: config.host,
-  user: config.user,
-  password: config.password,
-  database: config.database,
-  waitForConnections: true,
-  connectionLimit: 30,
-  queueLimit: 20
-};
-
 class UserService {
   constructor(dbConfig) {
     this.pool = mysql.createPool(dbConfig);
@@ -37,18 +25,36 @@ class UserService {
     const connection = await this.pool.getConnection();
 
     try {
-      const [existing] = await connection.execute('SELECT id FROM users WHERE username = ?', [userData.username]);
+      if (!this.isValidEmail(userData.email)) {
+        return {
+          success: false,
+          message: 'Invalid email format',
+          code: 'invalidEmail'
+        };
+      }
 
+      const [existing] = await connection.execute('SELECT id FROM users WHERE username = ?', [userData.username]);
       if (existing.length > 0) {
         return {
           success: false,
           message: 'User already exists',
-          existingId: existing[0].id
+          existingId: existing[0].id,
+          code: 'usernameTaken'
         };
       }
 
-      const [result] = await connection.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', [userData.username, userData.password, userData.email]);
+      const [existing2] = await connection.execute('SELECT id FROM users WHERE email = ?', [userData.email]);
+      if (existing2.length > 0) {
+        return {
+          success: false,
+          message: 'Email already exists',
+          existingId: existing2[0].id,
+          code: 'emailTaken'
+        };
+      }
 
+      let encryptedPassword = crypto.createHash('md5').update(userData.password).digest('hex').substring(0, 20);
+      const [result] = await connection.execute('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', [userData.username, encryptedPassword, userData.email]);
       return {
         success: true,
         message: 'User created successfully',
@@ -150,95 +156,149 @@ class UserService {
   }
 
   async getUserById(userId) {
-        const connection = await this.pool.getConnection();
+    const connection = await this.pool.getConnection();
 
-        try {
-            const [rows] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
-
-            if (rows.length === 1) {
-                let d = rows[0];
-                return {
-                    success: true,
-                    data: {
-                        id: d.id,
-                        username: d.username,
-                        email: d.email,
-                        signuptime: d.signuptime
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Database error:', error);
-            return {
-                success: false,
-                message: 'Failed to retrieve user',
-                error: error.message
-            };
-        } finally {
-            connection.release();
+    try {
+      const [rows] = await connection.execute('SELECT * FROM users WHERE id = ?', [userId]);
+      if (rows.length === 1) {
+        let d = rows[0];
+        return {
+          success: true,
+          data: {
+            id: d.id,
+            username: d.username,
+            email: d.email,
+            signuptime: d.signuptime
+          }
         }
+      }
+    } catch (error) {
+      console.error('Database error:', error);
+      return {
+        success: false,
+        message: 'Failed to retrieve user',
+        error: error.message
+      };
+    } finally {
+      connection.release();
     }
+  }
 
-    async updateUser(userId, userData) {
-        const connection = await this.pool.getConnection();
+  async updateUser(userId, userData) {
+    const connection = await this.pool.getConnection();
 
-        try {
-            const [existing] = await connection.execute('SELECT id FROM users WHERE id = ?', [userId]);
+    try {
+      const [existing] = await connection.execute('SELECT id FROM users WHERE id = ?', [userId]);
+      if (existing.length === 0) {
+        return {
+          success: false,
+          message: 'User not found',
+          code: 'userNotFound'
+        };
+      }
 
-            if (existing.length === 0) {
-                return {
-                    success: false,
-                    message: 'User not found'
-                };
-            }
+      let currentEncryptedPassword = crypto.createHash('md5').update(userData.currentPassword).digest('hex').substring(0, 20);
+      const [users] = await connection.execute('SELECT * FROM users WHERE id = ? AND password = ?', [userId, currentEncryptedPassword]);
+      if (users.length === 0) {
+        return {
+          success: false,
+          message: 'Incorrect password',
+          code: 'incorrectPassword'
+        };
+      }
 
-            // Build dynamic update query
-            const updateFields = [];
-            const updateValues = [];
+      // Build dynamic update query
+      const updateFields = [];
+      const updateValues = [];
 
-            if (userData.username !== undefined) {
-                updateFields.push('username = ?');
-                updateValues.push(userData.username);
-            }
+      // if (userData.username !== undefined) {
+      //   updateFields.push('username = ?');
+      //   updateValues.push(userData.username);
+      // }
 
-            if (userData.password !== undefined) {
-                updateFields.push('password = ?');
-                updateValues.push(userData.password);
-            }
+      if (userData.newPassword !== undefined) {
+        let newEncryptedPassword = crypto.createHash('md5').update(userData.newPassword).digest('hex').substring(0, 20);
+        updateFields.push('password = ?');
+        updateValues.push(newEncryptedPassword);
+      }
 
-            if (userData.email !== undefined) {
-                updateFields.push('email = ?');
-                updateValues.push(userData.email);
-            }
+      // if (userData.email !== undefined) {
+      //   updateFields.push('email = ?');
+      //   updateValues.push(userData.email);
+      // }
 
-            if (updateFields.length === 0) {
-                return {
-                    success: false,
-                    message: 'No fields to update'
-                };
-            }
+      if (updateFields.length === 0) {
+        return {
+          success: false,
+          message: 'No fields to update'
+        };
+      }
 
-            updateValues.push(userId); // for WHERE clause
+      updateValues.push(userId); // for WHERE clause
 
-            const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
-            const [result] = await connection.execute(query, updateValues);
+      const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+      const [result] = await connection.execute(query, updateValues);
 
-            return {
-                success: true,
-                message: 'User updated successfully',
-                affectedRows: result.affectedRows
-            };
-        } catch (error) {
-            console.error('Database error:', error);
-            return {
-                success: false,
-                message: 'Failed to update User',
-                error: error.message
-            };
-        } finally {
-            connection.release();
-        }
+      return {
+        success: true,
+        message: 'User updated successfully',
+        affectedRows: result.affectedRows
+      };
+    } catch (error) {
+      console.error('Database error:', error);
+      return {
+        success: false,
+        message: 'Failed to update User',
+        code: 'userNotFound',
+        error: error.message
+      };
+    } finally {
+      connection.release();
     }
+  }
+
+  async userLogin(username, password) {
+    const connection = await this.pool.getConnection();
+
+    try {
+      if (!username || !password) {
+        throw new Error('Username and password are required');
+      }
+
+      let encryptedPassword = crypto.createHash('md5').update(password).digest('hex').substring(0, 20);
+      const [users] = await connection.execute('SELECT id, username, email, signuptime FROM users WHERE username = ? AND password = ?', [username, encryptedPassword]);
+      if (users.length === 0) {
+        return {
+          success: false,
+          message: 'Incorrect username or password',
+          code: 'incorrectUsernamePassword'
+        };
+      } else {
+        const user = users[0];
+        return {
+          success: true,
+          data: user,
+          message: `Welcome back, ${user.username}`,
+          code: 'welcomeUser'
+        };
+      }
+    } catch (error) {
+      console.error('Database error:', error);
+      return {
+        success: false,
+        message: 'Failed to validate User',
+        code: 'failedValidateUser',
+        error: error.message
+      };
+    } finally {
+      connection.release();
+    }
+  }
+
+  isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
 
 }
 

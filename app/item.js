@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
-const config = require('./config.json');
 
 // Initialize Express app
 const app = express();
@@ -17,16 +16,6 @@ app.use(cors());
 app.options('/api/data', cors({
   methods: ['GET', 'POST']
 }));
-
-const databaseConfig = {
-  host: config.host,
-  user: config.user,
-  password: config.password,
-  database: config.database,
-  waitForConnections: true,
-  connectionLimit: 30,
-  queueLimit: 20
-};
 
 class ItemService {
     constructor(dbConfig) {
