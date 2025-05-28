@@ -31,6 +31,10 @@ const databaseConfig = {
   queueLimit: 20
 };
 
+/*
+    Item API
+*/
+
 // GET API endpoint - Retrieve all items
 app.get('/api/allitems/:page', (req, res) => {
   const currPage = parseInt(req.params.page);
@@ -259,6 +263,67 @@ app.post('/api/items', (req, res) => {
 
 });
 
+// POST API endpoint - Update item
+app.post('/api/updateitem/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  console.log(`POST request received for /api/updateitem/${id}`);
+  console.log('Request body:', req.body);
+
+  const itemService = new ItemService(databaseConfig);
+  itemService.updateItem(id, {
+    name: req.body.name,
+    size: req.body.size,
+    data: req.body.data,
+    preview: req.body.preview
+  })
+    .then(result => {
+      console.log(result);
+
+      res.status(201).json({
+        success: result.success,
+        data: result
+      });
+    })
+    .catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      });
+    });
+});
+
+// POST API endpoint - Delete item
+app.post('/api/deleteitem/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  console.log(`POST request received for /api/deleteitem/${id}`);
+
+  const itemService = new ItemService(databaseConfig);
+  itemService.deleteItem(id)
+    .then(result => {
+      console.log(result);
+
+      res.status(201).json({
+        success: result.success,
+        data: result
+      });
+    })
+    .catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      });
+    });
+});
+
+
+/*
+    User API
+*/
+
 // GET API endpoint - Retrieve all users
 app.get('/api/allusers', (req, res) => {
   console.log(`GET request received for /api/allusers`);
@@ -447,27 +512,29 @@ app.post('/api/updateuser/:id', (req, res) => {
         data: error
       });
     });
-  });
+});
 
-  // Start the server
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log('GET endpoints:');
-    console.log(`http://localhost:${PORT}/api/allitems/:page`);
-    console.log(`http://localhost:${PORT}/api/item/:id`);
-    console.log(`http://localhost:${PORT}/api/items/:idarray/:page`);
-    console.log(`http://localhost:${PORT}/api/search/:search_string/:page`);
-    console.log(`http://localhost:${PORT}/api/allusers`);
-    console.log(`http://localhost:${PORT}/api/user/:id`);
-    console.log(`http://localhost:${PORT}/api/search/:search_string`);
-    console.log(`http://localhost:${PORT}/api/loginuser/:username/:password`);
-    console.log('');
-    console.log('POST endpoint:');
-    console.log(`http://localhost:${PORT}/api/items`);
-    console.log(`http://localhost:${PORT}/api/users`);
-    console.log(`http://localhost:${PORT}/api/updateuser/:id`);
-    console.log(databaseConfig);
-  });
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log('GET endpoints:');
+  console.log(`http://localhost:${PORT}/api/allitems/:page`);
+  console.log(`http://localhost:${PORT}/api/item/:id`);
+  console.log(`http://localhost:${PORT}/api/items/:idarray/:page`);
+  console.log(`http://localhost:${PORT}/api/search/:search_string/:page`);
+  console.log(`http://localhost:${PORT}/api/allusers`);
+  console.log(`http://localhost:${PORT}/api/user/:id`);
+  console.log(`http://localhost:${PORT}/api/search/:search_string`);
+  console.log(`http://localhost:${PORT}/api/loginuser/:username/:password`);
+  console.log('');
+  console.log('POST endpoint:');
+  console.log(`http://localhost:${PORT}/api/items`);
+  console.log(`http://localhost:${PORT}/api/updateitem/:id`);
+  console.log(`http://localhost:${PORT}/api/deleteitem/:id`);
+  console.log(`http://localhost:${PORT}/api/users`);
+  console.log(`http://localhost:${PORT}/api/updateuser/:id`);
+  console.log(databaseConfig);
+});
 
-  // Export for testing purposes
-  module.exports = app;
+// Export for testing purposes
+module.exports = app;

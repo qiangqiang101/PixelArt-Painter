@@ -239,7 +239,7 @@ class ItemService {
         const connection = await this.pool.getConnection();
 
         try {
-            const [existing] = await connection.execute('SELECT id FROM items WHERE id = ?', [itemId]);
+            const [existing] = await connection.execute('SELECT * FROM items WHERE id = ?', [itemId]);
 
             if (existing.length === 0) {
                 return {
@@ -252,10 +252,10 @@ class ItemService {
             const updateFields = [];
             const updateValues = [];
 
-            if (itemData.author !== undefined) {
-                updateFields.push('author = ?');
-                updateValues.push(itemData.author);
-            }
+            // if (itemData.author !== undefined) {
+            //     updateFields.push('author = ?');
+            //     updateValues.push(itemData.author);
+            // }
 
             if (itemData.name !== undefined) {
                 updateFields.push('name = ?');

@@ -143,7 +143,9 @@
                     </button>
                 </div>
                 <div class="col-auto">
-                    <button class="btn btn-primary" id="share-btn" type="button"><span class="mdi mdi-share-variant-outline"></span> Share</button> <!--data-bs-toggle="modal" data-bs-target="#modal-share"-->
+                    <button class="btn btn-primary" id="share-btn" type="button"><span
+                            class="mdi mdi-share-variant-outline"></span> Share</button>
+                    <!--data-bs-toggle="modal" data-bs-target="#modal-share"-->
                     <button class="btn btn-primary" id="community-btn" type="button" data-bs-toggle="offcanvas"
                         data-bs-target="#community" aria-controls="community" onclick="getCommunityItems();">
                         <span class="mdi mdi-account-group-outline"></span> Community Pixel Art
@@ -267,6 +269,8 @@
                             <input id="txtShareName" type="text" class="form-control" placeholder="my cool pixel art"
                                 maxlength="50" />
                         </div>
+                        <input id="chkIsUpdate" value="false" type="hidden" />
+                        <input id="txtUpdateId" value="-1" type="hidden" />
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -276,7 +280,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modal-info" tabindex="-1" aria-labelledby="modal-info-label" aria-hidden="true">
+    <!-- <div class="modal fade" id="modal-info" tabindex="-1" aria-labelledby="modal-info-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -315,9 +319,13 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal-footer" id="modal-info-footer" style="display: none;">
+                    <button type="button" class="btn btn-danger" id="btnDeleteItem">Delete</button>
+                    <button type="button" class="btn btn-primary" id="btnUpdateItem">Update</button>
+                </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <div class="modal fade" id="modal-signup" tabindex="-1" aria-labelledby="modal-signup-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -516,6 +524,8 @@
             loadSubtitle: { en: 'Which pixel art would you like load?', zh: '您想要加载哪一个像素存档？' },
             saved: { en: 'Pixel art saved.', zh: '像素存档保存成功。' },
             remove: { en: 'Remove', zh: '删除' },
+            update: { en: 'Update', zh: '更新' },
+            edit: { en: 'Edit', zh: '修改' },
             pleaseSelect: { en: 'Please select...', zh: '请选择...' },
             errorParsingJson: { en: 'Error parsing JSON data.', zh: '解析 JSON 数据时出错。' },
             oops: { en: 'Oops...', zh: '卧艹...' },
@@ -648,6 +658,8 @@
                     $('#modal-change-password-label').text(langDB.changePassword.zh);
                     $('label[for="txtCurrentPassword"]').text(langDB.currentPassword.zh);
                     $('label[for="txtNewPassword"]').text(langDB.newPassword.zh);
+                    $('#btnUpdateItem').text(langDB.update.zh);
+                    $('#btnDeleteItem').text(langDB.remove.zh);
                     break;
                 default:
                     $('#ddLanguage').html(langDB.language.en);
@@ -707,6 +719,8 @@
                     $('#modal-change-password-label').text(langDB.changePassword.en);
                     $('label[for="txtCurrentPassword"]').text(langDB.currentPassword.en);
                     $('label[for="txtNewPassword"]').text(langDB.newPassword.en);
+                    $('#btnUpdateItem').text(langDB.update.en);
+                    $('#btnDeleteItem').text(langDB.remove.en);
             }
 
             $('body').attr('data-language', lang);
@@ -911,15 +925,51 @@
                                                 <button type="button"
                                                     class="btn btn-sm btn-primary disabled placeholder col-3"></button>
                                                 <button type="button"
-                                                    class="btn btn-sm btn-secondary disabled placeholder col-3"></button>
-                                                <button type="button"
                                                     class="btn btn-sm btn-danger disabled placeholder col-3"></button>
+                                                <button type="button"
+                                                    class="btn btn-sm btn-secondary disabled placeholder col-3"></button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>`;
             var duplicate = placeholder.repeat(count);
             return duplicate;
+        }
+
+        function generateItem(id, preview, name, author) {
+            let isFavorite = favorites.includes(id);
+            var dropdown = '';
+            if (author === sessionStorage.getItem('username')) {
+                dropdown = `<div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#">${getCorrectTranslation('edit')}</a></li>
+                                    <li><a class="dropdown-item" href="#">${getCorrectTranslation('remove')}</a></li>
+                                </ul>
+                            </div>`;
+            }
+            
+            var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">
+                            <div class="card shadow-sm">
+                                <img src="${preview}" class="image-fluid card-img-top" />
+                                <div class="card-body">
+                                    <p class="card-text">${name}</p>
+                                    <div class="d-flex justify-content-between align-items-center mt-auto">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${id});">
+                                                <span class="mdi mdi-download"></span>
+                                            </button>
+                                            <button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${id});">
+                                                <span class="mdi mdi-heart"></span>
+                                            </button>
+                                            ${dropdown}
+                                        </div>
+                                        <small class="text-muted">${author}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+            return item;
         }
 
         function searchCommunityItems(search_string, page = 0) {
@@ -938,29 +988,7 @@
                         var children = [];
 
                         $.each(response.data, function (key, item) {
-                            let isFavorite = favorites.includes(item.id);
-                            var child = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">` +
-                                `<div class="card shadow-sm">` +
-                                `<img src="${item.preview}" class="image-fluid card-img-top" />` +
-                                `<div class="card-body">` +
-                                `<p class="card-text">${item.name}</p>` +
-                                `<div class="d-flex justify-content-between align-items-center mt-auto">` +
-                                `<div class="btn-group" role="group">` +
-                                `<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${item.id});">` +
-                                `<span class="mdi mdi-download"></span>` +
-                                `</button>` +
-                                `<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modal-info" onclick="itemInfo(${item.id});">` +
-                                `<span class="mdi mdi-dots-horizontal"></span>` +
-                                `</button>` +
-                                `<button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${item.id});">` +
-                                `<span class="mdi mdi-heart"></span>` +
-                                `</button>` +
-                                `</div>` +
-                                `<small class="text-muted">${item.author}</small>` +
-                                `</div>` +
-                                `</div>` +
-                                `</div>` +
-                                `</div>`;
+                            var child = generateItem(item.id, item.preview, item.name, item.author);
                             children.push(child);
                         });
 
@@ -1018,29 +1046,7 @@
                         var children = [];
 
                         $.each(response.data, function (key, item) {
-                            let isFavorite = favorites.includes(item.id);
-                            var child = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">` +
-                                `<div class="card shadow-sm">` +
-                                `<img src="${item.preview}" class="image-fluid card-img-top" />` +
-                                `<div class="card-body">` +
-                                `<p class="card-text">${item.name}</p>` +
-                                `<div class="d-flex justify-content-between align-items-center mt-auto">` +
-                                `<div class="btn-group" role="group">` +
-                                `<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${item.id});">` +
-                                `<span class="mdi mdi-download"></span>` +
-                                `</button>` +
-                                `<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modal-info" onclick="itemInfo(${item.id});">` +
-                                `<span class="mdi mdi-dots-horizontal"></span>` +
-                                `</button>` +
-                                `<button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${item.id});">` +
-                                `<span class="mdi mdi-heart"></span>` +
-                                `</button>` +
-                                `</div>` +
-                                `<small class="text-muted">${item.author}</small>` +
-                                `</div>` +
-                                `</div>` +
-                                `</div>` +
-                                `</div>`;
+                            var child = generateItem(item.id, item.preview, item.name, item.author);
                             children.push(child);
                         });
 
@@ -1079,29 +1085,7 @@
                         var children = [];
 
                         $.each(response.data, function (key, item) {
-                            let isFavorite = favorites.includes(item.id);
-                            var child = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">` +
-                                `<div class="card shadow-sm">` +
-                                `<img src="${item.preview}" class="image-fluid card-img-top" />` +
-                                `<div class="card-body">` +
-                                `<p class="card-text">${item.name}</p>` +
-                                `<div class="d-flex justify-content-between align-items-center mt-auto">` +
-                                `<div class="btn-group" role="group">` +
-                                `<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${item.id});">` +
-                                `<span class="mdi mdi-download"></span>` +
-                                `</button>` +
-                                `<button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modal-info" onclick="itemInfo(${item.id});">` +
-                                `<span class="mdi mdi-dots-horizontal"></span>` +
-                                `</button>` +
-                                `<button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${item.id});">` +
-                                `<span class="mdi mdi-heart"></span>` +
-                                `</button>` +
-                                `</div>` +
-                                `<small class="text-muted">${item.author}</small>` +
-                                `</div>` +
-                                `</div>` +
-                                `</div>` +
-                                `</div>`;
+                            var child = generateItem(item.id, item.preview, item.name, item.author);
                             children.push(child);
                         });
 
@@ -1155,9 +1139,13 @@
                     preview: canvasToBase64()
                 };
                 var jsonData = JSON.stringify(json);
+                var isUpdate = $('#chkIsUpdate').val().toLowerCase() === 'true' ? true : false;
+                var updateId = parseInt($('#txtUpdateId').val());
+                var url = `${api}items`;
+                if (isUpdate) url = `${api}updateitem/${updateId}`;
 
                 $.ajax({
-                    url: `${api}items`,
+                    url: url,
                     type: 'POST',
                     data: jsonData,
                     contentType: 'application/json; charset=utf-8',
@@ -1267,37 +1255,42 @@
             }
         }
 
-        function itemInfo(id) {
-            $.ajax({
-                url: `${api}item/${id}`,
-                type: 'GET',
-                contentType: 'application/json; charset=utf-8',
-                dataType: 'json',
-                success: function (response) {
-                    if (response.success === true) {
-                        let item = response.data;
-                        const datetimeLocal = item.submittime.slice(0, -5);
+        // function itemInfo(id) {
+        //     $.ajax({
+        //         url: `${api}item/${id}`,
+        //         type: 'GET',
+        //         contentType: 'application/json; charset=utf-8',
+        //         dataType: 'json',
+        //         success: function (response) {
+        //             if (response.success === true) {
+        //                 let item = response.data;
+        //                 const datetimeLocal = item.submittime.slice(0, -5);
 
-                        $('#modal-info-label').text(`${item.id}: ${item.name}`);
-                        $('#txtInfoName').val(item.name);
-                        $('#txtInfoAuthor').val(item.author);
-                        $('#txtInfoSize').val(`${item.size[0]}x${item.size[1]}`);
-                        $('#txtInfoDate').val(datetimeLocal);
-                        $('#txtInfoData').val(item.data);
-                        $('#btnInfoDataCopy').attr('onclick', `copyToClipboard('${item.data}');`);
-                    }
-                },
-                error: function (err) {
-                    console.log(err);
-                    swalBS.fire({
-                        icon: "error",
-                        title: getCorrectTranslation('oops'),
-                        theme: "dark",
-                        text: err.statusText,
-                    });
-                }
-            });
-        }
+        //                 if (item.author === sessionStorage.getItem('username')) {
+        //                     $('#txtInfoName').prop('disabled', false);
+        //                     $('#modal-info-footer').css('display', 'flex');
+        //                 }
+
+        //                 $('#modal-info-label').text(`${item.id}: ${item.name}`);
+        //                 $('#txtInfoName').val(item.name);
+        //                 $('#txtInfoAuthor').val(item.author);
+        //                 $('#txtInfoSize').val(`${item.size[0]}x${item.size[1]}`);
+        //                 $('#txtInfoDate').val(datetimeLocal);
+        //                 $('#txtInfoData').val(item.data);
+        //                 $('#btnInfoDataCopy').attr('onclick', `copyToClipboard('${item.data}');`);
+        //             }
+        //         },
+        //         error: function (err) {
+        //             console.log(err);
+        //             swalBS.fire({
+        //                 icon: "error",
+        //                 title: getCorrectTranslation('oops'),
+        //                 theme: "dark",
+        //                 text: err.statusText,
+        //             });
+        //         }
+        //     });
+        // }
     </script>
 
     <script>
@@ -1693,7 +1686,7 @@
                             });
                         }
                     },
-                    error: function(err) {
+                    error: function (err) {
                         swalBS.fire({
                             icon: "error",
                             title: getCorrectTranslation('oops'),
@@ -1874,7 +1867,7 @@
             $('#member button.dropdown-toggle').text('Guest');
         });
 
-        $('#share-btn').click(function(evt) {
+        $('#share-btn').click(function (evt) {
             let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
             if (loggedIn.userid != null && loggedIn.username != null) {
                 $('#modal-share').modal('show');
