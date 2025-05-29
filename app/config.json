@@ -1,6 +1,6 @@
 {
     "host": "localhost",
-    "user": "nollie_nodejs",
-    "password": "CzufZrx5bCwRnnf96Q3a",
-    "database": "nollie_nodejs"
+    "user": "your_user",
+    "password": "your_password",
+    "database": "your_database"
 }

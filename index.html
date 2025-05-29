@@ -33,10 +33,8 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="index.html">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="https://nolliergb.com">Nollie Official Website</a>
+                            <a class="nav-link active" aria-current="page" href="index.html"><span
+                                    class="mdi mdi-home-circle-outline"></span> Home</a>
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" id="ddInstall" href="#" role="button"
@@ -52,6 +50,12 @@
                                         target="_blank">WLED</a></li>
                             </ul>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="community-btn" href="#" data-bs-toggle="offcanvas"
+                                data-bs-target="#community" aria-controls="community"
+                                onclick="getCommunityItems();"><span class="mdi mdi-account-group-outline"></span>
+                                Community Pixel Art</a>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" id="ddLanguage" href="#" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
@@ -65,6 +69,8 @@
                         </li>
                     </ul>
                     <div class="d-flex gap-2">
+                        <button class="btn btn-outline-success" id="btnShare" type="button" style="display: none;"><span
+                                class="mdi mdi-share-variant-outline"></span> Share</button>
                         <div class="dropdown" id="ddLogin">
                             <button type="button" class="btn btn-outline-primary dropdown-toggle" id="btnLogin"
                                 data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"><span
@@ -142,18 +148,32 @@
                         <span class="mdi mdi-content-save-outline"></span> Save
                     </button>
                 </div>
-                <div class="col-auto">
-                    <button class="btn btn-primary" id="share-btn" type="button"><span
-                            class="mdi mdi-share-variant-outline"></span> Share</button>
-                    <!--data-bs-toggle="modal" data-bs-target="#modal-share"-->
-                    <button class="btn btn-primary" id="community-btn" type="button" data-bs-toggle="offcanvas"
-                        data-bs-target="#community" aria-controls="community" onclick="getCommunityItems();">
-                        <span class="mdi mdi-account-group-outline"></span> Community Pixel Art
-                    </button>
+                <div class="col-auto" id="editItem" style="display: none;">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-success" id="btnUpdateEdit" data-bs-toggle="modal"
+                            data-bs-target="#modal-update">
+                            <span class="mdi mdi-content-save-outline"></span> Update
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
+                            onclick="cancelEdit();">
+                            <span class="mdi mdi-cancel"></span> Cancel
+                        </button>
+                    </div>
+
+                    <input id="txtUpdateId" value="-1" type="hidden" />
                 </div>
             </div>
 
             <div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
+                <!-- <div class="col-auto">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" id="btnUndo" onclick="undo();">
+                            <span class="mdi mdi-undo"></span> Undo</button>
+                        <button type="button" class="btn btn-primary" id="btnRedo" onclick="redo();">
+                            <span class="mdi mdi-redo"></span> Redo</button>
+                    </div>
+                </div> -->
+
                 <div class="col-auto">
                     <div class="btn-group">
                         <input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked>
@@ -161,9 +181,7 @@
                         <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill">
                         <label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span>
                             Fill</label>
-                        <input type="radio" class="btn-check" id="clear" name="draw-mode" value="clear">
-                        <label for="clear" class="btn btn-primary"><span class="mdi mdi-eraser"></span> Clear</label>
-                        <button class="btn btn-primary" id="clear-btn" onclick="fillAll('#000000');"><span
+                        <button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span
                                 class="mdi mdi-trash-can-outline"></span>
                             Clear
                             All</button>
@@ -177,19 +195,44 @@
                         <label for="draw-transparent" class="btn btn-primary"><span
                                 class="mdi mdi-water-opacity"></span>
                             Transparent</label>
+
+                        <input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
+                        <label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span>
+                            Off</label>
                     </div>
                 </div>
                 <div class="col-auto">
-                    <button id="invert-btn" class="btn btn-primary" onclick="invertAll();"><span
-                            class="mdi mdi-invert-colors"></span>
-                        Invert</button>
-                    <button id="horizontal-btn" class="btn btn-primary" onclick="mirrorHorizontal();"><span
-                            class="mdi mdi-flip-horizontal"></span>
-                        Mirror
-                        Horizontal</button>
-                    <button id="vertical-btn" class="btn btn-primary" onclick="mirrorVertical();"><span
-                            class="mdi mdi-flip-vertical"></span> Mirror
-                        Vertical</button>
+                    <div class="btn-group">
+                        <button id="btnInvert" class="btn btn-primary" onclick="invertAll();"><span
+                                class="mdi mdi-invert-colors"></span>
+                            Invert</button>
+                        <div class="btn-group dropdown">
+                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="mdi mdi-flip-to-front"></span> Mirror
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#" onclick="mirrorHorizontal();">
+                                    <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
+                                </a></li>
+                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#" onclick="mirrorVertical();">
+                                    <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
+                                </a></li>
+                            </ul>
+                        </div>
+                        <div class="btn-group dropdown">
+                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="mdi mdi-rotate-orbit"></span> Flip
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" id="btnFlipHorizontal" href="#" onclick="flip('horizontal');">
+                                    <span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
+                                </a></li>
+                                <li><a class="dropdown-item" id="btnFlipVertical" href="#" onclick="flip('vertical');">
+                                    <span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -269,8 +312,6 @@
                             <input id="txtShareName" type="text" class="form-control" placeholder="my cool pixel art"
                                 maxlength="50" />
                         </div>
-                        <input id="chkIsUpdate" value="false" type="hidden" />
-                        <input id="txtUpdateId" value="-1" type="hidden" />
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -280,52 +321,29 @@
         </div>
     </div>
 
-    <!-- <div class="modal fade" id="modal-info" tabindex="-1" aria-labelledby="modal-info-label" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal fade" id="modal-update" tabindex="-1" aria-labelledby="modal-update-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal-info-label">Item</h1>
+                    <h1 class="modal-title fs-5" id="modal-update-label">Update pixel art</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-lg-6 col-md-12 mb-lg-0 mb-3">
-                            <label for="txtInfoName" class="form-label">Name</label>
-                            <input id="txtInfoName" type="text" class="form-control" value="" disabled />
-                        </div>
-                        <div class="col-lg-6 col-md-12 mb-lg-0 mb-3">
-                            <label for="txtInfoAuthor" class="form-label">Author</label>
-                            <input id="txtInfoAuthor" type="text" class="form-control" value="" disabled />
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-lg-6 col-md-12 mb-lg-0 mb-3">
-                            <label for="txtInfoDate" class="form-label">Created</label>
-                            <input id="txtInfoDate" type="datetime-local" class="form-control" value="" disabled />
-                        </div>
-                        <div class="col-lg-6 col-md-12 mb-lg-0 mb-3">
-                            <label for="txtInfoSize" class="form-label">Size</label>
-                            <input id="txtInfoSize" type="text" class="form-control" value="" disabled />
-                        </div>
-                    </div>
                     <div class="row">
                         <div class="col-12">
-                            <label for="txtInfoData" class="form-label">Code</label>
-                            <div class="input-group">
-                                <textarea id="txtInfoData" class="form-control" rows="6" disabled></textarea>
-                                <button class="btn btn-outline-secondary" type="button" id="btnInfoDataCopy"
-                                    onclick="copyToClipboard('');">Copy</button>
-                            </div>
+                            <label for="txtUpdateName" class="form-label">What would you like to call this pixel
+                                art?</label>
+                            <input id="txtUpdateName" type="text" class="form-control" placeholder="my cool pixel art"
+                                maxlength="50" />
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer" id="modal-info-footer" style="display: none;">
-                    <button type="button" class="btn btn-danger" id="btnDeleteItem">Delete</button>
-                    <button type="button" class="btn btn-primary" id="btnUpdateItem">Update</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="btnUpdateConfirm">Submit</button>
                 </div>
             </div>
         </div>
-    </div> -->
+    </div>
 
     <div class="modal fade" id="modal-signup" tabindex="-1" aria-labelledby="modal-signup-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -482,9 +500,79 @@
         </div>
     </div>
 
+    <script src="script.js"></script>
+
+    <!-- History Manager -->
     <script>
-        const api = 'http://localhost:3001/api/';
-        //const api = 'https://pixelart.nolliergb.com/api/';
+        const MAX_HISTORY = 100;
+
+        class HistoryManager {
+            isEqual(a, b) {
+                return JSON.stringify(a) === JSON.stringify(b);
+            }
+
+            constructor(initialState) {
+                this.undoStack = [];
+                this.redoStack = [];
+                this.currentState = initialState;
+            }
+
+            saveState(newState) {
+                const clonedNewState = this.clone(newState);
+                const lastUndoState = this.undoStack[this.undoStack.length - 1];
+
+                if (lastUndoState && this.isEqual(clonedNewState, lastUndoState)) {
+                    return;
+                }
+
+                this.undoStack.push(this.clone(this.currentState));
+                if (this.undoStack.length > MAX_HISTORY) this.undoStack.shift();
+
+                this.currentState = clonedNewState;
+                this.redoStack = [];
+            }
+
+            clear(initialState) {
+                this.undoStack = [];
+                this.redoStack = [];
+                this.currentState = initialState;
+            }
+
+            undo() {
+                if (this.undoStack.length === 0) {
+                    console.log("Nothing to undo");
+                } else {
+                    this.redoStack.push(this.clone(this.currentState));
+                    this.currentState = this.undoStack.pop();
+                }
+                matrixData = this.clone(this.currentState);
+                drawMatrix();
+            }
+
+            redo() {
+                if (this.redoStack.length === 0) {
+                    console.log("Nothing to redo");
+                } else {
+                    this.undoStack.push(this.clone(this.currentState));
+                    this.currentState = this.redoStack.pop();
+                }
+                matrixData = this.clone(this.currentState);
+                drawMatrix();
+            }
+
+            clone(state) {
+                return JSON.parse(JSON.stringify(state));
+            }
+
+            getCurrentState() {
+                return this.clone(this.currentState);
+            }
+        }
+    </script>
+
+    <script>
+        //const api = 'http://localhost:3001/api/';
+        const api = 'https://pixelart.nolliergb.com/api/';
 
         const swalBS = Swal.mixin({
             customClass: {
@@ -492,90 +580,6 @@
                 cancelButton: 'btn btn-secondary'
             }
         });
-
-        const langDB = {
-            language: { en: '<span class="mdi mdi-translate"></span> Language', zh: '<span class="mdi mdi-translate"></span> 语言' },
-            installAddon: { en: '<span class="mdi mdi-tools"></span> Install Pixel Art Addon', zh: '<span class="mdi mdi-tools"></span> 安装像素屏插件' },
-            header: { en: "SignalRGB WLED/Nollie1 Matrix Pixel Art Painter", zh: "SignalRGB WLED/Nollie1 像素屏画家" },
-            size: { en: '<span class="mdi mdi-image-size-select-small"></span> Size', zh: '<span class="mdi mdi-image-size-select-small"></span> 大小' },
-            import: { en: '<span class="mdi mdi-import"></span> Import', zh: '<span class="mdi mdi-import"></span> 导入' },
-            export: { en: '<span class="mdi mdi-export"></span> Export', zh: '<span class="mdi mdi-export"></span> 导出' },
-            draw: { en: '<span class="mdi mdi-draw"></span> Draw', zh: '<span class="mdi mdi-draw"></span> 绘画模式' },
-            fill: { en: '<span class="mdi mdi-format-color-fill"></span> Fill', zh: '<span class="mdi mdi-format-color-fill"></span> 填充模式' },
-            erase: { en: '<span class="mdi mdi-eraser"></span> Erase', zh: '<span class="mdi mdi-eraser"></span> 擦除模式' },
-            clear: { en: '<span class="mdi mdi-trash-can-outline"></span> Clear All', zh: '<span class="mdi mdi-trash-can-outline"></span> 清除全部' },
-            invert: { en: '<span class="mdi mdi-invert-colors"></span> Invert', zh: '<span class="mdi mdi-invert-colors"></span> 反转' },
-            horizontal: { en: '<span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal', zh: '<span class="mdi mdi-flip-horizontal"></span> 水平镜像' },
-            vertical: { en: '<span class="mdi mdi-flip-vertical"></span> Mirror Vertical', zh: '<span class="mdi mdi-flip-vertical"></span> 垂直镜像' },
-            position1: { en: 'Position: (-1, -1)', zh: '位置: (-1, -1)' },
-            cellsize1: { en: 'Cell Size: 0x0', zh: '像元大小: 34x34' },
-            position2: { en: 'Position:', zh: '位置:' },
-            cellsize2: { en: 'Cell Size:', zh: '像元大小:' },
-            copycode: { en: 'Copy the code below into SignalRGB', zh: '将以下代码复制到SignalRGB' },
-            copy: { en: 'Copy', zh: '复制' },
-            ok: { en: 'OK', zh: '确认' },
-            copied: { en: 'Code copied to clipboard.', zh: '代码已复制到剪贴板。' },
-            load: { en: '<span class="mdi mdi-cloud-outline"></span> Load', zh: '<span class="mdi mdi-cloud-outline"></span> 载入' },
-            save: { en: '<span class="mdi mdi-content-save-outline"></span> Save', zh: '<span class="mdi mdi-content-save-outline"></span> 保存' },
-            saveTitle: { en: 'Save pixel art', zh: '保存像素屏' },
-            saveSubtitle: { en: 'What would you like to call this pixel art?', zh: '您想将这个像素艺术存档命名为什么？' },
-            submit: { en: 'Submit', zh: '提交' },
-            loadTitle: { en: 'Load pixel art', zh: '载入像素屏' },
-            loadSubtitle: { en: 'Which pixel art would you like load?', zh: '您想要加载哪一个像素存档？' },
-            saved: { en: 'Pixel art saved.', zh: '像素存档保存成功。' },
-            remove: { en: 'Remove', zh: '删除' },
-            update: { en: 'Update', zh: '更新' },
-            edit: { en: 'Edit', zh: '修改' },
-            pleaseSelect: { en: 'Please select...', zh: '请选择...' },
-            errorParsingJson: { en: 'Error parsing JSON data.', zh: '解析 JSON 数据时出错。' },
-            oops: { en: 'Oops...', zh: '卧艹...' },
-            community: { en: '<span class="mdi mdi-account-group-outline"></span> Community Pixel Art', zh: '<span class="mdi mdi-account-group-outline"></span> 社区像素作品' },
-            share: { en: '<span class="mdi mdi-share-variant-outline"></span> Share', zh: '<span class="mdi mdi-share-variant-outline"></span> 分享' },
-            shareTitle: { en: 'Share pixel art', zh: '分享作品' },
-            shareAuthor: { en: 'Who are you?', zh: '你是谁？' },
-            shared: { en: 'The pixel artwork has been shared successfully.', zh: '像素作品已成功分享。' },
-            communityTitle: { en: 'Browse Community Pixel Art', zh: '浏览社区像素作品' },
-            search: { en: 'Search...', zh: '搜索...' },
-            itemExists: { en: 'The pixel art you are trying to share already exists on the server.', zh: '您尝试分享的像素作品已存在于服务器中。' },
-            latest: { en: '<span class="mdi mdi-fire"></span> Latest', zh: '<span class="mdi mdi-fire"></span> 最新' },
-            search2: { en: '<span class="mdi mdi-magnify"></span> Search', zh: '<span class="mdi mdi-magnify"></span> 搜索' },
-            loadMore: { en: '<span class="mdi mdi-plus"></span> Load More', zh: '<span class="mdi mdi-plus"></span> 加载更多' },
-            favorites: { en: '<span class="mdi mdi-heart-outline"></span> Favorites', zh: '<span class="mdi mdi-heart-outline"></span> 收藏夹' },
-            infoName: { en: 'Name', zh: '名字' },
-            infoAuthor: { en: 'Author', zh: '作者' },
-            infoCreated: { en: 'Created', zh: '提交时间' },
-            infoSize: { en: 'Size', zh: '大小' },
-            infoCode: { en: 'Code', zh: '代码' },
-            colorFull: { en: '<span class="mdi mdi-water"></span> Full Color', zh: '<span class="mdi mdi-water"></span> 全色' },
-            colorTransparent: { en: '<span class="mdi mdi-water-opacity"></span> Transparent', zh: '<span class="mdi mdi-water-opacity"></span> 透明' },
-            inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' },
-            nollieweb: { en: 'Nollie Official Website', zh: '诺莉官方网站' },
-            navLogin: { en: '<span class="mdi mdi-login"></span> Login', zh: '<span class="mdi mdi-login"></span> 登入' },
-            navSignUp: { en: '<span class="mdi mdi-account-plus-outline"></span> Sign Up', zh: '<span class="mdi mdi-account-plus-outline"></span> 注册' },
-            email: { en: 'Email', zh: '电邮' },
-            username: { en: 'Username', zh: '用户名' },
-            password: { en: 'Password', zh: '密码' },
-            confirmPassword: { en: 'Confirm Password', zh: '确认密码' },
-            rememberMe: { en: 'Remember me', zh: '记住我' },
-            login: { en: 'Login', zh: '登入' },
-            signup: { en: 'Sign Up', zh: '注册' },
-            passwordNotMatch: { en: 'Password and Confirm Password does not match.', zh: '密码和确认密码不匹配。' },
-            signedUp: { en: 'Thanks for signing up. Welcome to our community. We are happy to have you on board.', zh: '感谢您注册。欢迎加入我们的社区。我们非常高兴您能加入我们。' },
-            invalidEmail: { en: 'Invalid email format.', zh: '电子邮件格式无效。' },
-            usernameTaken: { en: 'The username is already taken.', zh: '该用户名已被使用。' },
-            emailTaken: { en: 'Email Already Registered.', zh: '电子邮件已注册。' },
-            incorrectUsernamePassword: { en: 'The username or password is incorrect.', zh: '用户名或密码不正确。' },
-            welcomeUser: { en: 'Welcome back, {user}.', zh: '欢迎回来，{user}。' },
-            failedValidateUser: { en: 'Unable to authenticate user.', zh: '无法验证用户。' },
-            logout: { en: '<span class="mdi mdi-logout"></span> Logout', zh: '<span class="mdi mdi-logout"></span> 退出登录' },
-            navChangePassword: { en: '<span class="mdi mdi-lock-reset"></span> Change Password', zh: '<span class="mdi mdi-lock-reset"></span> 更换密码' },
-            changePassword: { en: 'Change Password', zh: '更换密码' },
-            currentPassword: { en: 'Current Password', zh: '当前密码' },
-            newPassword: { en: 'New Password', zh: '新密码' },
-            passwordChanged: { en: 'Password changed successfully. Please log in again.', zh: '密码修改成功，请重新登录。' },
-            userNotFound: { en: 'User not found.', zh: '未找到用户。' },
-            incorrectPassword: { en: 'The current password is incorrect.', zh: '当前密码不正确。' }
-        };
 
         var favorites = [];
 
@@ -596,157 +600,15 @@
             changeLanguage(language);
         });
 
-        function changeLanguage(lang) {
-            localStorage.setItem('language', lang);
-
-            switch (lang) {
-                case 'chinese':
-                    $('#ddLanguage').html(langDB.language.zh);
-                    $('#ddInstall').html(langDB.installAddon.zh);
-                    $('li.nav-item a.nav-link[href="index.html"]').text(langDB.header.zh);
-                    $('li.nav-item a.nav-link[href="https://nolliergb.com"]').text(langDB.nollieweb.zh);
-                    document.title = langDB.header.zh;
-                    $('#size-label').html(langDB.size.zh);
-                    $('#import-btn').html(langDB.import.zh);
-                    $('#export-btn').html(langDB.export.zh);
-                    $('#load-btn').html(langDB.load.zh);
-                    $('#save-btn').html(langDB.save.zh);
-                    $('label[for="draw"]').html(langDB.draw.zh);
-                    $('label[for="fill"]').html(langDB.fill.zh);
-                    $('label[for="clear"]').html(langDB.erase.zh);
-                    $('#clear-btn').html(langDB.clear.zh);
-                    $('#invert-btn').html(langDB.invert.zh);
-                    $('#horizontal-btn').html(langDB.horizontal.zh);
-                    $('#vertical-btn').html(langDB.vertical.zh);
-                    $('#mouse-pos').text(langDB.position1.zh);
-                    $('#cell-size').text(langDB.cellsize1.zh);
-                    $('#modal-save-label').text(langDB.saveTitle.zh);
-                    $('label[for="txt-save"], label[for="txtShareName"]').text(langDB.saveSubtitle.zh);
-                    $('#save-confirm-btn, #btnShareConfirm, #load-confirm-btn, #btnChangePasswordConfirm').text(langDB.submit.zh);
-                    $('#modal-load-label').text(langDB.loadTitle.zh);
-                    $('label[for="select-load"]').text(langDB.loadSubtitle.zh);
-                    $('#remove-confirm-btn').text(langDB.remove.zh);
-                    $('#community-btn').html(langDB.community.zh);
-                    $('#share-btn').html(langDB.share.zh);
-                    $('#modal-share-label').text(langDB.shareTitle.zh);
-                    $('#community-Label').text(langDB.communityTitle.zh);
-                    $('#txt-search').attr('placeholder', langDB.search.zh);
-                    $('#new-items-tab').html(langDB.latest.zh);
-                    $('#search-items-tab').html(langDB.search2.zh);
-                    $('#community-load-more-btn, #search-load-more-btn, #favorites-load-more-btn').html(langDB.loadMore.zh);
-                    $('#favorites-items-tab').html(langDB.favorites.zh);
-                    $('label[for="txtInfoName"]').text(langDB.infoName.zh);
-                    $('label[for="txtInfoAuthor"]').text(langDB.infoAuthor.zh);
-                    $('label[for="txtInfoDate"]').text(langDB.infoCreated.zh);
-                    $('label[for="txtInfoSize"]').text(langDB.infoSize.zh);
-                    $('label[for="txtInfoData"]').text(langDB.infoCode.zh);
-                    $('#btnInfoDataCopy').text(langDB.copy.zh);
-                    $('label[for="draw-full"]').html(langDB.colorFull.zh);
-                    $('label[for="draw-transparent"]').html(langDB.colorTransparent.zh);
-                    $('#btnLogin').html(langDB.navLogin.zh);
-                    $('#btnSignup').html(langDB.navSignUp.zh);
-                    $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.zh);
-                    $('label[for="txtLoginPassword"], label[for="txtSignupPassword"]').text(langDB.password.zh);
-                    $('label[for=txtSignupConfirmPassword], label[for="txtConfirmNewPassword"]').text(langDB.confirmPassword.zh);
-                    $('label[for="txtSignupEmail"]').text(langDB.email.zh);
-                    $('label[for="chkLoginRemember"]').text(langDB.rememberMe.zh);
-                    $('#btnLoginConfirm').text(langDB.login.zh);
-                    $('#modal-signup-label').text(langDB.signup.zh);
-                    $('#btnSignupConfirm').text(langDB.signup.zh);
-                    $('#aLogout').html(langDB.logout.zh);
-                    $('#aPassword').html(langDB.navChangePassword.zh);
-                    $('#modal-change-password-label').text(langDB.changePassword.zh);
-                    $('label[for="txtCurrentPassword"]').text(langDB.currentPassword.zh);
-                    $('label[for="txtNewPassword"]').text(langDB.newPassword.zh);
-                    $('#btnUpdateItem').text(langDB.update.zh);
-                    $('#btnDeleteItem').text(langDB.remove.zh);
-                    break;
-                default:
-                    $('#ddLanguage').html(langDB.language.en);
-                    $('#ddInstall').html(langDB.installAddon.en);
-                    $('li.nav-item a.nav-link[href="index.html"]').text(langDB.header.en);
-                    $('li.nav-item a.nav-link[href="https://nolliergb.com"]').text(langDB.nollieweb.en);
-                    document.title = langDB.header.en;
-                    $('#size-label').html(langDB.size.en);
-                    $('#import-btn').html(langDB.import.en);
-                    $('#export-btn').html(langDB.export.en);
-                    $('#load-btn').html(langDB.load.en);
-                    $('#save-btn').html(langDB.save.en);
-                    $('label[for="draw"]').html(langDB.draw.en);
-                    $('label[for="fill"]').html(langDB.fill.en);
-                    $('label[for="clear"]').html(langDB.erase.en);
-                    $('#clear-btn').html(langDB.clear.en);
-                    $('#invert-btn').html(langDB.invert.en);
-                    $('#horizontal-btn').html(langDB.horizontal.en);
-                    $('#vertical-btn').html(langDB.vertical.en);
-                    $('#mouse-pos').text(langDB.position1.en);
-                    $('#cell-size').text(langDB.cellsize1.en);
-                    $('#modal-save-label').text(langDB.saveTitle.en);
-                    $('label[for="txt-save"], label[for="txtShareName"]').text(langDB.saveSubtitle.en);
-                    $('#save-confirm-btn, #btnShareConfirm, #load-confirm-btn, #btnChangePasswordConfirm').text(langDB.submit.en);
-                    $('#modal-load-label').text(langDB.loadTitle.en);
-                    $('label[for="select-load"]').text(langDB.loadSubtitle.en);
-                    $('#remove-confirm-btn').text(langDB.remove.en);
-                    $('#community-btn').html(langDB.community.en);
-                    $('#share-btn').html(langDB.share.en);
-                    $('#modal-share-label').text(langDB.shareTitle.en);
-                    $('#community-Label').text(langDB.communityTitle.en);
-                    $('#txt-search').attr('placeholder', langDB.search.en);
-                    $('#new-items-tab').html(langDB.latest.en);
-                    $('#search-items-tab').html(langDB.search2.en);
-                    $('#community-load-more-btn, #search-load-more-btn, #favorites-load-more-btn').html(langDB.loadMore.en);
-                    $('#favorites-items-tab').html(langDB.favorites.en);
-                    $('label[for="txtInfoName"]').text(langDB.infoName.en);
-                    $('label[for="txtInfoAuthor"]').text(langDB.infoAuthor.en);
-                    $('label[for="txtInfoDate"]').text(langDB.infoCreated.en);
-                    $('label[for="txtInfoSize"]').text(langDB.infoSize.en);
-                    $('label[for="txtInfoData"]').text(langDB.infoCode.en);
-                    $('#btnInfoDataCopy').text(langDB.copy.en);
-                    $('label[for="draw-full"]').html(langDB.colorFull.en);
-                    $('label[for="draw-transparent"]').html(langDB.colorTransparent.en);
-                    $('#btnLogin').html(langDB.navLogin.en);
-                    $('#btnSignup').html(langDB.navSignUp.en);
-                    $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.en);
-                    $('label[for="txtLoginPassword"], label[for="txtSignupPassword"]').text(langDB.password.en);
-                    $('label[for=txtSignupConfirmPassword], label[for="txtConfirmNewPassword"]').text(langDB.confirmPassword.zh);
-                    $('label[for="txtSignupEmail"]').text(langDB.email.en);
-                    $('label[for="chkLoginRemember"]').text(langDB.rememberMe.en);
-                    $('#btnLoginConfirm').text(langDB.login.en);
-                    $('#modal-signup-label').text(langDB.signup.en);
-                    $('#btnSignupConfirm').text(langDB.signup.en);
-                    $('#aLogout').html(langDB.logout.en);
-                    $('#aPassword').html(langDB.navChangePassword.en);
-                    $('#modal-change-password-label').text(langDB.changePassword.en);
-                    $('label[for="txtCurrentPassword"]').text(langDB.currentPassword.en);
-                    $('label[for="txtNewPassword"]').text(langDB.newPassword.en);
-                    $('#btnUpdateItem').text(langDB.update.en);
-                    $('#btnDeleteItem').text(langDB.remove.en);
-            }
-
-            $('body').attr('data-language', lang);
-        };
-
         const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
             'dick', 'dumb', 'fag', 'nigga', 'piss', 'slut', 'wanker', 'ccp', '共产党', '傻逼', '维尼', 'pooh', '西藏', '防火墙', '天安门'];
-
-        function getCorrectTranslation(lang) {
-            let body = $('body').attr('data-language');
-            switch (body) {
-                case 'chinese':
-                    return langDB[lang].zh
-                    break;
-                default:
-                    return langDB[lang].en
-            }
-            return null;
-        }
 
         $('#size-cols, #size-rows').on('input', function (e) {
             COLS = parseInt($('#size-cols').val());
             ROWS = parseInt($('#size-rows').val());
 
             matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-
+            canvasHistory.clear(matrixData);
             resizeCanvas();
         });
 
@@ -779,6 +641,7 @@
             try {
                 matrixData = JSON.parse($('#clipboard').val());
                 matrixData = matrixData.map(row => row.map(value => value === 0 ? "#000000" : (value === 1 ? "#ffffff" : "#808080")));
+                canvasHistory.saveState(matrixData);
                 drawMatrix();
             } catch (e) {
                 console.log(e);
@@ -809,6 +672,7 @@
                 $('#select-load').addClass('is-invalid');
             } else {
                 try {
+                    canvasHistory.saveState(matrixData);
                     var $select = $('#select-load option:selected');
 
                     COLS = parseInt($select.data('size')[0]);
@@ -819,6 +683,7 @@
 
                     matrixData = JSON.parse($select.val());
                     matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
+                    canvasHistory.saveState(matrixData);
                     drawMatrix();
 
                     $('#size-cols').val(COLS);
@@ -943,12 +808,12 @@
                 dropdown = `<div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#">${getCorrectTranslation('edit')}</a></li>
-                                    <li><a class="dropdown-item" href="#">${getCorrectTranslation('remove')}</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="downloadItem(${id}, true);">${getCorrectTranslation('edit')}</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="removeItem(${id});">${getCorrectTranslation('remove')}</a></li>
                                 </ul>
                             </div>`;
             }
-            
+
             var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">
                             <div class="card shadow-sm">
                                 <img src="${preview}" class="image-fluid card-img-top" />
@@ -1116,6 +981,76 @@
             return base64String;
         }
 
+        $('#btnUpdateConfirm').click(function (evt) {
+            if (!$('#txtUpdateName').val()) {
+                $('#txtUpdateName').addClass('is-invalid');
+                $('#txtUpdateName').focus();
+            } else if (naughtyWords.includes($('#txtUpdateName').val())) {
+                $('#txtUpdateName').addClass('is-invalid');
+                $('#txtUpdateName').focus();
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('inappropriateTextWarning'),
+                });
+            } else {
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                var json = {
+                    author: sessionStorage.getItem('username'),
+                    name: $('#txtUpdateName').val(),
+                    size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
+                    data: dataStr,
+                    preview: canvasToBase64()
+                };
+                var jsonData = JSON.stringify(json);
+                var updateId = parseInt($('#txtUpdateId').val());
+                $.ajax({
+                    url: `${api}updateitem/${updateId}`,
+                    type: 'POST',
+                    data: jsonData,
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success === true) {
+                            swalBS.fire({
+                                position: "top-end",
+                                icon: "success",
+                                theme: "dark",
+                                title: getCorrectTranslation('updated'),
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+
+                            $('#txtUpdateName').val('');
+                            if ($('#txtUpdateName').hasClass('is-invalid')) $('#txtUpdateName').removeClass('is-invalid');
+
+                            $('#modal-update').modal('hide');
+
+                            $('#editItem').css('display', 'none');
+                            $('#txtUpdateId').val('-1');
+                            $('#btnShare').prop('disabled', false);
+                        } else {
+                            swalBS.fire({
+                                icon: "error",
+                                title: getCorrectTranslation('oops'),
+                                theme: "dark",
+                                text: getCorrectTranslation('itemExists'),
+                            });
+                        }
+                    },
+                    error: function (err) {
+                        swalBS.fire({
+                            icon: "error",
+                            title: getCorrectTranslation('oops'),
+                            theme: "dark",
+                            text: err.statusText,
+                        });
+                    }
+                });
+            }
+        });
+
         $('#btnShareConfirm').click(function (evt) {
             if (!$('#txtShareName').val()) {
                 $('#txtShareName').addClass('is-invalid');
@@ -1139,13 +1074,8 @@
                     preview: canvasToBase64()
                 };
                 var jsonData = JSON.stringify(json);
-                var isUpdate = $('#chkIsUpdate').val().toLowerCase() === 'true' ? true : false;
-                var updateId = parseInt($('#txtUpdateId').val());
-                var url = `${api}items`;
-                if (isUpdate) url = `${api}updateitem/${updateId}`;
-
                 $.ajax({
-                    url: url,
+                    url: `${api}items`,
                     type: 'POST',
                     data: jsonData,
                     contentType: 'application/json; charset=utf-8',
@@ -1186,7 +1116,7 @@
             }
         });
 
-        function downloadItem(id) {
+        function downloadItem(id, edit = false) {
             $.ajax({
                 url: `${api}item/${id}`,
                 type: 'GET',
@@ -1204,12 +1134,20 @@
 
                         matrixData = JSON.parse($item.data);
                         matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
+                        canvasHistory.saveState(matrixData);
                         drawMatrix();
 
                         $('#size-cols').val(COLS);
                         $('#size-rows').val(ROWS);
 
                         $('#community').offcanvas('hide');
+
+                        if (edit) {
+                            $('#editItem').css('display', 'block');
+                            $('#txtUpdateId').val(id);
+                            $('#txtUpdateName').val($item.name);
+                            $('#btnShare').prop('disabled', true);
+                        }
                     }
                 },
                 error: function (err) {
@@ -1224,10 +1162,31 @@
             });
         }
 
-        $('#txt-search').on('keydown', function (event) {
-            if (event.keyCode === 13) {
+        function cancelEdit() {
+            $('#editItem').css('display', 'none');
+            $('#txtUpdateId').val('-1');
+            $('#btnShare').prop('disabled', false);
+            fillAll('#000000');
+        }
+
+        $('#txt-search').on('keydown', function (e) {
+            if (e.keyCode === 13) {
                 $('#community-search').click();
-                event.preventDefault()
+                e.preventDefault()
+            }
+
+            // Undo
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                canvasHistory.undo();
+                return;
+            }
+
+            // Redo
+            if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                e.preventDefault();
+                canvasHistory.redo();
+                return;
             }
         });
 
@@ -1255,42 +1214,48 @@
             }
         }
 
-        // function itemInfo(id) {
-        //     $.ajax({
-        //         url: `${api}item/${id}`,
-        //         type: 'GET',
-        //         contentType: 'application/json; charset=utf-8',
-        //         dataType: 'json',
-        //         success: function (response) {
-        //             if (response.success === true) {
-        //                 let item = response.data;
-        //                 const datetimeLocal = item.submittime.slice(0, -5);
+        function removeItem(id) {
+            var json = {
+                author: sessionStorage.getItem('username')
+            };
+            var jsonData = JSON.stringify(json);
+            var url = `${api}deleteitem/${id}`;
 
-        //                 if (item.author === sessionStorage.getItem('username')) {
-        //                     $('#txtInfoName').prop('disabled', false);
-        //                     $('#modal-info-footer').css('display', 'flex');
-        //                 }
-
-        //                 $('#modal-info-label').text(`${item.id}: ${item.name}`);
-        //                 $('#txtInfoName').val(item.name);
-        //                 $('#txtInfoAuthor').val(item.author);
-        //                 $('#txtInfoSize').val(`${item.size[0]}x${item.size[1]}`);
-        //                 $('#txtInfoDate').val(datetimeLocal);
-        //                 $('#txtInfoData').val(item.data);
-        //                 $('#btnInfoDataCopy').attr('onclick', `copyToClipboard('${item.data}');`);
-        //             }
-        //         },
-        //         error: function (err) {
-        //             console.log(err);
-        //             swalBS.fire({
-        //                 icon: "error",
-        //                 title: getCorrectTranslation('oops'),
-        //                 theme: "dark",
-        //                 text: err.statusText,
-        //             });
-        //         }
-        //     });
-        // }
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: jsonData,
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success === true) {
+                        swalBS.fire({
+                            position: "top-end",
+                            icon: "success",
+                            theme: "dark",
+                            title: getCorrectTranslation('removed'),
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    } else {
+                        swalBS.fire({
+                            icon: "error",
+                            title: getCorrectTranslation('oops'),
+                            theme: "dark",
+                            text: getCorrectTranslation('removeFailed'),
+                        });
+                    }
+                },
+                error: function (err) {
+                    swalBS.fire({
+                        icon: "error",
+                        title: getCorrectTranslation('oops'),
+                        theme: "dark",
+                        text: err.statusText,
+                    });
+                }
+            });
+        }
     </script>
 
     <script>
@@ -1306,6 +1271,12 @@
 
         // Matrix data - stores color for each cell
         let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+
+        //Wrapped matrix to hold matrix info for nudging
+        let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+
+        let canvasHistory = new HistoryManager(matrixData);
+        canvasHistory.saveState(matrixData);
 
         // Drawing state
         let isDrawing = false;
@@ -1392,7 +1363,8 @@
         }
 
         // Fill all cells with a specific color
-        function fillAll(color) {
+        function clearAll(color) {
+            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     matrixData[row][col] = color;
@@ -1401,8 +1373,42 @@
             drawMatrix();
         }
 
+        // Fill all contiguous cells with a specific color
+        function fillAll(row, col, color) {
+            canvasHistory.saveState(matrixData);
+            fillAllRecursive(row, col, color);
+        }
+
+        function fillAllRecursive(row, col, color) {
+            originalColor = matrixData[row][col];
+            if (originalColor != color) {
+                updateCell(row, col, color);
+                if (row > 0 && matrixData[row - 1][col] == originalColor) {
+                    fillAllRecursive(row - 1, col, color);
+                }
+                if (row < ROWS - 1 && matrixData[row + 1][col] == originalColor) {
+                    fillAllRecursive(row + 1, col, color);
+                }
+                if (col > 0 && matrixData[row][col - 1] == originalColor) {
+                    fillAllRecursive(row, col - 1, color);
+                }
+                if (col < COLS - 1 && matrixData[row][col + 1] == originalColor) {
+                    fillAllRecursive(row, col + 1, color);
+                }
+            }
+        }
+
+        function undo() {
+            canvasHistory.undo();
+        }
+
+        function redo() {
+            canvasHistory.redo();
+        }
+
         //Invert all cells
         function invertAll() {
+            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
@@ -1419,6 +1425,7 @@
         }
 
         function mirrorHorizontal() {
+            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS / 2; col++) {
                     matrixData[row][COLS - col - 1] = matrixData[row][col];
@@ -1428,10 +1435,23 @@
         }
 
         function mirrorVertical() {
+            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS / 2; row++) {
                 for (let col = 0; col < COLS; col++) {
                     matrixData[ROWS - row - 1][col] = matrixData[row][col];
                 }
+            }
+            drawMatrix();
+        }
+
+        function flip(direction = 'horizontal') {
+            canvasHistory.saveState(matrixData);
+            if (direction === 'horizontal') {
+                console.log("flip horizontal");
+                matrixData = matrixData.map(row => row.slice().reverse());
+            } else if (direction === 'vertical') {
+                console.log("flip vertical");
+                matrixData = matrixData.slice().reverse();
             }
             drawMatrix();
         }
@@ -1454,46 +1474,70 @@
             });
         }
 
-        function moveUp() {
-            for (let row = 0; row < ROWS - 1; row++) {
+        function copyWrappedToMatrix() {
+            for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    matrixData[row][col] = matrixData[row + 1][col];
-                    matrixData[row + 1][col] = '#000000';
+                    matrixData[row][col] = wrappedMatrix[row][col];
                 }
             }
+        }
+
+        function moveUp() {
+            canvasHistory.saveState(matrixData);
+            for (let row = 0; row < ROWS - 1; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    // matrixData[row][col] = matrixData[row + 1][col];
+                    // matrixData[row + 1][col] = '#000000';
+                    const srcRow = (row + 1) % ROWS;
+                    wrappedMatrix[row][col] = matrixData[srcRow][col];
+                }
+            }
+            copyWrappedToMatrix();
             drawMatrix();
             nudgeY();
         }
 
         function moveDown() {
+            canvasHistory.saveState(matrixData);
             for (let row = ROWS - 1; row > 0; row--) {
                 for (let col = 0; col < COLS; col++) {
-                    matrixData[row][col] = matrixData[row - 1][col];
-                    matrixData[row - 1][col] = '#000000';
+                    // matrixData[row][col] = matrixData[row - 1][col];
+                    // matrixData[row - 1][col] = '#000000';
+                    const srcRow = (row - 1 + ROWS) % ROWS;
+                    wrappedMatrix[row][col] = matrixData[srcRow][col];
                 }
             }
+            copyWrappedToMatrix();
             drawMatrix();
             nudgeY();
         }
 
         function moveLeft() {
+            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS - 1; col++) {
-                    matrixData[row][col] = matrixData[row][col + 1];
-                    matrixData[row][col + 1] = '#000000';
+                    // matrixData[row][col] = matrixData[row][col + 1];
+                    // matrixData[row][col + 1] = '#000000';
+                    const srcCol = (col + 1) % COLS;
+                    wrappedMatrix[row][col] = matrixData[row][srcCol];
                 }
             }
+            copyWrappedToMatrix();
             drawMatrix();
             nudgeX();
         }
 
         function moveRight() {
+            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = COLS - 1; col > 0; col--) {
-                    matrixData[row][col] = matrixData[row][col - 1];
-                    matrixData[row][col - 1] = '#000000';
+                    // matrixData[row][col] = matrixData[row][col - 1];
+                    // matrixData[row][col - 1] = '#000000';
+                    const srcCol = (col - 1 + COLS) % COLS;
+                    wrappedMatrix[row][col] = matrixData[row][srcCol];
                 }
             }
+            copyWrappedToMatrix();
             drawMatrix();
             nudgeX();
         }
@@ -1536,6 +1580,7 @@
         // Event listeners
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
+
             const coords = getMatrixCoords(e);
             if (coords) {
                 switch (currentMode) {
@@ -1547,20 +1592,23 @@
                             case 0.5:
                                 updateCell(coords.row, coords.col, '#808080');
                                 break;
+                            case 0:
+                                updateCell(coords.row, coords.col, '#000000');
+                                break;
                         }
                         break;
                     case 'fill':
                         switch (currentColor) {
                             case 1:
-                                fillAll('#ffffff');
+                                fillAll(coords.row, coords.col, '#ffffff');
                                 break;
                             case 0.5:
-                                fillAll('#808080');
+                                fillAll(coords.row, coords.col, '#808080');
+                                break;
+                            case 0:
+                                fillAll(coords.row, coords.col, '#000000');
                                 break;
                         }
-                        break;
-                    case 'clear':
-                        updateCell(coords.row, coords.col, '#000000');
                         break;
                 }
             }
@@ -1582,10 +1630,10 @@
                                 case 0.5:
                                     updateCell(coords.row, coords.col, '#808080');
                                     break;
+                                case 0:
+                                    updateCell(coords.row, coords.col, '#000000');
+                                    break;
                             }
-                            break;
-                        case 'clear':
-                            updateCell(coords.row, coords.col, '#000000');
                             break;
                     }
                 }
@@ -1600,6 +1648,7 @@
 
         window.addEventListener('mouseup', () => {
             isDrawing = false;
+            canvasHistory.saveState(matrixData);
         });
 
         window.addEventListener('resize', resizeCanvas);
@@ -1635,7 +1684,7 @@
             sessionStorage.setItem('username', username);
 
             $('#ddLogin, #btnSignup').css('display', 'none');
-            $('#member').css('display', 'block');
+            $('#member, #btnShare').css('display', 'block');
             $('#member button.dropdown-toggle').text(username);
         }
 
@@ -1829,7 +1878,7 @@
                             sessionStorage.clear();
 
                             $('#ddLogin, #btnSignup').css('display', 'block');
-                            $('#member').css('display', 'none');
+                            $('#member, #btnShare').css('display', 'none');
                             $('#member button.dropdown-toggle').text('Guest');
 
                             $('#txtCurrentPassword, #txtNewPassword, #txtConfirmNewPassword').val('');
@@ -1863,11 +1912,11 @@
             sessionStorage.clear();
 
             $('#ddLogin, #btnSignup').css('display', 'block');
-            $('#member').css('display', 'none');
+            $('#member, #btnShare').css('display', 'none');
             $('#member button.dropdown-toggle').text('Guest');
         });
 
-        $('#share-btn').click(function (evt) {
+        $('#btnShare').click(function (evt) {
             let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
             if (loggedIn.userid != null && loggedIn.username != null) {
                 $('#modal-share').modal('show');
@@ -1876,6 +1925,8 @@
             }
         });
     </script>
+
+
 </body>
 
 </html>

@@ -1,6 +1,6 @@
 // app.js - Simple Node.js API Server with GET and POST endpoints
 const express = require('express');
-const cors = require('cors');
+//const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql2/promise');
 const config = require('./config.json');
@@ -15,11 +15,11 @@ const limit = 30; //normally 30
 // Middleware to parse JSON bodies
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+//app.use(cors());
 
-app.options('/api/data', cors({
-  methods: ['GET', 'POST']
-}));
+// app.options('/api/data', cors({
+//   methods: ['GET', 'POST']
+// }));
 
 const databaseConfig = {
   host: config.host,
@@ -298,9 +298,12 @@ app.post('/api/updateitem/:id', (req, res) => {
 app.post('/api/deleteitem/:id', (req, res) => {
   const id = parseInt(req.params.id);
   console.log(`POST request received for /api/deleteitem/${id}`);
+  console.log('Request body:', req.body);
 
   const itemService = new ItemService(databaseConfig);
-  itemService.deleteItem(id)
+  itemService.deleteItem(id, {
+    author: req.body.author
+  })
     .then(result => {
       console.log(result);
 

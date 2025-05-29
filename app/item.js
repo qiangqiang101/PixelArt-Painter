@@ -311,11 +311,11 @@ class ItemService {
         }
     }
 
-    async deleteItem(itemId) {
+    async deleteItem(itemId, itemData) {
         const connection = await this.pool.getConnection();
 
         try {
-            const [result] = await connection.execute('DELETE FROM items WHERE id = >', [itemId]);
+            const [result] = await connection.execute('DELETE FROM items WHERE id = ? AND author = ?', [itemId, itemData.author]);
 
             if (result.affectedRows === 0) {
                 return {
@@ -325,7 +325,7 @@ class ItemService {
             }
 
             return {
-                message: true,
+                success: true,
                 message: 'Item deleted successfully'
             };
         } catch (error) {
