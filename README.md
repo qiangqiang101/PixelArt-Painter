@@ -18,7 +18,7 @@ This is only the source code, to use the Pixel Art painter, visit this [website]
 2. Import nollie_nodejs.sql to your mysql database
 3. Run `pwsh` in app directory
 4. Enter `npm install` in pwsh
-5. Edit config.json and change your mysql databasse configs
+5. Edit config.json and change your mysql database configs
 6. Run start.bat to start
 
 ## 🚧 Prerequisite
