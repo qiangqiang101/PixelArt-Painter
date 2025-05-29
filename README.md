@@ -11,7 +11,8 @@
 [![Follow on Patreon](https://img.shields.io/badge/Donate-Patreon-orange)](https://www.patreon.com/imnotmental)
 
 This is only the source code, to use the Pixel Art painter, visit this [website](https://pixelart.nolliergb.com/).
-![QQ_1748507797276](https://github.com/user-attachments/assets/d48c1ce2-2191-49e4-a0b7-5522f84a362b)
+![QQ_1748508643680](https://github.com/user-attachments/assets/cc51571d-3047-485a-88cd-9d1a9b66e89c)
+
 
 ## 🛠️ How to Build
 1. Git clone this project
