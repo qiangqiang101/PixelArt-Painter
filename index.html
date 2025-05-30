@@ -814,12 +814,12 @@
                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="#" onclick="downloadItem(${id}, true);">${getCorrectTranslation('edit')}</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="removeItem(${id});">${getCorrectTranslation('remove')}</a></li>
+                                    <li><a class="dropdown-item remove-item" href="#" data-id="${id}"">${getCorrectTranslation('remove')}</a></li>
                                 </ul>
                             </div>`;
             }
 
-            var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">
+            var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch generated-item">
                             <div class="card shadow-sm">
                                 <img src="${preview}" class="image-fluid card-img-top" />
                                 <div class="card-body">
@@ -1227,7 +1227,10 @@
             }
         }
 
-        function removeItem(id) {
+        //Remove Item and remove div from container
+        $(document).on('click', '.remove-item', function(evt) {
+            var item = $(this).closest('div.generated-item');
+            var id = parseInt($(this).attr('data-id'));
             var json = {
                 author: sessionStorage.getItem('username')
             };
@@ -1250,6 +1253,7 @@
                             showConfirmButton: false,
                             timer: 1500
                         });
+                        item.remove();
                     } else {
                         swalBS.fire({
                             icon: "error",
@@ -1268,7 +1272,7 @@
                     });
                 }
             });
-        }
+        });
     </script>
 
     <script>
