@@ -778,7 +778,7 @@
         }
 
         function appendPlaceholders(count) {
-            var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex">
+            var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex placeholder-item">
                                     <div class="card" aria-hidden="true">
                                         <svg class="bd-placeholder-img card-img-top" width="100%" height="180"
                                             xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder"
@@ -843,7 +843,11 @@
         }
 
         function searchCommunityItems(search_string, page = 0) {
-            if (page === 0) $('#community-search-container').empty().append(appendPlaceholders(Math.random() * 30));
+            if (page === 0) {
+                $('#community-search-container').empty().append(appendPlaceholders(Math.random() * 20));
+            } else {
+                $('#community-search-container').append(appendPlaceholders(Math.random() * 20));
+            }
 
             $.ajax({
                 url: `${api}searchitem/${search_string}/${page}`,
@@ -862,6 +866,7 @@
                             children.push(child);
                         });
 
+                        $('#community-search-container').find('.placeholder-item').remove();
                         $('#community-search-container').append(children);
                         if (response.pagination.hasMore) {
                             $('#search-load-more-btn').attr('data-page', response.pagination.nextPage);
@@ -872,6 +877,7 @@
                     }
                 },
                 error: function (err) {
+                    $('#community-search-container').find('.placeholder-item').remove();
                     console.log(err);
                     swalBS.fire({
                         icon: "error",
@@ -903,7 +909,11 @@
         });
 
         function getCommunityItems(page = 0) {
-            if (page === 0) $('#community-container').empty().append(appendPlaceholders(Math.random() * 30));
+            if (page === 0) {
+                $('#community-container').empty().append(appendPlaceholders(Math.random() * 20));
+            } else {
+                $('#community-container').append(appendPlaceholders(Math.random() * 20));
+            }
 
             $.ajax({
                 url: `${api}allitems/${page}`,
@@ -920,6 +930,7 @@
                             children.push(child);
                         });
 
+                        $('#community-container').find('.placeholder-item').remove();
                         $('#community-container').append(children);
                         if (response.pagination.hasMore) {
                             $('#community-load-more-btn').attr('data-page', response.pagination.nextPage);
@@ -930,6 +941,7 @@
                     }
                 },
                 error: function (err) {
+                    $('#community-container').find('.placeholder-item').remove();
                     console.log(err);
                     swalBS.fire({
                         icon: "error",
@@ -942,7 +954,11 @@
         }
 
         function getFavoritesCommunityItems(page = 0) {
-            if (page === 0) $('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 30));
+            if (page === 0) {
+                $('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 20));
+            } else {
+                $('#community-favorites-container').append(appendPlaceholders(Math.random() * 20));
+            }
 
             $.ajax({
                 url: `${api}items/${JSON.stringify(favorites)}/${page}`,
@@ -959,6 +975,7 @@
                             children.push(child);
                         });
 
+                        $('#community-favorites-container').find('.placeholder-item').remove();
                         $('#community-favorites-container').append(children);
                         if (response.pagination.hasMore) {
                             $('#favorites-load-more-btn').attr('data-page', response.pagination.nextPage);
@@ -969,6 +986,7 @@
                     }
                 },
                 error: function (err) {
+                    $('#community-favorites-container').find('.placeholder-item').remove();
                     console.log(err);
                     swalBS.fire({
                         icon: "error",
