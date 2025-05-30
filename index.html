@@ -207,29 +207,34 @@
                                 class="mdi mdi-invert-colors"></span>
                             Invert</button>
                         <div class="btn-group dropdown">
-                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-flip-to-front"></span> Mirror
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#" onclick="mirrorHorizontal();">
-                                    <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
-                                </a></li>
-                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#" onclick="mirrorVertical();">
-                                    <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
-                                </a></li>
+                                <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#"
+                                        onclick="mirrorHorizontal();">
+                                        <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
+                                    </a></li>
+                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#"
+                                        onclick="mirrorVertical();">
+                                        <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
+                                    </a></li>
                             </ul>
                         </div>
                         <div class="btn-group dropdown">
-                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-rotate-orbit"></span> Flip
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" id="btnFlipHorizontal" href="#" onclick="flip('horizontal');">
-                                    <span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
-                                </a></li>
+                                <li><a class="dropdown-item" id="btnFlipHorizontal" href="#"
+                                        onclick="flip('horizontal');">
+                                        <span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
+                                    </a></li>
                                 <li><a class="dropdown-item" id="btnFlipVertical" href="#" onclick="flip('vertical');">
-                                    <span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
-                                </a></li>
+                                        <span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
+                                    </a></li>
                             </ul>
                         </div>
                     </div>
@@ -977,7 +982,8 @@
 
         function canvasToBase64() {
             var canvas = $('#matrix-canvas')[0]; // Get the DOM element
-            var base64String = canvas.toDataURL('image/png', 0.1); // Default is PNG format
+            resizeCanvas(true);
+            var base64String = canvas.toDataURL('image/jpeg', 0.5); // Default is PNG format
             return base64String;
         }
 
@@ -1049,6 +1055,8 @@
                     }
                 });
             }
+
+            resizeCanvas();
         });
 
         $('#btnShareConfirm').click(function (evt) {
@@ -1113,6 +1121,8 @@
                         });
                     }
                 });
+
+                resizeCanvas();
             }
         });
 
@@ -1192,14 +1202,17 @@
 
         $('#community-load-more-btn').click(function (evt) {
             getCommunityItems(parseInt($(this).attr('data-page')));
+            $('#community-load-more-btn').prop('disabled', true);
         });
 
         $('#search-load-more-btn').click(function (evt) {
             searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')));
+            $('#search-load-more-btn').prop('disabled', true);
         });
 
         $('#favorites-load-more-btn').click(function (evt) {
             getFavoritesCommunityItems($(this.attr('data-page')));
+            $('#favorites-load-more-btn').prop('disabled', true);
         })
 
         function addToFavorite(id) {
@@ -1284,9 +1297,13 @@
         let currentColor = parseFloat($('#input[name="draw-color"]:checked').val()) || 1;
 
         // Resize the canvas to fill the screen while maintaining aspect ratio
-        function resizeCanvas() {
-            const maxWidth = window.innerWidth * 0.95;
-            const maxHeight = window.innerHeight * 0.7;
+        function resizeCanvas(manual = false, mwidth = 250, mheight = 250) {
+            var maxWidth = window.innerWidth * 0.95;
+            var maxHeight = window.innerHeight * 0.7;
+            if (manual === true) {
+                maxWidth = mwidth;
+                maxHeight = mheight;
+            }
 
             // Calculate the cell size to fit the matrix in the available space
             const cellWidthByWidth = maxWidth / COLS;
