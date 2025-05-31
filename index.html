@@ -124,7 +124,7 @@
         <section class="py-4 text-center container">
             <div id="controls" class="row mb-3 g-3 d-flex justify-content-center">
                 <div class="col-auto">
-                    <div class="input-group">
+                    <div class="input-group input-group-sm">
                         <span class="input-group-text" id="size-label"><span
                                 class="mdi mdi-image-size-select-small"></span> Size</span>
                         <input class="form-control" id="size-cols" type="number" value="16" min="1" step="1" max="99"
@@ -134,22 +134,22 @@
                     </div>
                 </div>
                 <div class="col-auto">
-                    <button type="button" class="btn btn-primary" id="import-btn" onclick="importData();"><span
+                    <button type="button" class="btn btn-primary btn-sm" id="import-btn" onclick="importData();"><span
                             class="mdi mdi-import"></span> Import Data</button>
-                    <button type="button" class="btn btn-primary" id="export-btn" onclick="exportData();"><span
+                    <button type="button" class="btn btn-primary btn-sm" id="export-btn" onclick="exportData();"><span
                             class="mdi mdi-export"></span> Export Data</button>
                     <input type="hidden" id="clipboard" />
-                    <button type="button" class="btn btn-primary" id="load-btn" data-bs-toggle="modal"
+                    <button type="button" class="btn btn-primary btn-sm" id="load-btn" data-bs-toggle="modal"
                         data-bs-target="#modal-load" onclick="reloadSavedPixelArt();">
                         <span class="mdi mdi-cloud-outline"></span> Load
                     </button>
-                    <button type="button" class="btn btn-primary" id="save-btn" data-bs-toggle="modal"
+                    <button type="button" class="btn btn-primary btn-sm" id="save-btn" data-bs-toggle="modal"
                         data-bs-target="#modal-save">
                         <span class="mdi mdi-content-save-outline"></span> Save
                     </button>
                 </div>
                 <div class="col-auto" id="editItem" style="display: none;">
-                    <div class="btn-group">
+                    <div class="btn-group btn-group-sm">
                         <button type="button" class="btn btn-outline-success" id="btnUpdateEdit" data-bs-toggle="modal"
                             data-bs-target="#modal-update">
                             <span class="mdi mdi-content-save-outline"></span> Update
@@ -166,16 +166,16 @@
 
             <div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
                 <!-- <div class="col-auto">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary" id="btnUndo" onclick="undo();">
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-primary" id="btnUndo" onclick="canvasHistory.undo();">
                             <span class="mdi mdi-undo"></span> Undo</button>
-                        <button type="button" class="btn btn-primary" id="btnRedo" onclick="redo();">
+                        <button type="button" class="btn btn-primary" id="btnRedo" onclick="canvasHistory.redo();">
                             <span class="mdi mdi-redo"></span> Redo</button>
                     </div>
                 </div> -->
 
                 <div class="col-auto">
-                    <div class="btn-group">
+                    <div class="btn-group btn-group-sm">
                         <input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked>
                         <label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
                         <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill">
@@ -188,25 +188,46 @@
                     </div>
                 </div>
                 <div class="col-auto">
-                    <div class="btn-group">
+                    <div class="btn-group btn-group-sm">
                         <input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
                         <label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> Full</label>
-                        <input type="radio" class="btn-check" id="draw-transparent" name="draw-color" value="0.5">
-                        <label for="draw-transparent" class="btn btn-primary"><span
-                                class="mdi mdi-water-opacity"></span>
-                            Transparent</label>
-
+                        <input type="radio" class="btn-check" id="draw-forced" name="draw-color" value="0.3">
+                        <label for="draw-forced" class="btn btn-primary"><span class="mdi mdi-water"></span>
+                            Forced</label>
+                        <input type="radio" class="btn-check" id="draw-translucent" name="draw-color" value="0.5">
+                        <label for="draw-translucent" class="btn btn-primary"><span
+                                class="mdi mdi-water-opacity"></span> Translucent</label>
+                        <input type="radio" class="btn-check" id="draw-semi-translucent" name="draw-color" value="0.7">
+                        <label for="draw-semi-translucent" class="btn btn-primary"><span
+                                class="mdi mdi-water-opacity"></span> Semi Translucent</label>
                         <input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
                         <label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span>
-                            Off</label>
+                            Black</label>
                     </div>
                 </div>
                 <div class="col-auto">
-                    <div class="btn-group">
-                        <button id="btnInvert" class="btn btn-primary" onclick="invertAll();"><span
-                                class="mdi mdi-invert-colors"></span>
-                            Invert</button>
-                        <div class="btn-group dropdown">
+                    <div class="btn-group btn-group-sm">
+                        <div class="btn-group dropdown btn-group-sm">
+                            <a class="btn btn-primary dropdown-toggle" id="ddInvert" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <span class="mdi mdi-invert-colors"></span> Invert
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" id="btnInvert" href="#" onclick="invertAll();">
+                                        <span class="mdi mdi-invert-colors"></span> Invert All
+                                    </a></li>
+                                <li><a class="dropdown-item" id="btnInvertBlackWhite" href="#"
+                                        onclick="invertBlackWhite();">
+                                        <span class="mdi mdi-flip-vertical"></span> Invert Black & White
+                                    </a></li>
+                                <li><a class="dropdown-item" id="btnInvertTranslucents" href="#"
+                                        onclick="invertTranslucents();">
+                                        <span class="mdi mdi-flip-vertical"></span> Invert Translucents
+                                    </a></li>
+                            </ul>
+                        </div>
+
+                        <div class="btn-group dropdown btn-group-sm">
                             <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-flip-to-front"></span> Mirror
@@ -222,7 +243,7 @@
                                     </a></li>
                             </ul>
                         </div>
-                        <div class="btn-group dropdown">
+                        <div class="btn-group dropdown btn-group-sm">
                             <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-rotate-orbit"></span> Flip
@@ -505,7 +526,7 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?ver=01062025"></script>
 
     <!-- History Manager -->
     <script>
@@ -588,6 +609,8 @@
 
         var favorites = [];
 
+        const colorMap = { white: '#FFFFFF', lightTranslucent: '#808080', darkTranslucent: '#262626', black: '#000000', forced: '#2FACED' };
+
         $(document).ready(function () {
             let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
             if (loggedIn.userid != null && loggedIn.username != null) loginUser(loggedIn.userid, loggedIn.username);
@@ -645,7 +668,25 @@
             }
             try {
                 matrixData = JSON.parse($('#clipboard').val());
-                matrixData = matrixData.map(row => row.map(value => value === 0 ? "#000000" : (value === 1 ? "#ffffff" : "#808080")));
+                matrixData = matrixData.map(row => row.map(function (value) {
+                    switch (value) {
+                        case 0:
+                            return colorMap.black;
+                            break;
+                        case 0.3:
+                            return colorMap.forced;
+                            break;
+                        case 0.5:
+                            return colorMap.lightTranslucent;
+                            break;
+                        case 0.7:
+                            return colorMap.darkTranslucent;
+                            break;
+                        case 1:
+                            return colorMap.white;
+                            break;
+                    }
+                }));
                 canvasHistory.saveState(matrixData);
                 drawMatrix();
             } catch (e) {
@@ -687,7 +728,25 @@
                     resizeCanvas();
 
                     matrixData = JSON.parse($select.val());
-                    matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
+                    matrixData = matrixData.map(row => row.map(function (value) {
+                        switch (value) {
+                            case 0:
+                                return colorMap.black;
+                                break;
+                            case 0.3:
+                                return colorMap.forced;
+                                break;
+                            case 0.5:
+                                return colorMap.lightTranslucent;
+                                break;
+                            case 0.7:
+                                return colorMap.darkTranslucent;
+                                break;
+                            case 1:
+                                return colorMap.white;
+                                break;
+                        }
+                    }));
                     canvasHistory.saveState(matrixData);
                     drawMatrix();
 
@@ -723,7 +782,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
                 const name = $('#txt-save').val();
                 const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
                 localStorage.setItem(`item-${name}`, JSON.stringify(obj));
@@ -1019,7 +1078,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtUpdateName').val(),
@@ -1091,7 +1150,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtShareName').val(),
@@ -1161,7 +1220,25 @@
                         resizeCanvas();
 
                         matrixData = JSON.parse($item.data);
-                        matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
+                        matrixData = matrixData.map(row => row.map(function (value) {
+                            switch (value) {
+                                case 0:
+                                    return colorMap.black;
+                                    break;
+                                case 0.3:
+                                    return colorMap.forced;
+                                    break;
+                                case 0.5:
+                                    return colorMap.lightTranslucent;
+                                    break;
+                                case 0.7:
+                                    return colorMap.darkTranslucent;
+                                    break;
+                                case 1:
+                                    return colorMap.white;
+                                    break;
+                            }
+                        }));
                         canvasHistory.saveState(matrixData);
                         drawMatrix();
 
@@ -1202,21 +1279,21 @@
                 $('#community-search').click();
                 e.preventDefault()
             }
+        });
 
+        $(document).keydown(function (e) {
             // Undo
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                e.preventDefault();
                 canvasHistory.undo();
-                return;
+                e.preventDefault();
             }
 
             // Redo
             if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-                e.preventDefault();
                 canvasHistory.redo();
-                return;
+                e.preventDefault();
             }
-        });
+        })
 
         $('#community-load-more-btn').click(function (evt) {
             getCommunityItems(parseInt($(this).attr('data-page')));
@@ -1246,7 +1323,7 @@
         }
 
         //Remove Item and remove div from container
-        $(document).on('click', '.remove-item', function(evt) {
+        $(document).on('click', '.remove-item', function (evt) {
             var item = $(this).closest('div.generated-item');
             var id = parseInt($(this).attr('data-id'));
             var json = {
@@ -1437,25 +1514,57 @@
             }
         }
 
-        function undo() {
-            canvasHistory.undo();
-        }
-
-        function redo() {
-            canvasHistory.redo();
-        }
-
         //Invert all cells
         function invertAll() {
             canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
-                        case '#ffffff':
-                            matrixData[row][col] = '#000000';
+                        case colorMap.white:
+                            matrixData[row][col] = colorMap.black;
                             break;
-                        case '#000000':
-                            matrixData[row][col] = '#ffffff';
+                        case colorMap.black:
+                            matrixData[row][col] = colorMap.white;
+                            break;
+                        case colorMap.lightTranslucent:
+                            matrixData[row][col] = colorMap.darkTranslucent;
+                            break;
+                        case colorMap.darkTranslucent:
+                            matrixData[row][col] = colorMap.lightTranslucent;
+                            break;
+                    }
+                }
+            }
+            drawMatrix();
+        }
+
+        function invertBlackWhite() {
+            canvasHistory.saveState(matrixData);
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    switch (matrixData[row][col]) {
+                        case colorMap.white:
+                            matrixData[row][col] = colorMap.black;
+                            break;
+                        case colorMap.black:
+                            matrixData[row][col] = colorMap.white;
+                            break;
+                    }
+                }
+            }
+            drawMatrix();
+        }
+
+        function invertTranslucents() {
+            canvasHistory.saveState(matrixData)
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    switch (matrixData[row][col]) {
+                        case colorMap.lightTranslucent:
+                            matrixData[row][col] = colorMap.darkTranslucent;
+                            break;
+                        case colorMap.darkTranslucent:
+                            matrixData[row][col] = colorMap.lightTranslucent;
                             break;
                     }
                 }
@@ -1599,7 +1708,7 @@
 
         // Export matrix data as JSON
         function exportData() {
-            const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+            const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
 
             swalBS.fire({
                 title: getCorrectTranslation('copycode'),
@@ -1626,26 +1735,38 @@
                     case 'draw':
                         switch (currentColor) {
                             case 1:
-                                updateCell(coords.row, coords.col, '#ffffff');
+                                updateCell(coords.row, coords.col, colorMap.white);
+                                break;
+                            case 0.7:
+                                updateCell(coords.row, coords.col, colorMap.darkTranslucent);
                                 break;
                             case 0.5:
-                                updateCell(coords.row, coords.col, '#808080');
+                                updateCell(coords.row, coords.col, colorMap.lightTranslucent);
+                                break;
+                            case 0.3:
+                                updateCell(coords.row, coords.col, colorMap.forced);
                                 break;
                             case 0:
-                                updateCell(coords.row, coords.col, '#000000');
+                                updateCell(coords.row, coords.col, colorMap.black);
                                 break;
                         }
                         break;
                     case 'fill':
                         switch (currentColor) {
                             case 1:
-                                fillAll(coords.row, coords.col, '#ffffff');
+                                fillAll(coords.row, coords.col, colorMap.white);
+                                break;
+                            case 0.7:
+                                fillAll(coords.row, coords.col, colorMap.darkTranslucent);
                                 break;
                             case 0.5:
-                                fillAll(coords.row, coords.col, '#808080');
+                                fillAll(coords.row, coords.col, colorMap.lightTranslucent);
+                                break;
+                            case 0.3:
+                                fillAll(coords.row, coords.col, colorMap.forced);
                                 break;
                             case 0:
-                                fillAll(coords.row, coords.col, '#000000');
+                                fillAll(coords.row, coords.col, colorMap.black);
                                 break;
                         }
                         break;
@@ -1664,13 +1785,19 @@
                         case 'draw':
                             switch (currentColor) {
                                 case 1:
-                                    updateCell(coords.row, coords.col, '#ffffff');
+                                    updateCell(coords.row, coords.col, colorMap.white);
+                                    break;
+                                case 0.7:
+                                    updateCell(coords.row, coords.col, colorMap.darkTranslucent);
                                     break;
                                 case 0.5:
-                                    updateCell(coords.row, coords.col, '#808080');
+                                    updateCell(coords.row, coords.col, colorMap.lightTranslucent);
+                                    break;
+                                case 0.3:
+                                    updateCell(coords.row, coords.col, colorMap.forced);
                                     break;
                                 case 0:
-                                    updateCell(coords.row, coords.col, '#000000');
+                                    updateCell(coords.row, coords.col, colorMap.black);
                                     break;
                             }
                             break;

@@ -11,6 +11,9 @@ const langDB = {
     erase: { en: '<span class="mdi mdi-eraser"></span> Erase', zh: '<span class="mdi mdi-eraser"></span> 擦除模式' },
     clear: { en: '<span class="mdi mdi-trash-can-outline"></span> Clear All', zh: '<span class="mdi mdi-trash-can-outline"></span> 清除全部' },
     invert: { en: '<span class="mdi mdi-invert-colors"></span> Invert', zh: '<span class="mdi mdi-invert-colors"></span> 反转' },
+    invertA: { en: '<span class="mdi mdi-invert-colors"></span> Invert All', zh: '<span class="mdi mdi-invert-colors"></span> 反转全部' },
+    invertBW: { en: '<span class="mdi mdi-invert-colors"></span> Invert Black & White', zh: '<span class="mdi mdi-invert-colors"></span> 反转黑白' },
+    invertT: { en: '<span class="mdi mdi-invert-colors"></span> Invert Translucent', zh: '<span class="mdi mdi-invert-colors"></span> 反转半透明' },
     mirrorHorizontal: { en: '<span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal', zh: '<span class="mdi mdi-flip-horizontal"></span> 水平镜像' },
     mirrorVertical: { en: '<span class="mdi mdi-flip-vertical"></span> Mirror Vertical', zh: '<span class="mdi mdi-flip-vertical"></span> 垂直镜像' },
     flipHorizontal: { en: '<span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal', zh: '<span class="mdi mdi-horizontal-rotate-clockwise"></span> 水平翻转' },
@@ -54,9 +57,11 @@ const langDB = {
     infoCreated: { en: 'Created', zh: '提交时间' },
     infoSize: { en: 'Size', zh: '大小' },
     infoCode: { en: 'Code', zh: '代码' },
-    colorFull: { en: '<span class="mdi mdi-water"></span> Full Color', zh: '<span class="mdi mdi-water"></span> 全色' },
+    colorForced: { en: '<span class="mdi mdi-water"></span> Forced', zh: '<span class="mdi mdi-water"></span> 强制' },
+    colorFull: { en: '<span class="mdi mdi-water"></span> Opaque', zh: '<span class="mdi mdi-water"></span> 全色' },
     colorTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明' },
-    colorOff: {en: '<span class="mdi mdi-water-outline"></span> Off', zh: '<span class="mdi mdi-water-outline"></span> 关灯' },
+    colorSemiTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Semi Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明+' },
+    colorOff: {en: '<span class="mdi mdi-water-outline"></span> Black', zh: '<span class="mdi mdi-water-outline"></span> 黑色' },
     inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' },
     navLogin: { en: '<span class="mdi mdi-login"></span> Login', zh: '<span class="mdi mdi-login"></span> 登入' },
     navSignUp: { en: '<span class="mdi mdi-account-plus-outline"></span> Sign Up', zh: '<span class="mdi mdi-account-plus-outline"></span> 注册' },
@@ -113,7 +118,10 @@ function changeLanguage(lang) {
             $('label[for="fill"]').html(langDB.fill.zh);
             $('label[for="clear"]').html(langDB.erase.zh);
             $('#clear-btn').html(langDB.clear.zh);
-            $('#btnInvert').html(langDB.invert.zh);
+            $('#ddInvert').html(langDB.invert.zh);
+            $('#btnInvert').html(langDB.invertA.zh);
+            $('#btnInvertBlackWhite').html(langDB.invertBW.zh);
+            $('#btnInvertTranslucents').html(langDB.invertT.zh);
             $('#btnMirrorHorizontal').html(langDB.mirrorHorizontal.zh);
             $('#btnMirrorVertical').html(langDB.mirrorVertical.zh);
             $('#btnFlipHorizontal').html(langDB.flipHorizontal.zh);
@@ -141,8 +149,10 @@ function changeLanguage(lang) {
             $('label[for="txtInfoSize"]').text(langDB.infoSize.zh);
             $('label[for="txtInfoData"]').text(langDB.infoCode.zh);
             $('#btnInfoDataCopy').text(langDB.copy.zh);
+            $('label[for="draw-forced"]').html(langDB.colorForced.zh);
             $('label[for="draw-full"]').html(langDB.colorFull.zh);
-            $('label[for="draw-transparent"]').html(langDB.colorTranslucent.zh);
+            $('label[for="draw-translucent"]').html(langDB.colorTranslucent.zh);
+            $('label[for="draw-semi-translucent"]').html(langDB.colorSemiTranslucent.zh);
             $('label[for="draw-clear"]').html(langDB.colorOff.zh);
             $('#btnLogin').html(langDB.navLogin.zh);
             $('#btnSignup').html(langDB.navSignUp.zh);
@@ -183,7 +193,10 @@ function changeLanguage(lang) {
             $('label[for="fill"]').html(langDB.fill.en);
             $('label[for="clear"]').html(langDB.erase.en);
             $('#clear-btn').html(langDB.clear.en);
-            $('#btnInvert').html(langDB.invert.en);
+            $('#ddInvert').html(langDB.invert.en);
+            $('#btnInvert').html(langDB.invertA.en);
+            $('#btnInvertBlackWhite').html(langDB.invertBW.en);
+            $('#btnInvertTranslucents').html(langDB.invertT.en);
             $('#btnMirrorHorizontal').html(langDB.mirrorHorizontal.en);
             $('#btnMirrorVertical').html(langDB.mirrorVertical.en);
             $('#btnFlipHorizontal').html(langDB.flipHorizontal.en);
@@ -211,8 +224,10 @@ function changeLanguage(lang) {
             $('label[for="txtInfoSize"]').text(langDB.infoSize.en);
             $('label[for="txtInfoData"]').text(langDB.infoCode.en);
             $('#btnInfoDataCopy').text(langDB.copy.en);
+            $('label[for="draw-forced"]').html(langDB.colorForced.en);
             $('label[for="draw-full"]').html(langDB.colorFull.en);
-            $('label[for="draw-transparent"]').html(langDB.colorTranslucent.en);
+            $('label[for="draw-translucent"]').html(langDB.colorTranslucent.en);
+            $('label[for="draw-semi-translucent"]').html(langDB.colorSemiTranslucent.en);
             $('label[for="draw-clear"]').html(langDB.colorOff.en);
             $('#btnLogin').html(langDB.navLogin.en);
             $('#btnSignup').html(langDB.navSignUp.en);
