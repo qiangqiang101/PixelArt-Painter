@@ -1,1938 +1,1943 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
-    <title>SignalRGB WLED Matrix Pixel Art Painter</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
-        crossorigin="anonymous"></script>
-    <script>
-        // Colors
-        let lightGrey="#A9A9A9"
-        let darkGrey="#505050"
-        let white="#FFFFFF"
-        let black="#000000"
-        
-        let lightGreyValue = 0.7
-        let darkGreyValue = 0.5
-        let whiteValue = 1
-        let blackValue = 0
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+	<title>SignalRGB WLED Matrix Pixel Art Painter</title>
+	<link rel="stylesheet" href="style.css" />
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
+	<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+		integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+		integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+		crossorigin="anonymous"></script>
+	<script>
+		// Colors
+		let lightGrey="#A9A9A9";
+		let darkGrey="#505050";
+		let oldDarkGrey="#808080";
+		let white="#FFFFFF";
+		let black="#000000";
+		
+		let lightGreyValue = 0.7
+		let darkGreyValue = 0.5
+		let oldDarkGreyValue = 0.5
+		let whiteValue = 1
+		let blackValue = 0
 
-        const colorMap = {
-            [white]: white,
-            [black]: black,
-            [darkGrey]: darkGreyValue,
-            [lightGrey]: lightGreyValue
-        };
+		const colorMap = {
+			[white]: whiteValue,
+			[black]: blackValue,
+			[darkGrey]: darkGreyValue,
+			[oldDarkGrey]: darkGreyValue,
+			[lightGrey]: lightGreyValue
+		};
 
-        const colorMapReverse = {
-            [white]: white,
-            [black]: black,
-            [darkGreyValue]: darkGrey,
-            [lightGreyValue]: lightGrey
-        };
-    </script>
+		const colorMapReverse = {
+			[whiteValue]: white,
+			[blackValue]: black,
+			[darkGreyValue]: darkGrey,
+			[oldDarkGreyValue]: oldDarkGrey,
+			[lightGreyValue]: lightGrey
+		};
+	</script>
 </head>
 
 <body>
-    <header>
-        <nav class="navbar navbar-expand-lg bg-body-tertiary bg-dark border-bottom border-body">
-            <div class="container">
-                <a class="navbar-brand" href="index.html">
-                    <img src="https://nolliergb.com/wp-content/uploads/2024/08/NOLLIE-RGB-1.png" alt="nollie" width="80"
-                        height="auto" />
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="index.html"><span
-                                    class="mdi mdi-home-circle-outline"></span> Home</a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" id="ddInstall" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-tools"></span> Install Pixel Art Addon
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item"
-                                        href="https://srgbmods.net/s?p=addon/install?url=https://gitlab.com/nollie/nolliecontroller"
-                                        target="_blank">Nollie</a></li>
-                                <li><a class="dropdown-item"
-                                        href="https://srgbmods.net/s?p=addon/install?url=https://github.com/qiangqiang101/SRGB-Plugins"
-                                        target="_blank">WLED</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="community-btn" href="#" data-bs-toggle="offcanvas"
-                                data-bs-target="#community" aria-controls="community"
-                                onclick="getCommunityItems();"><span class="mdi mdi-account-group-outline"></span>
-                                Community Pixel Art</a>
-                        </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" id="ddLanguage" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-translate"></span> Language
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><button class="dropdown-item" onclick="changeLanguage('english');">English</button>
-                                </li>
-                                <li><button class="dropdown-item" onclick="changeLanguage('chinese');">中文</button></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-success" id="btnShare" type="button" style="display: none;"><span
-                                class="mdi mdi-share-variant-outline"></span> Share</button>
-                        <div class="dropdown" id="ddLogin">
-                            <button type="button" class="btn btn-outline-primary dropdown-toggle" id="btnLogin"
-                                data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"><span
-                                    class="mdi mdi-login"></span> Login</button>
-                            <form id="frmLogin" class="dropdown-menu p-4">
-                                <div class="mb-3">
-                                    <label for="txtLoginUsername" class="form-label">Username</label>
-                                    <input type="text" class="form-control" id="txtLoginUsername" maxlength="30"
-                                        placeholder="Username">
-                                </div>
-                                <div class="mb-3">
-                                    <label for="txtLoginPassword" class="form-label">Password</label>
-                                    <input type="password" class="form-control" id="txtLoginPassword" maxlength="30"
-                                        placeholder="Password">
-                                </div>
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="chkLoginRemember">
-                                        <label class="form-check-label" for="chkLoginRemember">
-                                            Remember me
-                                        </label>
-                                    </div>
-                                </div>
-                                <button id="btnLoginConfirm" type="button" class="btn btn-primary">Sign in</button>
-                            </form>
-                        </div>
-                        <button class="btn btn-primary" type="button" data-bs-toggle="modal" id="btnSignup"
-                            data-bs-target="#modal-signup"><span class="mdi mdi-account-plus-outline"></span> Sign
-                            Up</button>
-                        <div class="btn-group" id="member" style="display: none;">
-                            <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                                Guest
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal"
-                                        data-bs-target="#modal-change-password" id="aPassword">Password</a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item" href="#" id="aLogout">Logout</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-    </header>
-
-    <main>
-        <section class="py-4 text-center container">
-            <div id="controls" class="row mb-3 g-3 d-flex justify-content-center">
-                <div class="col-auto">
-                    <div class="input-group">
-                        <span class="input-group-text" id="size-label"><span
-                                class="mdi mdi-image-size-select-small"></span> Size</span>
-                        <input class="form-control" id="size-cols" type="number" value="16" min="1" step="1" max="99"
-                            style="width: 6rem;" />
-                        <input class="form-control" id="size-rows" type="number" value="16" min="1" step="1" max="99"
-                            style="width: 6rem;" />
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-primary" id="import-btn" onclick="importData();"><span
-                            class="mdi mdi-import"></span> Import Data</button>
-                    <button type="button" class="btn btn-primary" id="export-btn" onclick="exportData();"><span
-                            class="mdi mdi-export"></span> Export Data</button>
-                    <input type="hidden" id="clipboard" />
-                    <button type="button" class="btn btn-primary" id="load-btn" data-bs-toggle="modal"
-                        data-bs-target="#modal-load" onclick="reloadSavedPixelArt();">
-                        <span class="mdi mdi-cloud-outline"></span> Load
-                    </button>
-                    <button type="button" class="btn btn-primary" id="save-btn" data-bs-toggle="modal"
-                        data-bs-target="#modal-save">
-                        <span class="mdi mdi-content-save-outline"></span> Save
-                    </button>
-                </div>
-                <div class="col-auto" id="editItem" style="display: none;">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-outline-success" id="btnUpdateEdit" data-bs-toggle="modal"
-                            data-bs-target="#modal-update">
-                            <span class="mdi mdi-content-save-outline"></span> Update
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
-                            onclick="cancelEdit();">
-                            <span class="mdi mdi-cancel"></span> Cancel
-                        </button>
-                    </div>
-
-                    <input id="txtUpdateId" value="-1" type="hidden" />
-                </div>
-            </div>
-
-            <div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
-                <div class="col-auto">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary" id="btnUndo" onclick="undo();">
-                            <span class="mdi mdi-undo"></span> Undo</button>
-                        <button type="button" class="btn btn-primary" id="btnRedo" onclick="redo();">
-                            <span class="mdi mdi-redo"></span> Redo</button>
-                    </div>
-                </div>
-
-                <div class="col-auto">
-                    <div class="btn-group">
-                        <input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked><label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
-                        <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill"><label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span> Fill</label>
-                    </div>
-                    <button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span class="mdi mdi-trash-can-outline"></span> Clear All</button>
-                </div>
-                <div class="col-auto">
-                    <div class="btn-group">
-                        <!--<input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked><label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> White</label>-->
-                        <input type="radio" class="btn-check" id="draw-white" name="draw-color" value="1" checked><label for="draw-white" class="btn btn-white"><span class="mdi mdi-water"></span> White</label>
-                        <input type="radio" class="btn-check" id="draw-lightGrey" name="draw-color" value="0.7"><label for="draw-lightGrey" class="btn btn-light-grey"><span class="mdi mdi-water-opacity"></span> Light Grey</label>
-                        <input type="radio" class="btn-check" id="draw-darkGrey" name="draw-color" value="0.5"><label for="draw-darkGrey" class="btn btn-dark-grey"><span class="mdi mdi-water-opacity"></span> Dark Grey</label>
-                        <input type="radio" class="btn-check" id="draw-black" name="draw-color" value="0"><label for="draw-black" class="btn btn-black"><span class="mdi mdi-water-outline"></span> Black</label>
-                        <!--<input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0"><label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span> Off</label>-->
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <div class="btn-group">
-                        <button id="btnInvertBW" class="btn btn-primary text-dark" onclick="invertAll();"><span class="mdi mdi-invert-colors"></span> Invert White/Black</button>
-                        <button id="btnInvertGreys" class="btn btn-primary" onclick="invertGreys();"><span class="mdi mdi-invert-colors"></span> Invert Greys</button>
-                        <div class="btn-group dropdown">
-                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-flip-to-front"></span> Mirror
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#" onclick="mirrorHorizontal();">
-                                    <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
-                                </a></li>
-                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#" onclick="mirrorVertical();">
-                                    <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
-                                </a></li>
-                            </ul>
-                        </div>
-                        <div class="btn-group dropdown">
-                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-rotate-orbit"></span> Flip
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" id="btnFlipHorizontal" href="#" onclick="flip('horizontal');">
-                                    <span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
-                                </a></li>
-                                <li><a class="dropdown-item" id="btnFlipVertical" href="#" onclick="flip('vertical');">
-                                    <span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
-                                </a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <div class="container">
-            <div id="canvas-container" class="d-flex justify-content-center">
-                <canvas id="matrix-canvas"></canvas>
-            </div>
-
-            <div id="matrix-info" class="d-flex justify-content-center">
-                <span id="mouse-pos">Position: (-1, -1)</span> |
-                <span id="cell-size">Cell Size: 0x0</span>
-            </div>
-        </div>
-    </main>
-
-    <div class="modal fade" id="modal-save" tabindex="-1" aria-labelledby="modal-save-label" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal-save-label">Save pixel art</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-12">
-                            <label for="txt-save" class="form-label">What would you like to call this pixel art?</label>
-                            <input id="txt-save" type="text" class="form-control" placeholder="my cool pixel art"
-                                maxlength="50" />
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="save-confirm-btn">Submit</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modal-load" tabindex="-1" aria-labelledby="modal-load-label" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal-load-label">Load pixel art</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-12">
-                            <label for="select-load" class="form-label">Which pixel art would you like load?</label>
-                            <select class="form-select" id="select-load">
-                                <option value="null" disabled selected>Please select...</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" id="remove-confirm-btn">Remove</button>
-                    <button type="button" class="btn btn-primary" id="load-confirm-btn">Submit</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modal-share" tabindex="-1" aria-labelledby="modal-share-label" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal-share-label">Share pixel art</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-12">
-                            <label for="txtShareName" class="form-label">What would you like to call this pixel
-                                art?</label>
-                            <input id="txtShareName" type="text" class="form-control" placeholder="my cool pixel art"
-                                maxlength="50" />
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="btnShareConfirm">Submit</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modal-update" tabindex="-1" aria-labelledby="modal-update-label" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal-update-label">Update pixel art</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-12">
-                            <label for="txtUpdateName" class="form-label">What would you like to call this pixel
-                                art?</label>
-                            <input id="txtUpdateName" type="text" class="form-control" placeholder="my cool pixel art"
-                                maxlength="50" />
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="btnUpdateConfirm">Submit</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modal-signup" tabindex="-1" aria-labelledby="modal-signup-label" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal-signup-label">Sign Up</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label for="txtSignupEmail" class="form-label">Email</label>
-                            <input id="txtSignupEmail" type="text" class="form-control" placeholder="email@example.com"
-                                maxlength="100" />
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label for="txtSignupUsername" class="form-label">Username</label>
-                            <input id="txtSignupUsername" type="text" class="form-control" placeholder="Username"
-                                maxlength="30" />
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label for="txtSignupPassword" class="form-label">Password</label>
-                            <input id="txtSignupPassword" type="password" class="form-control" placeholder="Password"
-                                maxlength="30" />
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12">
-                            <label for="txtSignupConfirmPassword" class="form-label">Confirm Password</label>
-                            <input id="txtSignupConfirmPassword" type="password" class="form-control"
-                                placeholder="Password" maxlength="30" />
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="btnSignupConfirm">Submit</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modal-change-password" tabindex="-1" aria-labelledby="modal-change-password-label"
-        aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal-change-password-label">Change Password</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label for="txtCurrentPassword" class="form-label">Current Password</label>
-                            <input id="txtCurrentPassword" type="password" class="form-control" placeholder="Password"
-                                maxlength="30" />
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label for="txtNewPassword" class="form-label">New Password</label>
-                            <input id="txtNewPassword" type="password" class="form-control" placeholder="Password"
-                                maxlength="30" />
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12">
-                            <label for="txtConfirmNewPassword" class="form-label">Confirm Password</label>
-                            <input id="txtConfirmNewPassword" type="password" class="form-control"
-                                placeholder="Password" maxlength="30" />
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="btnChangePasswordConfirm">Submit</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="offcanvas offcanvas-end w-75" tabindex="-1" id="community" aria-labelledby="community-Label">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="community-Label">Browse Community Pixel Art</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <ul class="nav nav-underline" id="stepTab" role="tablist">
-                <li class="nav-item">
-                    <button class="nav-link active" id="new-items-tab" data-bs-toggle="tab"
-                        data-bs-target="#new-items">Latest</button>
-                </li>
-
-                <li class="nav-item">
-                    <button class="nav-link" id="search-items-tab" data-bs-toggle="tab"
-                        data-bs-target="#search-items">Search</button>
-                </li>
-
-                <li class="nav-item">
-                    <button class="nav-link" id="favorites-items-tab" data-bs-toggle="tab"
-                        data-bs-target="#favorite-items" onclick="getFavoritesCommunityItems();">Favorites</button>
-                </li>
-            </ul>
-
-            <div class="tab-content mt-3" id="stepTabContent">
-                <div class="tab-pane fade show active" id="new-items">
-                    <div class="row mb-3" id="community-container">
-                    </div>
-                    <div class="row">
-                        <div class="d-grid gap-2 col-auto mx-auto">
-                            <button class="btn btn-outline-primary" type="button" data-page="0"
-                                id="community-load-more-btn" disabled>Load More</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tab-pane fade" id="search-items">
-                    <div class="row mb-3">
-                        <div class="col">
-                        </div>
-                        <div class="col-auto float-end">
-                            <div class="input-group">
-                                <input class="form-control form-control-sm" type="search" id="txt-search"
-                                    placeholder="Search" aria-label="Search" autocomplete="off" autocapitalize="none" />
-                                <button class="btn btn-outline-secondary btn-sm" type="button"
-                                    id="community-search"><span class="mdi mdi-magnify"></span></button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row" id="community-search-container">
-                    </div>
-                    <div class="row">
-                        <div class="d-grid gap-2 col-auto mx-auto">
-                            <button class="btn btn-outline-primary" type="button" data-page="0"
-                                id="search-load-more-btn" disabled>Load More</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tab-pane fade" id="favorite-items">
-                    <div class="row" id="community-favorites-container">
-                    </div>
-                    <div class="row">
-                        <div class="d-grid gap-2 col-auto mx-auto">
-                            <button class="btn btn-outline-primary" type="button" data-page="0"
-                                id="favorites-load-more-btn" disabled>Load More</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-    
-    <script src="script.js"></script>
-
-    <!-- History Manager -->
-    <script src="history_manager.js"></script>
-
-    <script>
-        //const api = 'http://localhost:3001/api/';
-        const api = 'https://pixelart.nolliergb.com/api/';
-
-        const swalBS = Swal.mixin({
-            customClass: {
-                confirmButton: 'btn btn-primary',
-                cancelButton: 'btn btn-secondary'
-            }
-        });
-
-        var favorites = [];
-
-        $(document).ready(function () {
-            let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
-            if (loggedIn.userid != null && loggedIn.username != null) loginUser(loggedIn.userid, loggedIn.username);
-
-            let remember = localStorage.getItem('remember') || false;
-            let language = localStorage.getItem('language') || 'english';
-            favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-
-            $('body').attr('data-language', language);
-            if (remember) {
-                $('#txtLoginUsername').val(localStorage.getItem('username'));
-                $('#txtLoginPassword').val(localStorage.getItem('password'));
-                $('#chkLoginRemember').prop('checked', true);
-            }
-            changeLanguage(language);
-        });
-
-        const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
-            'dick', 'dumb', 'fag', 'nigga', 'piss', 'slut', 'wanker', 'ccp', '共产党', '傻逼', '维尼', 'pooh', '西藏', '防火墙', '天安门'];
-
-        $('#size-cols, #size-rows').on('input', function (e) {
-            COLS = parseInt($('#size-cols').val());
-            ROWS = parseInt($('#size-rows').val());
-
-            matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-            canvasHistory.clear(matrixData);
-            resizeCanvas();
-        });
-
-        $('input[name="draw-mode"]').change(function () {
-            currentMode = this.value;
-        });
-
-        $('input[name="draw-color"]').change(function () {
-            currentColor = parseFloat(this.value);
-        })
-
-        async function importData() {
-            var text = null;
-            try {
-                text = await navigator.clipboard.readText()
-                $('#clipboard').val(text);
-            } catch (error) {
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: "Failed to read clipboard. Using execCommand instead.",
-                });
-
-                $('#clipboard').focus();
-                $('#clipboard').val('');
-                text = document.execCommand('paste')
-                $('#clipboard').val(text);
-            }
-            try {
-                matrixData = JSON.parse($('#clipboard').val());
-                matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color));
-                canvasHistory.saveState(matrixData);
-                drawMatrix();
-            } catch (e) {
-                console.log(e);
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: getCorrectTranslation('errorParsingJson'),
-                });
-            }
-        }
-
-        $('#remove-confirm-btn').click(function (evt) {
-            if ($('#select-load').val() === 'null') {
-                $('#select-load').addClass('is-invalid');
-            } else {
-                let name = $('#select-load option:selected').text();
-                console.log(name);
-                localStorage.removeItem(`item-${name}`);
-
-                if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
-                $('#modal-load').modal('hide');
-            }
-        });
-
-        $('#load-confirm-btn').click(function (evt) {
-            if ($('#select-load').val() === 'null') {
-                $('#select-load').addClass('is-invalid');
-            } else {
-                try {
-                    canvasHistory.saveState(matrixData);
-                    var $select = $('#select-load option:selected');
-
-                    COLS = parseInt($select.data('size')[0]);
-                    ROWS = parseInt($select.data('size')[1]);
-
-                    matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-                    resizeCanvas();
-
-                    matrixData = JSON.parse($select.val());
-                    matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color));
-                    canvasHistory.saveState(matrixData);
-                    drawMatrix();
-
-                    $('#size-cols').val(COLS);
-                    $('#size-rows').val(ROWS);
-
-                    if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
-                    $('#modal-load').modal('hide');
-                } catch (e) {
-                    console.log(e);
-                    swalBS.fire({
-                        icon: "error",
-                        title: getCorrectTranslation('oops'),
-                        theme: "dark",
-                        text: getCorrectTranslation('errorParsingJson'),
-                    });
-                }
-            }
-
-        });
-
-        $('#save-confirm-btn').click(function (evt) {
-            if (!$('#txt-save').val()) {
-                $('#txt-save').addClass('is-invalid');
-                $('#txt-save').focus();
-            } else if (naughtyWords.includes($('#txt-save').val())) {
-                $('#txt-save').addClass('is-invalid');
-                $('#txt-save').focus();
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: getCorrectTranslation('inappropriateTextWarning'),
-                });
-            } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue);
-                const name = $('#txt-save').val();
-                const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
-                localStorage.setItem(`item-${name}`, JSON.stringify(obj));
-
-                swalBS.fire({
-                    position: "top-end",
-                    icon: "success",
-                    theme: "dark",
-                    title: getCorrectTranslation('saved'),
-                    showConfirmButton: false,
-                    timer: 1500
-                });
-
-                $('#txt-save').val('');
-                if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
-                $('#modal-save').modal('hide');
-            }
-        });
-
-        function reloadSavedPixelArt() {
-            $('#select-load').find('optgroup').remove();
-            $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')));
-            var values = stringifyLocalStorageExcept(['language', 'username', 'password', 'remember', 'favorites']);
-            $.each(values, function (key, item) {
-                $('#select-load').append($(`<option data-size="[${item.size}]" data-group="${item.size[0]}x${item.size[1]}" value="${item.data}">${item.name}</option>`).val(item.data).html(item.name));
-            });
-
-            var optiongroups = {};
-            $("#select-load option[data-group]").each(function () {
-                optiongroups[$.trim($(this).attr("data-group"))] = true;
-            });
-            $.each(optiongroups, function (c) {
-                $("select option[data-group='" + c + "']").wrapAll('<optgroup label="' + c + '">');
-            });
-        };
-
-        function stringifyLocalStorageExcept(keysToSkip) {
-            if (!Array.isArray(keysToSkip)) keysToSkip = [keysToSkip];
-
-            const filtered = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (!keysToSkip.includes(key)) {
-                    try {
-                        filtered[key] = JSON.parse(localStorage.getItem(key));
-                    } catch (e) {
-                        filtered[key] = localStorage.getItem(key);
-                    }
-                }
-            }
-            return filtered;
-        };
-
-        function appendPlaceholders(count) {
-            var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex placeholder-item">
-                                    <div class="card" aria-hidden="true">
-                                        <svg class="bd-placeholder-img card-img-top" width="100%" height="180"
-                                            xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder"
-                                            preserveAspectRatio="xMidYMid slice" focusable="false">
-                                            <title>Placeholder</title>
-                                            <rect width="100%" height="100%" fill="#868e96"></rect>
-                                        </svg>
-                                        <div class="card-body">
-                                            <p class="card-text placeholder-glow">
-                                                <span class="placeholder col-7"></span>
-                                                <span class="placeholder col-4"></span>
-                                            </p>
-                                            <div class="btn-group col-6" role="group">
-                                                <button type="button"
-                                                    class="btn btn-sm btn-primary disabled placeholder col-3"></button>
-                                                <button type="button"
-                                                    class="btn btn-sm btn-danger disabled placeholder col-3"></button>
-                                                <button type="button"
-                                                    class="btn btn-sm btn-secondary disabled placeholder col-3"></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>`;
-            var duplicate = placeholder.repeat(count);
-            return duplicate;
-        }
-
-        function generateItem(id, preview, name, author) {
-            let isFavorite = favorites.includes(id);
-            var dropdown = '';
-            if (author === sessionStorage.getItem('username')) {
-                dropdown = `<div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="downloadItem(${id}, true);">${getCorrectTranslation('edit')}</a></li>
-                                    <li><a class="dropdown-item remove-item" href="#" data-id="${id}"">${getCorrectTranslation('remove')}</a></li>
-                                </ul>
-                            </div>`;
-            }
-
-            var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch generated-item">
-                            <div class="card shadow-sm">
-                                <img src="${preview}" class="image-fluid card-img-top" />
-                                <div class="card-body">
-                                    <p class="card-text">${name}</p>
-                                    <div class="d-flex justify-content-between align-items-center mt-auto">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${id});">
-                                                <span class="mdi mdi-download"></span>
-                                            </button>
-                                            <button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${id});">
-                                                <span class="mdi mdi-heart"></span>
-                                            </button>
-                                            ${dropdown}
-                                        </div>
-                                        <small class="text-muted">${author}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-            return item;
-        }
-
-        function searchCommunityItems(search_string, page = 0) {
-            if (page === 0) {
-                $('#community-search-container').empty().append(appendPlaceholders(Math.random() * 20));
-            } else {
-                $('#community-search-container').append(appendPlaceholders(Math.random() * 20));
-            }
-
-            $.ajax({
-                url: `${api}searchitem/${search_string}/${page}`,
-                type: 'GET',
-                contentType: 'application/json; charset=utf-8',
-                dataType: 'json',
-                success: function (response) {
-                    console.log(response);
-
-                    if (response.success === true && response.pagination.total >= 1) {
-                        if (page === 0) $('#community-search-container').empty();
-                        var children = [];
-
-                        $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
-                            children.push(child);
-                        });
-
-                        $('#community-search-container').find('.placeholder-item').remove();
-                        $('#community-search-container').append(children);
-                        if (response.pagination.hasMore) {
-                            $('#search-load-more-btn').attr('data-page', response.pagination.nextPage);
-                            $('#search-load-more-btn').prop('disabled', false);
-                        } else {
-                            $('#search-load-more-btn').prop('disabled', true);
-                        }
-                    }
-                },
-                error: function (err) {
-                    $('#community-search-container').find('.placeholder-item').remove();
-                    console.log(err);
-                    swalBS.fire({
-                        icon: "error",
-                        title: getCorrectTranslation('oops'),
-                        theme: "dark",
-                        text: err.statusText,
-                    });
-                }
-            });
-        }
-
-        $('#community-search').click(function (evt) {
-            if ($('#txt-search').val()) {
-                $('#search-load-more-btn').attr('data-page', 0);
-                searchCommunityItems($('#txt-search').val());
-            }
-        });
-
-        $('#txt-search').on('input', function (evt) {
-            // Store the current selection range
-            var start = this.selectionStart;
-            var end = this.selectionEnd;
-
-            // Convert text to lowercase
-            $(this).val($(this).val().toLowerCase());
-
-            // Restore the selection range
-            this.setSelectionRange(start, end);
-        });
-
-        function getCommunityItems(page = 0) {
-            if (page === 0) {
-                $('#community-container').empty().append(appendPlaceholders(Math.random() * 20));
-            } else {
-                $('#community-container').append(appendPlaceholders(Math.random() * 20));
-            }
-
-            $.ajax({
-                url: `${api}allitems/${page}`,
-                type: 'GET',
-                contentType: 'application/json; charset=utf-8',
-                dataType: 'json',
-                success: function (response) {
-                    if (response.success === true && response.pagination.total >= 1) {
-                        if (page === 0) $('#community-container').empty();
-                        var children = [];
-
-                        $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
-                            children.push(child);
-                        });
-
-                        $('#community-container').find('.placeholder-item').remove();
-                        $('#community-container').append(children);
-                        if (response.pagination.hasMore) {
-                            $('#community-load-more-btn').attr('data-page', response.pagination.nextPage);
-                            $('#community-load-more-btn').prop('disabled', false);
-                        } else {
-                            $('#community-load-more-btn').prop('disabled', true);
-                        }
-                    }
-                },
-                error: function (err) {
-                    $('#community-container').find('.placeholder-item').remove();
-                    console.log(err);
-                    swalBS.fire({
-                        icon: "error",
-                        title: getCorrectTranslation('oops'),
-                        theme: "dark",
-                        text: err.statusText,
-                    });
-                }
-            });
-        }
-
-        function getFavoritesCommunityItems(page = 0) {
-            if (page === 0) {
-                $('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 20));
-            } else {
-                $('#community-favorites-container').append(appendPlaceholders(Math.random() * 20));
-            }
-
-            $.ajax({
-                url: `${api}items/${JSON.stringify(favorites)}/${page}`,
-                type: 'GET',
-                contentType: 'application/json; charset=utf-8',
-                dataType: 'json',
-                success: function (response) {
-                    if (response.success === true && response.pagination.total >= 1) {
-                        if (page === 0) $('#community-favorites-container').empty();
-                        var children = [];
-
-                        $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
-                            children.push(child);
-                        });
-
-                        $('#community-favorites-container').find('.placeholder-item').remove();
-                        $('#community-favorites-container').append(children);
-                        if (response.pagination.hasMore) {
-                            $('#favorites-load-more-btn').attr('data-page', response.pagination.nextPage);
-                            $('#favorites-load-more-btn').prop('disabled', false);
-                        } else {
-                            $('#favorites-load-more-btn').prop('disabled', true);
-                        }
-                    }
-                },
-                error: function (err) {
-                    $('#community-favorites-container').find('.placeholder-item').remove();
-                    console.log(err);
-                    swalBS.fire({
-                        icon: "error",
-                        title: getCorrectTranslation('oops'),
-                        theme: "dark",
-                        text: err.statusText,
-                    });
-                }
-            });
-        }
-
-        function canvasToBase64() {
-            var canvas = $('#matrix-canvas')[0]; // Get the DOM element
-            resizeCanvas(true);
-            var base64String = canvas.toDataURL('image/jpeg', 0.5); // Default is PNG format
-            return base64String;
-        }
-
-        $('#btnUpdateConfirm').click(function (evt) {
-            if (!$('#txtUpdateName').val()) {
-                $('#txtUpdateName').addClass('is-invalid');
-                $('#txtUpdateName').focus();
-            } else if (naughtyWords.includes($('#txtUpdateName').val())) {
-                $('#txtUpdateName').addClass('is-invalid');
-                $('#txtUpdateName').focus();
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: getCorrectTranslation('inappropriateTextWarning'),
-                });
-            } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
-                var json = {
-                    author: sessionStorage.getItem('username'),
-                    name: $('#txtUpdateName').val(),
-                    size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
-                    data: dataStr,
-                    preview: canvasToBase64()
-                };
-                var jsonData = JSON.stringify(json);
-                var updateId = parseInt($('#txtUpdateId').val());
-                $.ajax({
-                    url: `${api}updateitem/${updateId}`,
-                    type: 'POST',
-                    data: jsonData,
-                    contentType: 'application/json; charset=utf-8',
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.success === true) {
-                            swalBS.fire({
-                                position: "top-end",
-                                icon: "success",
-                                theme: "dark",
-                                title: getCorrectTranslation('updated'),
-                                showConfirmButton: false,
-                                timer: 1500
-                            });
-
-                            $('#txtUpdateName').val('');
-                            if ($('#txtUpdateName').hasClass('is-invalid')) $('#txtUpdateName').removeClass('is-invalid');
-
-                            $('#modal-update').modal('hide');
-
-                            $('#editItem').css('display', 'none');
-                            $('#txtUpdateId').val('-1');
-                            $('#btnShare').prop('disabled', false);
-                        } else {
-                            swalBS.fire({
-                                icon: "error",
-                                title: getCorrectTranslation('oops'),
-                                theme: "dark",
-                                text: getCorrectTranslation('itemExists'),
-                            });
-                        }
-                    },
-                    error: function (err) {
-                        swalBS.fire({
-                            icon: "error",
-                            title: getCorrectTranslation('oops'),
-                            theme: "dark",
-                            text: err.statusText,
-                        });
-                    }
-                });
-            }
-
-            resizeCanvas();
-        });
-
-        $('#btnShareConfirm').click(function (evt) {
-            if (!$('#txtShareName').val()) {
-                $('#txtShareName').addClass('is-invalid');
-                $('#txtShareName').focus();
-            } else if (naughtyWords.includes($('#txtShareName').val())) {
-                $('#txtShareName').addClass('is-invalid');
-                $('#txtShareName').focus();
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: getCorrectTranslation('inappropriateTextWarning'),
-                });
-            } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
-                var json = {
-                    author: sessionStorage.getItem('username'),
-                    name: $('#txtShareName').val(),
-                    size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
-                    data: dataStr,
-                    preview: canvasToBase64()
-                };
-                var jsonData = JSON.stringify(json);
-                $.ajax({
-                    url: `${api}items`,
-                    type: 'POST',
-                    data: jsonData,
-                    contentType: 'application/json; charset=utf-8',
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.success === true) {
-                            swalBS.fire({
-                                position: "top-end",
-                                icon: "success",
-                                theme: "dark",
-                                title: getCorrectTranslation('shared'),
-                                showConfirmButton: false,
-                                timer: 1500
-                            });
-
-                            $('#txtShareName').val('');
-                            if ($('#txtShareName').hasClass('is-invalid')) $('#txtShareName').removeClass('is-invalid');
-
-                            $('#modal-share').modal('hide');
-                        } else {
-                            swalBS.fire({
-                                icon: "error",
-                                title: getCorrectTranslation('oops'),
-                                theme: "dark",
-                                text: getCorrectTranslation('itemExists'),
-                            });
-                        }
-                    },
-                    error: function (err) {
-                        swalBS.fire({
-                            icon: "error",
-                            title: getCorrectTranslation('oops'),
-                            theme: "dark",
-                            text: err.statusText,
-                        });
-                    }
-                });
-
-                resizeCanvas();
-            }
-        });
-
-        function downloadItem(id, edit = false) {
-            $.ajax({
-                url: `${api}item/${id}`,
-                type: 'GET',
-                contentType: 'application/json; charset=utf-8',
-                dataType: 'json',
-                success: function (response) {
-                    if (response.success === true) {
-                        let $item = response.data;
-
-                        COLS = $item.size[0];
-                        ROWS = $item.size[1];
-
-                        matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-                        resizeCanvas();
-
-                        matrixData = JSON.parse($item.data);
-                        matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
-                        canvasHistory.saveState(matrixData);
-                        drawMatrix();
-
-                        $('#size-cols').val(COLS);
-                        $('#size-rows').val(ROWS);
-
-                        $('#community').offcanvas('hide');
-
-                        if (edit) {
-                            $('#editItem').css('display', 'block');
-                            $('#txtUpdateId').val(id);
-                            $('#txtUpdateName').val($item.name);
-                            $('#btnShare').prop('disabled', true);
-                        }
-                    }
-                },
-                error: function (err) {
-                    console.log(err);
-                    swalBS.fire({
-                        icon: "error",
-                        title: getCorrectTranslation('oops'),
-                        theme: "dark",
-                        text: err.statusText,
-                    });
-                }
-            });
-        }
-
-        function cancelEdit() {
-            $('#editItem').css('display', 'none');
-            $('#txtUpdateId').val('-1');
-            $('#btnShare').prop('disabled', false);
-            fillAll('#000000');
-        }
-
-        $(document).keydown(function (e) {
-            // If any div has the class '.modal.show' or '.offcanvas.show', exit early
-            if ($('div.modal.show').length > 0 || $('div.offcanvas.show').length > 0) {
-                return
-            }
-
-            // Undo
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                e.preventDefault()
-                canvasHistory.undo()
-                return
-            }
-
-            // Redo
-            if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-                e.preventDefault()
-                canvasHistory.redo()
-                return
-            }
-        })
-
-        $('#community-load-more-btn').click(function (evt) {
-            getCommunityItems(parseInt($(this).attr('data-page')))
-        })
-
-        $('#search-load-more-btn').click(function (evt) {
-            searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')))
-        })
-
-        $('#favorites-load-more-btn').click(function (evt) {
-            getFavoritesCommunityItems($(this.attr('data-page')))
-        })
-
-        function addToFavorite(id) {
-            if (!favorites.includes(id)) {
-                favorites.push(id)
-                localStorage.setItem('favorites', JSON.stringify(favorites))
-                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-outline-danger').addClass('btn-danger')
-            } else {
-                favorites.splice($.inArray(id, favorites), 1)
-                localStorage.setItem('favorites', JSON.stringify(favorites))
-                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-danger').addClass('btn-outline-danger')
-            }
-        }
-
-        function removeItem(id) {
-            var json = {
-                author: sessionStorage.getItem('username')
-            }
-            var jsonData = JSON.stringify(json)
-            var url = `${api}deleteitem/${id}`
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: jsonData,
-                contentType: 'application/json; charset=utf-8',
-                dataType: 'json',
-                success: function (response) {
-                    if (response.success === true) {
-                        swalBS.fire({
-                            position: "top-end",
-                            icon: "success",
-                            theme: "dark",
-                            title: getCorrectTranslation('removed'),
-                            showConfirmButton: false,
-                            timer: 1500
-                        })
-                    } else {
-                        swalBS.fire({
-                            icon: "error",
-                            title: getCorrectTranslation('oops'),
-                            theme: "dark",
-                            text: getCorrectTranslation('removeFailed'),
-                        })
-                    }
-                },
-                error: function (err) {
-                    swalBS.fire({
-                        icon: "error",
-                        title: getCorrectTranslation('oops'),
-                        theme: "dark",
-                        text: err.statusText,
-                    })
-                }
-            })
-        }
-    </script>
-
-    <script>
-        const canvas = document.getElementById('matrix-canvas');
-        const ctx = canvas.getContext('2d');
-        const mousePosDisplay = document.getElementById('mouse-pos');
-        const cellSizeDisplay = document.getElementById('cell-size');
-
-        // Matrix dimensions
-        let COLS = parseInt($('#size-cols').val());
-        let ROWS = parseInt($('#size-rows').val());
-        let cellWidth, cellHeight;
-
-        // Matrix data - stores color for each cell
-        let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill(black));
-
-        //Wrapped matrix to hold matrix info for nudging
-        let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill(black));
-
-        let canvasHistory = new HistoryManager(matrixData);
-        canvasHistory.saveState(matrixData);
-
-        // Drawing state
-        let isDrawing = false;
-        let currentMode = $('input[name="draw-mode"]:checked').val();
-        let currentColor = parseFloat($('#input[name="draw-color"]:checked').val()) || 1;
-
-        // Resize the canvas to fill the screen while maintaining aspect ratio
-        function resizeCanvas() {
-            const maxWidth = window.innerWidth * 0.95;
-            const maxHeight = window.innerHeight * 0.7;
-
-            // Calculate the cell size to fit the matrix in the available space
-            const cellWidthByWidth = maxWidth / COLS;
-            const cellHeightByHeight = maxHeight / ROWS;
-
-            // Use the smaller of the two to ensure the entire matrix fits
-            const cellSize = Math.floor(Math.min(cellWidthByWidth, cellHeightByHeight));
-
-            cellWidth = cellSize;
-            cellHeight = cellSize;
-
-            canvas.width = COLS * cellWidth;
-            canvas.height = ROWS * cellHeight;
-
-            cellSizeDisplay.textContent = `${getCorrectTranslation('cellsize2')} ${cellWidth}x${cellHeight}`;
-
-            // Redraw the matrix with the current data
-            drawMatrix();
-        };
-
-        // Draw the entire matrix
-        function drawMatrix() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw each cell
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS; col++) {
-                    const x = col * cellWidth;
-                    const y = row * cellHeight;
-
-                    // Draw the cell background
-                    ctx.fillStyle = matrixData[row][col];
-                    ctx.fillRect(x, y, cellWidth, cellHeight);
-
-                    // Draw the cell border
-                    ctx.strokeStyle = '#333333';
-                    ctx.strokeRect(x, y, cellWidth, cellHeight);
-                };
-            };
-        };
-
-        // Convert mouse position to matrix coordinates
-        function getMatrixCoords(event) {
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-
-            const col = Math.floor(x / cellWidth);
-            const row = Math.floor(y / cellHeight);
-
-            // Make sure we're within bounds
-            if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
-                return { row, col };
-            };
-
-            return null;
-        };
-
-        // Update a cell's color
-        function updateCell(row, col, color) {
-            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {;
-                matrixData[row][col] = color;
-
-                // Redraw just this cell
-                const x = col * cellWidth;
-                const y = row * cellHeight;
-
-                ctx.fillStyle = color;
-                ctx.fillRect(x, y, cellWidth, cellHeight);
-
-                ctx.strokeStyle = '#333333';
-                ctx.strokeRect(x, y, cellWidth, cellHeight);
-            };
-        };
-
-        // Fill all cells with a specific color
-        function clearAll(color) {
-            canvasHistory.saveState(matrixData);
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS; col++) {;
-                    matrixData[row][col] = color;
-                };
-            };
-            drawMatrix();
-        };
-
-        // Fill all contiguous cells with a specific color
-        function fillAll(row, col, color) {
-            canvasHistory.saveState(matrixData);
-            fillAllRecursive(row, col, color);
-        };
-
-        function fillAllRecursive(row, col, color) {
-            originalColor = matrixData[row][col];
-            if (originalColor != color) {
-                updateCell(row, col, color);
-                if (row > 0 && matrixData[row - 1][col] == originalColor) {
-                    fillAllRecursive(row - 1, col, color);
-                };
-                if (row < ROWS - 1 && matrixData[row + 1][col] == originalColor) {
-                    fillAllRecursive(row + 1, col, color);
-                };
-                if (col > 0 && matrixData[row][col - 1] == originalColor) {
-                    fillAllRecursive(row, col - 1, color);
-                };
-                if (col < COLS - 1 && matrixData[row][col + 1] == originalColor) {
-                    fillAllRecursive(row, col + 1, color);
-                };
-            };
-        };
-
-        function undo() {
-            canvasHistory.undo();
-        };
-
-        function redo() {
-            canvasHistory.redo();
-        };
-
-       //Invert all cells
-        function invertAll() {
-            canvasHistory.saveState(matrixData);
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS; col++) {
-                    switch (matrixData[row][col]) {
-                        case white:
-                            matrixData[row][col] = black;
-                            break;
-                        case black:
-                            matrixData[row][col] = white;
-                            break;
-                    };
-                };
-            };
-            drawMatrix();
-        };
-        
-        function invertGreys() {
-            canvasHistory.saveState(matrixData)
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS; col++) {
-                    switch (matrixData[row][col]) {
-                        case lightGrey:
-                            matrixData[row][col] = darkGrey;
-                            break;
-                        case darkGrey:
-                            matrixData[row][col] = lightGrey;
-                            break;
-                    };
-                };
-            };
-            drawMatrix();
-        };
-
-        function mirrorHorizontal() {
-            canvasHistory.saveState(matrixData)
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS / 2; col++) {
-                    matrixData[row][COLS - col - 1] = matrixData[row][col];
-                };
-            };
-            drawMatrix();
-        };
-
-        function mirrorVertical() {
-            canvasHistory.saveState(matrixData);
-            for (let row = 0; row < ROWS / 2; row++) {
-                for (let col = 0; col < COLS; col++) {
-                    matrixData[ROWS - row - 1][col] = matrixData[row][col];
-                };
-            };
-            drawMatrix();
-        };
-
-        function flip(direction = 'horizontal') {
-            canvasHistory.saveState(matrixData);
-            if (direction === 'horizontal') {
-                console.log("flip horizontal");
-                matrixData = matrixData.map(row => row.slice().reverse());
-            } else if (direction === 'vertical') {
-                console.log("flip vertical");
-                matrixData = matrixData.slice().reverse();
-            };
-            drawMatrix();
-        };
-
-        function copyToClipboard(text) {
-            console.log(text);
-            var $temp = $('<input>');
-            $('body').append($temp);
-            $temp.val(text).select();
-            document.execCommand('copy');
-            $temp.remove()
-
-            swalBS.fire({
-                position: "top-end",
-                icon: "success",
-                theme: "dark",
-                title: getCorrectTranslation('copied'),
-                showConfirmButton: false,
-                timer: 1500
-            });
-        };
-
-        function copyWrappedToMatrix() {
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS; col++) {
-                    matrixData[row][col] = wrappedMatrix[row][col];
-                };
-            };
-        };
-
-        function moveUp() {
-            canvasHistory.saveState(matrixData);
-            for (let row = 0; row < ROWS - 1; row++) {
-                for (let col = 0; col < COLS; col++) {
-                    const srcRow = (row + 1) % ROWS;
-                    wrappedMatrix[row][col] = matrixData[srcRow][col];
-                };
-            };
-            copyWrappedToMatrix();
-            drawMatrix();
-            nudgeY();
-        };
-
-        function moveDown() {
-            canvasHistory.saveState(matrixData);
-            for (let row = ROWS - 1; row > 0; row--) {
-                for (let col = 0; col < COLS; col++) {
-                    const srcRow = (row - 1 + ROWS) % ROWS;
-                    wrappedMatrix[row][col] = matrixData[srcRow][col];
-                };
-            };
-            copyWrappedToMatrix();
-            drawMatrix();
-            nudgeY();
-        };
-
-        function moveLeft() {
-            canvasHistory.saveState(matrixData);
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS - 1; col++) {
-                    const srcCol = (col + 1) % COLS;
-                    wrappedMatrix[row][col] = matrixData[row][srcCol];
-                };
-            };
-            copyWrappedToMatrix();
-            drawMatrix();
-            nudgeX();
-        }
-
-        function moveRight() {
-            canvasHistory.saveState(matrixData)
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = COLS - 1; col > 0; col--) {
-                    const srcCol = (col - 1 + COLS) % COLS;
-                    wrappedMatrix[row][col] = matrixData[row][srcCol];
-                }
-            }
-            copyWrappedToMatrix();
-            drawMatrix();
-            nudgeX();
-        }
-
-        function nudgeX() {
-            $('#canvas-container').addClass('nudgeX');
-
-            setTimeout(() => {
-                $('#canvas-container').removeClass('nudgeX')
-            }, 700);
-        };
-
-        function nudgeY() {
-            $('#canvas-container').addClass('nudgeY');
-
-            setTimeout(() => {
-                $('#canvas-container').removeClass('nudgeY')
-            }, 700);
-        };
-
-        // Export matrix data as JSON
-        function exportData() {
-            const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue);
-
-            swalBS.fire({
-                title: getCorrectTranslation('copycode'),
-                icon: "success",
-                theme: "dark",
-                html: `<div class="code-container"><code>${dataStr}</code><button class="btn btn-outline-primary copy-code" onclick="copyToClipboard('${dataStr}');">${getCorrectTranslation('copy')}</button></div>`,
-                showCloseButton: false,
-                showCancelButton: false,
-                focusConfirm: false,
-                confirmButtonText: getCorrectTranslation('ok'),
-                confirmButtonAriaLabel: 'OK',
-                cancelButtonText: 'Cancel',
-                cancelButtonAriaLabel: "Thumbs down"
-            });
-        };
-
-        // Event listeners
-        
-        window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('draw-white').value = whiteValue;
-            document.getElementById('draw-lightGrey').value = lightGreyValue;
-            document.getElementById('draw-darkGrey').value = darkGreyValue;
-            document.getElementById('draw-black').value = blackValue;
-        });
-        
-        //Lazy loading of community items
-        const communityDiv = document.querySelector('#community .offcanvas-body');
-        const loadMoreBtn = document.getElementById('community-load-more-btn');
-       
-        communityDiv.addEventListener('scroll', () => {
-            const isAtBottom = communityDiv.scrollTop + communityDiv.clientHeight >= communityDiv.scrollHeight;
-            if (isAtBottom) {
-                loadMoreBtn.click();
-            };
-        });
-        
-        canvas.addEventListener('mousedown', (e) => {
-            isDrawing = true;
-
-            const coords = getMatrixCoords(e);
-            if (coords) {
-                switch (currentMode) {
-                    case 'draw':
-                        switch (currentColor) {
-                            case 1:
-                                updateCell(coords.row, coords.col, white);
-                                break;
-                            case 0.5:
-                                updateCell(coords.row, coords.col, darkGrey);
-                                break;
-                            case 0.7:
-                                updateCell(coords.row, coords.col, lightGrey);
-                                break;
-                            case 0:
-                                updateCell(coords.row, coords.col, black);
-                                break;
-                        };
-                        break;
-                    case 'fill':
-                        switch (currentColor) {
-                            case 1:
-                                fillAll(coords.row, coords.col, white);
-                                break;
-                            case 0.5:
-                                fillAll(coords.row, coords.col, darkGrey);
-                                break;
-                            case 0.7:
-                                fillAll(coords.row, coords.col, lightGrey);
-                                break;
-                            case 0:
-                                fillAll(coords.row, coords.col, black);
-                                break;
-                        };
-                        break;
-                };
-            };
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            const coords = getMatrixCoords(e);
-            if (coords) {
-
-                mousePosDisplay.textContent = `${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`;
-
-                if (isDrawing) {
-                    switch (currentMode) {
-                        case 'draw':
-                            switch (currentColor) {
-                                case 1:
-                                    updateCell(coords.row, coords.col, white);
-                                    break;
-                                case 0.5:
-                                    updateCell(coords.row, coords.col, darkGrey);
-                                    break;
-                                case 0.7:
-                                    updateCell(coords.row, coords.col, lightGrey);
-                                    break;
-                                case 0:
-                                    updateCell(coords.row, coords.col, black);
-                                    break;
-                            };
-                            break;
-                    };
-                };
-            } else {
-                mousePosDisplay.textContent = getCorrectTranslation('position1');
-            };
-        });
-
-        canvas.addEventListener('mouseout', () => {
-            mousePosDisplay.textContent = getCorrectTranslation('position1');
-        });
-
-        window.addEventListener('mouseup', () => {
-            isDrawing = false;
-            canvasHistory.saveState(matrixData);
-        });
-
-        window.addEventListener('resize', resizeCanvas);
-
-        // Initial setup
-        resizeCanvas();
-
-        $(document).keydown(function (e) {
-            switch (e.which) {
-                case 37: // left arrow key
-                    moveLeft();
-                    break;
-                case 38: // up arrow key
-                    moveUp();
-                    break;
-                case 39: // right arrow key
-                    moveRight();
-                    break;
-                case 40: // down arrow key
-                    moveDown();
-                    break;
-                default: return; // exit this handler for other keys
-            };
-
-            e.preventDefault(); // prevent the default action (scroll / move caret)
-        });
-    </script>
-
-    <!-- User functions -->
-    <script>
-        function loginUser(id, username) {
-            sessionStorage.setItem('id', id);
-            sessionStorage.setItem('username', username);
-
-            $('#ddLogin, #btnSignup').css('display', 'none');
-            $('#member, #btnShare').css('display', 'block');
-            $('#member button.dropdown-toggle').text(username);
-        };
-
-        $('#btnLoginConfirm').click(function (evt) {
-            if (!$('#txtLoginUsername').val()) {
-                $('#txtLoginUsername').addClass('is-invalid');
-                $('#txtLoginUsername').focus();
-            } else if (!$('#txtLoginPassword').val()) {
-                $('#txtLoginPassword').addClass('is-invalid');
-                $('#txtLoginPassword').focus();
-            } else {
-                $.ajax({
-                    url: `${api}loginuser/${$('#txtLoginUsername').val()}/${$('#txtLoginPassword').val()}`,
-                    type: 'GET',
-                    contentType: 'application/json; charset=utf-8',
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.success === true) {
-                            swalBS.fire({
-                                position: "top-end",
-                                icon: "success",
-                                theme: "dark",
-                                title: getCorrectTranslation('welcomeUser').replace('{user}', response.data.data.username),
-                                showConfirmButton: false,
-                                timer: 1500
-                            });
-
-                            loginUser(response.data.data.id, $('#txtLoginUsername').val());
-
-                            if ($('#chkLoginRemember').is(':checked')) {
-                                localStorage.setItem('username', $('#txtLoginUsername').val());
-                                localStorage.setItem('password', $('#txtLoginPassword').val());
-                                localStorage.setItem('remember', true);
-                            };
-
-                            $('#txtLoginUsername, #txtLoginPassword').val('');
-                            if ($('#txtLoginUsername').hasClass('is-invalid')) $('#txtLoginUsername').removeClass('is-invalid');
-                            if ($('#txtLoginPassword').hasClass('is-invalid')) $('#txtLoginPassword').removeClass('is-invalid');
-
-                            //if ($('#frmLogin').hasClass('show')) $('#frmLogin').removeClass('show')
-                            $('#frmLogin').dropdown('hide');
-                        } else {
-                            swalBS.fire({
-                                icon: "error",
-                                title: getCorrectTranslation('oops'),
-                                theme: "dark",
-                                text: getCorrectTranslation(response.data.code),
-                            });
-                        };
-                    },
-                    error: function (err) {
-                        swalBS.fire({
-                            icon: "error",
-                            title: getCorrectTranslation('oops'),
-                            theme: "dark",
-                            text: err.statusText,
-                        });
-                    }
-                });
-            };
-        });
-
-        $('#btnSignupConfirm').click(function (evt) {
-            if (!$('#txtSignupEmail').val()) {
-                $('#txtSignupEmail').addClass('is-invalid');
-                $('#txtSignupEmail').focus();
-            } else if (!$('#txtSignupUsername').val()) {
-                $('#txtSignupUsername').addClass('is-invalid');
-                $('#txtSignupUsername').focus();
-            } else if (naughtyWords.includes($('#txtSignupUsername').val())) {
-                $('#txtSignupUsername').addClass('is-invalid');
-                $('#txtSignupUsername').focus();
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: getCorrectTranslation('inappropriateTextWarning'),
-                });
-            } else if (!$('#txtSignupPassword').val()) {
-                $('#txtSignupPassword').addClass('is-invalid');
-                $('#txtSignupPassword').focus();
-            } else if (!$('#txtSignupConfirmPassword').val()) {
-                $('#txtSignupConfirmPassword').addClass('is-invalid');
-                $('#txtSignupConfirmPassword').focus();
-            } else if ($('#txtSignupPassword').val() != $('#txtSignupConfirmPassword').val()) {
-                $('#txtSignupPassword').addClass('is-invalid');
-                $('#txtSignupConfirmPassword').addClass('is-invalid');
-                $('#txtSignupPassword').focus();
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: getCorrectTranslation('passwordNotMatch'),
-                });
-            } else {
-                var json = {
-                    username: $('#txtSignupUsername').val(),
-                    email: $('#txtSignupEmail').val(),
-                    password: $('#txtSignupConfirmPassword').val()
-                };
-                var jsonData = JSON.stringify(json);
-
-                $.ajax({
-                    url: `${api}users`,
-                    type: 'POST',
-                    data: jsonData,
-                    contentType: 'application/json; charset=utf-8',
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.success === true) {
-                            swalBS.fire({
-                                position: "top-end",
-                                icon: "success",
-                                theme: "dark",
-                                title: getCorrectTranslation('signedUp'),
-                                showConfirmButton: false,
-                                timer: 1500
-                            })
-
-                            loginUser(response.id, $('#txtSignupUsername').val())
-
-                            $('#txtSignupEmail, #txtSignupUsername, #txtSignupConfirmPassword, #txtSignupPassword').val('');
-                            if ($('#txtSignupEmail').hasClass('is-invalid')) $('#txtSignupEmail').removeClass('is-invalid');
-                            if ($('#txtSignupUsername').hasClass('is-invalid')) $('#txtSignupUsername').removeClass('is-invalid');
-                            if ($('#txtSignupConfirmPassword').hasClass('is-invalid')) $('#txtSignupConfirmPassword').removeClass('is-invalid');
-                            if ($('#txtSignupPassword').hasClass('is-invalid')) $('#txtSignupPassword').removeClass('is-invalid');
-
-                            $('#modal-signup').modal('hide');
-                        } else {
-                            swalBS.fire({
-                                icon: "error",
-                                title: getCorrectTranslation('oops'),
-                                theme: "dark",
-                                text: getCorrectTranslation(response.data.code),
-                            });
-                        };
-                    },
-                    error: function (err) {
-                        swalBS.fire({
-                            icon: "error",
-                            title: getCorrectTranslation('oops'),
-                            theme: "dark",
-                            text: err.statusText,
-                        });
-                    }
-                });
-            };
-        });
-
-        $('#btnChangePasswordConfirm').click(function (evt) {
-            if (!$('#txtCurrentPassword').val()) {
-                $('#txtCurrentPassword').addClass('is-invalid');
-                $('#txtCurrentPassword').focus();
-            } else if (!$('#txtNewPassword').val()) {
-                $('#txtNewPassword').addClass('is-invalid');
-                $('#txtNewPassword').focus();
-            } else if (!$('#txtConfirmNewPassword').val()) {
-                $('#txtConfirmNewPassword').addClass('is-invalid');
-                $('#txtConfirmNewPassword').focus();
-            } else if ($('#txtNewPassword').val() != $('#txtConfirmNewPassword').val()) {
-                $('#txtSignupPassword').addClass('is-invalid');
-                $('#txtConfirmNewPassword').addClass('is-invalid');
-                $('#txtNewPassword').focus();
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: getCorrectTranslation('passwordNotMatch'),
-                });
-            } else {
-                var json = { currentPassword: $('#txtCurrentPassword').val(), newPassword: $('#txtConfirmNewPassword').val() };
-                var jsonData = JSON.stringify(json);
-
-                $.ajax({
-                    url: `${api}updateuser/${parseInt(sessionStorage.getItem('id') || -1)}`,
-                    type: 'POST',
-                    data: jsonData,
-                    contentType: 'application/json; charset=utf-8',
-                    dataType: 'json',
-                    success: function (response) {
-                        if (response.success === true) {
-                            swalBS.fire({
-                                position: "top-end",
-                                icon: "success",
-                                theme: "dark",
-                                title: getCorrectTranslation('passwordChanged'),
-                                showConfirmButton: false,
-                                timer: 1500
-                            });
-
-                            sessionStorage.clear();
-
-                            $('#ddLogin, #btnSignup').css('display', 'block');
-                            $('#member, #btnShare').css('display', 'none');
-                            $('#member button.dropdown-toggle').text('Guest');
-
-                            $('#txtCurrentPassword, #txtNewPassword, #txtConfirmNewPassword').val('');
-                            if ($('#txtCurrentPassword').hasClass('is-invalid')) $('#txtCurrentPassword').removeClass('is-invalid');
-                            if ($('#txtNewPassword').hasClass('is-invalid')) $('#txtNewPassword').removeClass('is-invalid');
-                            if ($('#txtConfirmNewPassword').hasClass('is-invalid')) $('#txtConfirmNewPassword').removeClass('is-invalid');
-
-                            $('#modal-change-password').modal('hide');
-                        } else {
-                            swalBS.fire({
-                                icon: "error",
-                                title: getCorrectTranslation('oops'),
-                                theme: "dark",
-                                text: getCorrectTranslation(response.data.code),
-                            });
-                        };
-                    },
-                    error: function (err) {
-                        swalBS.fire({
-                            icon: "error",
-                            title: getCorrectTranslation('oops'),
-                            theme: "dark",
-                            text: err.statusText,
-                        });
-                    }
-                });
-            };
-        });
-
-        $('#aLogout').click(function (evt) {
-            sessionStorage.clear();
-
-            $('#ddLogin, #btnSignup').css('display', 'block');
-            $('#member, #btnShare').css('display', 'none');
-            $('#member button.dropdown-toggle').text('Guest');
-        });
-
-        $('#btnShare').click(function (evt) {
-            let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
-            if (loggedIn.userid != null && loggedIn.username != null) {
-                $('#modal-share').modal('show');
-            } else {
-                $('#frmLogin').dropdown('show');
-            };
-        });
-    </script>
+	<header>
+		<nav class="navbar navbar-expand-lg bg-body-tertiary bg-dark border-bottom border-body">
+			<div class="container">
+				<a class="navbar-brand" href="index.html">
+					<img src="https://nolliergb.com/wp-content/uploads/2024/08/NOLLIE-RGB-1.png" alt="nollie" width="80"
+						height="auto" />
+				</a>
+				<button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+					data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+					aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarSupportedContent">
+					<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+						<li class="nav-item">
+							<a class="nav-link active" aria-current="page" href="index.html"><span
+									class="mdi mdi-home-circle-outline"></span> Home</a>
+						</li>
+						<li class="nav-item dropdown">
+							<a class="nav-link dropdown-toggle" id="ddInstall" href="#" role="button"
+								data-bs-toggle="dropdown" aria-expanded="false">
+								<span class="mdi mdi-tools"></span> Install Pixel Art Addon
+							</a>
+							<ul class="dropdown-menu">
+								<li><a class="dropdown-item"
+										href="https://srgbmods.net/s?p=addon/install?url=https://gitlab.com/nollie/nolliecontroller"
+										target="_blank">Nollie</a></li>
+								<li><a class="dropdown-item"
+										href="https://srgbmods.net/s?p=addon/install?url=https://github.com/qiangqiang101/SRGB-Plugins"
+										target="_blank">WLED</a></li>
+							</ul>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" id="community-btn" href="#" data-bs-toggle="offcanvas"
+								data-bs-target="#community" aria-controls="community"
+								onclick="getCommunityItems();"><span class="mdi mdi-account-group-outline"></span>
+								Community Pixel Art</a>
+						</li>
+						<li class="nav-item dropdown">
+							<a class="nav-link dropdown-toggle" id="ddLanguage" href="#" role="button"
+								data-bs-toggle="dropdown" aria-expanded="false">
+								<span class="mdi mdi-translate"></span> Language
+							</a>
+							<ul class="dropdown-menu">
+								<li><button class="dropdown-item" onclick="changeLanguage('english');">English</button>
+								</li>
+								<li><button class="dropdown-item" onclick="changeLanguage('chinese');">中文</button></li>
+							</ul>
+						</li>
+					</ul>
+					<div class="d-flex gap-2">
+						<button class="btn btn-outline-success" id="btnShare" type="button" style="display: none;"><span
+								class="mdi mdi-share-variant-outline"></span> Share</button>
+						<div class="dropdown" id="ddLogin">
+							<button type="button" class="btn btn-outline-primary dropdown-toggle" id="btnLogin"
+								data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside"><span
+									class="mdi mdi-login"></span> Login</button>
+							<form id="frmLogin" class="dropdown-menu p-4">
+								<div class="mb-3">
+									<label for="txtLoginUsername" class="form-label">Username</label>
+									<input type="text" class="form-control" id="txtLoginUsername" maxlength="30"
+										placeholder="Username">
+								</div>
+								<div class="mb-3">
+									<label for="txtLoginPassword" class="form-label">Password</label>
+									<input type="password" class="form-control" id="txtLoginPassword" maxlength="30"
+										placeholder="Password">
+								</div>
+								<div class="mb-3">
+									<div class="form-check">
+										<input type="checkbox" class="form-check-input" id="chkLoginRemember">
+										<label class="form-check-label" for="chkLoginRemember">
+											Remember me
+										</label>
+									</div>
+								</div>
+								<button id="btnLoginConfirm" type="button" class="btn btn-primary">Sign in</button>
+							</form>
+						</div>
+						<button class="btn btn-primary" type="button" data-bs-toggle="modal" id="btnSignup"
+							data-bs-target="#modal-signup"><span class="mdi mdi-account-plus-outline"></span> Sign
+							Up</button>
+						<div class="btn-group" id="member" style="display: none;">
+							<button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+								aria-expanded="false">
+								Guest
+							</button>
+							<ul class="dropdown-menu">
+								<li><a class="dropdown-item" href="#" data-bs-toggle="modal"
+										data-bs-target="#modal-change-password" id="aPassword">Password</a></li>
+								<li>
+									<hr class="dropdown-divider">
+								</li>
+								<li><a class="dropdown-item" href="#" id="aLogout">Logout</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</nav>
+	</header>
+
+	<main>
+		<section class="py-4 text-center container">
+			<div id="controls" class="row mb-3 g-3 d-flex justify-content-center">
+				<div class="col-auto">
+					<div class="input-group">
+						<span class="input-group-text" id="size-label"><span
+								class="mdi mdi-image-size-select-small"></span> Size</span>
+						<input class="form-control" id="size-cols" type="number" value="16" min="1" step="1" max="99"
+							style="width: 6rem;" />
+						<input class="form-control" id="size-rows" type="number" value="16" min="1" step="1" max="99"
+							style="width: 6rem;" />
+					</div>
+				</div>
+				<div class="col-auto">
+					<button type="button" class="btn btn-primary" id="import-btn" onclick="importData();"><span
+							class="mdi mdi-import"></span> Import Data</button>
+					<button type="button" class="btn btn-primary" id="export-btn" onclick="exportData();"><span
+							class="mdi mdi-export"></span> Export Data</button>
+					<input type="hidden" id="clipboard" />
+					<button type="button" class="btn btn-primary" id="load-btn" data-bs-toggle="modal"
+						data-bs-target="#modal-load" onclick="reloadSavedPixelArt();">
+						<span class="mdi mdi-cloud-outline"></span> Load
+					</button>
+					<button type="button" class="btn btn-primary" id="save-btn" data-bs-toggle="modal"
+						data-bs-target="#modal-save">
+						<span class="mdi mdi-content-save-outline"></span> Save
+					</button>
+				</div>
+				<div class="col-auto" id="editItem" style="display: none;">
+					<div class="btn-group">
+						<button type="button" class="btn btn-outline-success" id="btnUpdateEdit" data-bs-toggle="modal"
+							data-bs-target="#modal-update">
+							<span class="mdi mdi-content-save-outline"></span> Update
+						</button>
+						<button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
+							onclick="cancelEdit();">
+							<span class="mdi mdi-cancel"></span> Cancel
+						</button>
+					</div>
+
+					<input id="txtUpdateId" value="-1" type="hidden" />
+				</div>
+			</div>
+
+			<div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
+				<div class="col-auto">
+					<div class="btn-group">
+						<button type="button" class="btn btn-primary" id="btnUndo" onclick="undo();">
+							<span class="mdi mdi-undo"></span> Undo</button>
+						<button type="button" class="btn btn-primary" id="btnRedo" onclick="redo();">
+							<span class="mdi mdi-redo"></span> Redo</button>
+					</div>
+				</div>
+
+				<div class="col-auto">
+					<div class="btn-group">
+						<input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked><label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
+						<input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill"><label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span> Fill</label>
+					</div>
+					<button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span class="mdi mdi-trash-can-outline"></span> Clear All</button>
+				</div>
+				<div class="col-auto">
+					<div class="btn-group">
+						<!--<input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked><label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> White</label>-->
+						<input type="radio" class="btn-check" id="draw-white" name="draw-color" value="1" checked><label for="draw-white" class="btn btn-white"><span class="mdi mdi-water"></span> White</label>
+						<input type="radio" class="btn-check" id="draw-lightGrey" name="draw-color" value="0.7"><label for="draw-lightGrey" class="btn btn-light-grey"><span class="mdi mdi-water-opacity"></span> Light Grey</label>
+						<input type="radio" class="btn-check" id="draw-darkGrey" name="draw-color" value="0.5"><label for="draw-darkGrey" class="btn btn-dark-grey"><span class="mdi mdi-water-opacity"></span> Dark Grey</label>
+						<input type="radio" class="btn-check" id="draw-black" name="draw-color" value="0"><label for="draw-black" class="btn btn-black"><span class="mdi mdi-water-outline"></span> Black</label>
+						<!--<input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0"><label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span> Off</label>-->
+					</div>
+				</div>
+				<div class="col-auto">
+					<div class="btn-group">
+						<button id="btnInvertBW" class="btn btn-primary text-dark" onclick="invertAll();"><span class="mdi mdi-invert-colors"></span> Invert White/Black</button>
+						<button id="btnInvertGreys" class="btn btn-primary" onclick="invertGreys();"><span class="mdi mdi-invert-colors"></span> Invert Greys</button>
+						<div class="btn-group dropdown">
+							<a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+								<span class="mdi mdi-flip-to-front"></span> Mirror
+							</a>
+							<ul class="dropdown-menu">
+								<li><a class="dropdown-item" id="btnMirrorHorizontal" href="#" onclick="mirrorHorizontal();">
+									<span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
+								</a></li>
+								<li><a class="dropdown-item" id="btnMirrorVertical" href="#" onclick="mirrorVertical();">
+									<span class="mdi mdi-flip-vertical"></span> Mirror Vertical
+								</a></li>
+							</ul>
+						</div>
+						<div class="btn-group dropdown">
+							<a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+								<span class="mdi mdi-rotate-orbit"></span> Flip
+							</a>
+							<ul class="dropdown-menu">
+								<li><a class="dropdown-item" id="btnFlipHorizontal" href="#" onclick="flip('horizontal');">
+									<span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
+								</a></li>
+								<li><a class="dropdown-item" id="btnFlipVertical" href="#" onclick="flip('vertical');">
+									<span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
+								</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<div class="container">
+			<div id="canvas-container" class="d-flex justify-content-center">
+				<canvas id="matrix-canvas"></canvas>
+			</div>
+
+			<div id="matrix-info" class="d-flex justify-content-center">
+				<span id="mouse-pos">Position: (-1, -1)</span> |
+				<span id="cell-size">Cell Size: 0x0</span>
+			</div>
+		</div>
+	</main>
+
+	<div class="modal fade" id="modal-save" tabindex="-1" aria-labelledby="modal-save-label" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="modal-save-label">Save pixel art</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-12">
+							<label for="txt-save" class="form-label">What would you like to call this pixel art?</label>
+							<input id="txt-save" type="text" class="form-control" placeholder="my cool pixel art"
+								maxlength="50" />
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" id="save-confirm-btn">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="modal-load" tabindex="-1" aria-labelledby="modal-load-label" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="modal-load-label">Load pixel art</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-12">
+							<label for="select-load" class="form-label">Which pixel art would you like load?</label>
+							<select class="form-select" id="select-load">
+								<option value="null" disabled selected>Please select...</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-danger" id="remove-confirm-btn">Remove</button>
+					<button type="button" class="btn btn-primary" id="load-confirm-btn">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="modal-share" tabindex="-1" aria-labelledby="modal-share-label" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="modal-share-label">Share pixel art</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-12">
+							<label for="txtShareName" class="form-label">What would you like to call this pixel
+								art?</label>
+							<input id="txtShareName" type="text" class="form-control" placeholder="my cool pixel art"
+								maxlength="50" />
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" id="btnShareConfirm">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="modal-update" tabindex="-1" aria-labelledby="modal-update-label" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="modal-update-label">Update pixel art</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="row">
+						<div class="col-12">
+							<label for="txtUpdateName" class="form-label">What would you like to call this pixel
+								art?</label>
+							<input id="txtUpdateName" type="text" class="form-control" placeholder="my cool pixel art"
+								maxlength="50" />
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" id="btnUpdateConfirm">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="modal-signup" tabindex="-1" aria-labelledby="modal-signup-label" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="modal-signup-label">Sign Up</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="row mb-3">
+						<div class="col-12">
+							<label for="txtSignupEmail" class="form-label">Email</label>
+							<input id="txtSignupEmail" type="text" class="form-control" placeholder="email@example.com"
+								maxlength="100" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<div class="col-12">
+							<label for="txtSignupUsername" class="form-label">Username</label>
+							<input id="txtSignupUsername" type="text" class="form-control" placeholder="Username"
+								maxlength="30" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<div class="col-12">
+							<label for="txtSignupPassword" class="form-label">Password</label>
+							<input id="txtSignupPassword" type="password" class="form-control" placeholder="Password"
+								maxlength="30" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-12">
+							<label for="txtSignupConfirmPassword" class="form-label">Confirm Password</label>
+							<input id="txtSignupConfirmPassword" type="password" class="form-control"
+								placeholder="Password" maxlength="30" />
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" id="btnSignupConfirm">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="modal-change-password" tabindex="-1" aria-labelledby="modal-change-password-label"
+		aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="modal-change-password-label">Change Password</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<div class="row mb-3">
+						<div class="col-12">
+							<label for="txtCurrentPassword" class="form-label">Current Password</label>
+							<input id="txtCurrentPassword" type="password" class="form-control" placeholder="Password"
+								maxlength="30" />
+						</div>
+					</div>
+					<div class="row mb-3">
+						<div class="col-12">
+							<label for="txtNewPassword" class="form-label">New Password</label>
+							<input id="txtNewPassword" type="password" class="form-control" placeholder="Password"
+								maxlength="30" />
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-12">
+							<label for="txtConfirmNewPassword" class="form-label">Confirm Password</label>
+							<input id="txtConfirmNewPassword" type="password" class="form-control"
+								placeholder="Password" maxlength="30" />
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" id="btnChangePasswordConfirm">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="offcanvas offcanvas-end w-75" tabindex="-1" id="community" aria-labelledby="community-Label">
+		<div class="offcanvas-header">
+			<h5 class="offcanvas-title" id="community-Label">Browse Community Pixel Art</h5>
+			<button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+		</div>
+		<div class="offcanvas-body">
+			<ul class="nav nav-underline" id="stepTab" role="tablist">
+				<li class="nav-item">
+					<button class="nav-link active" id="new-items-tab" data-bs-toggle="tab"
+						data-bs-target="#new-items">Latest</button>
+				</li>
+
+				<li class="nav-item">
+					<button class="nav-link" id="search-items-tab" data-bs-toggle="tab"
+						data-bs-target="#search-items">Search</button>
+				</li>
+
+				<li class="nav-item">
+					<button class="nav-link" id="favorites-items-tab" data-bs-toggle="tab"
+						data-bs-target="#favorite-items" onclick="getFavoritesCommunityItems();">Favorites</button>
+				</li>
+			</ul>
+
+			<div class="tab-content mt-3" id="stepTabContent">
+				<div class="tab-pane fade show active" id="new-items">
+					<div class="row mb-3" id="community-container">
+					</div>
+					<div class="row">
+						<div class="d-grid gap-2 col-auto mx-auto">
+							<button class="btn btn-outline-primary" type="button" data-page="0"
+								id="community-load-more-btn" disabled>Load More</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="tab-pane fade" id="search-items">
+					<div class="row mb-3">
+						<div class="col">
+						</div>
+						<div class="col-auto float-end">
+							<div class="input-group">
+								<input class="form-control form-control-sm" type="search" id="txt-search"
+									placeholder="Search" aria-label="Search" autocomplete="off" autocapitalize="none" />
+								<button class="btn btn-outline-secondary btn-sm" type="button"
+									id="community-search"><span class="mdi mdi-magnify"></span></button>
+							</div>
+						</div>
+					</div>
+					<div class="row" id="community-search-container">
+					</div>
+					<div class="row">
+						<div class="d-grid gap-2 col-auto mx-auto">
+							<button class="btn btn-outline-primary" type="button" data-page="0"
+								id="search-load-more-btn" disabled>Load More</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="tab-pane fade" id="favorite-items">
+					<div class="row" id="community-favorites-container">
+					</div>
+					<div class="row">
+						<div class="d-grid gap-2 col-auto mx-auto">
+							<button class="btn btn-outline-primary" type="button" data-page="0"
+								id="favorites-load-more-btn" disabled>Load More</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</div>
+	
+	<script src="script.js"></script>
+
+	<!-- History Manager -->
+	<script src="history_manager.js"></script>
+
+	<script>
+		//const api = 'http://localhost:3001/api/';
+		const api = 'https://pixelart.nolliergb.com/api/';
+
+		const swalBS = Swal.mixin({
+			customClass: {
+				confirmButton: 'btn btn-primary',
+				cancelButton: 'btn btn-secondary'
+			}
+		});
+
+		var favorites = [];
+
+		$(document).ready(function () {
+			let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
+			if (loggedIn.userid != null && loggedIn.username != null) loginUser(loggedIn.userid, loggedIn.username);
+
+			let remember = localStorage.getItem('remember') || false;
+			let language = localStorage.getItem('language') || 'english';
+			favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+
+			$('body').attr('data-language', language);
+			if (remember) {
+				$('#txtLoginUsername').val(localStorage.getItem('username'));
+				$('#txtLoginPassword').val(localStorage.getItem('password'));
+				$('#chkLoginRemember').prop('checked', true);
+			}
+			changeLanguage(language);
+		});
+
+		const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
+			'dick', 'dumb', 'fag', 'nigga', 'piss', 'slut', 'wanker', 'ccp', '共产党', '傻逼', '维尼', 'pooh', '西藏', '防火墙', '天安门'];
+
+		$('#size-cols, #size-rows').on('input', function (e) {
+			COLS = parseInt($('#size-cols').val());
+			ROWS = parseInt($('#size-rows').val());
+
+			matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+			canvasHistory.clear(matrixData);
+			resizeCanvas();
+		});
+
+		$('input[name="draw-mode"]').change(function () {
+			currentMode = this.value;
+		});
+
+		$('input[name="draw-color"]').change(function () {
+			currentColor = parseFloat(this.value);
+		})
+
+		async function importData() {
+			var text = null;
+			try {
+				text = await navigator.clipboard.readText()
+				$('#clipboard').val(text);
+			} catch (error) {
+				swalBS.fire({
+					icon: "error",
+					title: getCorrectTranslation('oops'),
+					theme: "dark",
+					text: "Failed to read clipboard. Using execCommand instead.",
+				});
+
+				$('#clipboard').focus();
+				$('#clipboard').val('');
+				text = document.execCommand('paste')
+				$('#clipboard').val(text);
+			}
+			try {
+				matrixData = JSON.parse($('#clipboard').val());
+				matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color));
+				canvasHistory.saveState(matrixData);
+				drawMatrix();
+			} catch (e) {
+				console.log(e);
+				swalBS.fire({
+					icon: "error",
+					title: getCorrectTranslation('oops'),
+					theme: "dark",
+					text: getCorrectTranslation('errorParsingJson'),
+				});
+			}
+		}
+
+		$('#remove-confirm-btn').click(function (evt) {
+			if ($('#select-load').val() === 'null') {
+				$('#select-load').addClass('is-invalid');
+			} else {
+				let name = $('#select-load option:selected').text();
+				console.log(name);
+				localStorage.removeItem(`item-${name}`);
+
+				if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
+				$('#modal-load').modal('hide');
+			}
+		});
+
+		$('#load-confirm-btn').click(function (evt) {
+			if ($('#select-load').val() === 'null') {
+				$('#select-load').addClass('is-invalid');
+			} else {
+				try {
+					canvasHistory.saveState(matrixData);
+					var $select = $('#select-load option:selected');
+
+					COLS = parseInt($select.data('size')[0]);
+					ROWS = parseInt($select.data('size')[1]);
+
+					matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+					resizeCanvas();
+
+					matrixData = JSON.parse($select.val());
+					matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color));
+					canvasHistory.saveState(matrixData);
+					drawMatrix();
+
+					$('#size-cols').val(COLS);
+					$('#size-rows').val(ROWS);
+
+					if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
+					$('#modal-load').modal('hide');
+				} catch (e) {
+					console.log(e);
+					swalBS.fire({
+						icon: "error",
+						title: getCorrectTranslation('oops'),
+						theme: "dark",
+						text: getCorrectTranslation('errorParsingJson'),
+					});
+				}
+			}
+
+		});
+
+		$('#save-confirm-btn').click(function (evt) {
+			if (!$('#txt-save').val()) {
+				$('#txt-save').addClass('is-invalid');
+				$('#txt-save').focus();
+			} else if (naughtyWords.includes($('#txt-save').val())) {
+				$('#txt-save').addClass('is-invalid');
+				$('#txt-save').focus();
+				swalBS.fire({
+					icon: "error",
+					title: getCorrectTranslation('oops'),
+					theme: "dark",
+					text: getCorrectTranslation('inappropriateTextWarning'),
+				});
+			} else {
+				const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue);
+				const name = $('#txt-save').val();
+				const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
+				localStorage.setItem(`item-${name}`, JSON.stringify(obj));
+
+				swalBS.fire({
+					position: "top-end",
+					icon: "success",
+					theme: "dark",
+					title: getCorrectTranslation('saved'),
+					showConfirmButton: false,
+					timer: 1500
+				});
+
+				$('#txt-save').val('');
+				if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
+				$('#modal-save').modal('hide');
+			}
+		});
+
+		function reloadSavedPixelArt() {
+			$('#select-load').find('optgroup').remove();
+			$('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')));
+			var values = stringifyLocalStorageExcept(['language', 'username', 'password', 'remember', 'favorites']);
+			$.each(values, function (key, item) {
+				$('#select-load').append($(`<option data-size="[${item.size}]" data-group="${item.size[0]}x${item.size[1]}" value="${item.data}">${item.name}</option>`).val(item.data).html(item.name));
+			});
+
+			var optiongroups = {};
+			$("#select-load option[data-group]").each(function () {
+				optiongroups[$.trim($(this).attr("data-group"))] = true;
+			});
+			$.each(optiongroups, function (c) {
+				$("select option[data-group='" + c + "']").wrapAll('<optgroup label="' + c + '">');
+			});
+		};
+
+		function stringifyLocalStorageExcept(keysToSkip) {
+			if (!Array.isArray(keysToSkip)) keysToSkip = [keysToSkip];
+
+			const filtered = {};
+			for (let i = 0; i < localStorage.length; i++) {
+				const key = localStorage.key(i);
+				if (!keysToSkip.includes(key)) {
+					try {
+						filtered[key] = JSON.parse(localStorage.getItem(key));
+					} catch (e) {
+						filtered[key] = localStorage.getItem(key);
+					}
+				}
+			}
+			return filtered;
+		};
+
+		function appendPlaceholders(count) {
+			var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex placeholder-item">
+									<div class="card" aria-hidden="true">
+										<svg class="bd-placeholder-img card-img-top" width="100%" height="180"
+											xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder"
+											preserveAspectRatio="xMidYMid slice" focusable="false">
+											<title>Placeholder</title>
+											<rect width="100%" height="100%" fill="#868e96"></rect>
+										</svg>
+										<div class="card-body">
+											<p class="card-text placeholder-glow">
+												<span class="placeholder col-7"></span>
+												<span class="placeholder col-4"></span>
+											</p>
+											<div class="btn-group col-6" role="group">
+												<button type="button"
+													class="btn btn-sm btn-primary disabled placeholder col-3"></button>
+												<button type="button"
+													class="btn btn-sm btn-danger disabled placeholder col-3"></button>
+												<button type="button"
+													class="btn btn-sm btn-secondary disabled placeholder col-3"></button>
+											</div>
+										</div>
+									</div>
+								</div>`;
+			var duplicate = placeholder.repeat(count);
+			return duplicate;
+		}
+
+		function generateItem(id, preview, name, author) {
+			let isFavorite = favorites.includes(id);
+			var dropdown = '';
+			if (author === sessionStorage.getItem('username')) {
+				dropdown = `<div class="btn-group btn-group-sm">
+								<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
+								<ul class="dropdown-menu">
+									<li><a class="dropdown-item" href="#" onclick="downloadItem(${id}, true);">${getCorrectTranslation('edit')}</a></li>
+									<li><a class="dropdown-item remove-item" href="#" data-id="${id}"">${getCorrectTranslation('remove')}</a></li>
+								</ul>
+							</div>`;
+			}
+
+			var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch generated-item">
+							<div class="card shadow-sm">
+								<img src="${preview}" class="image-fluid card-img-top" />
+								<div class="card-body">
+									<p class="card-text">${name}</p>
+									<div class="d-flex justify-content-between align-items-center mt-auto">
+										<div class="btn-group btn-group-sm" role="group">
+											<button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${id});">
+												<span class="mdi mdi-download"></span>
+											</button>
+											<button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${id});">
+												<span class="mdi mdi-heart"></span>
+											</button>
+											${dropdown}
+										</div>
+										<small class="text-muted">${author}</small>
+									</div>
+								</div>
+							</div>
+						</div>`;
+			return item;
+		}
+
+		function searchCommunityItems(search_string, page = 0) {
+			if (page === 0) {
+				$('#community-search-container').empty().append(appendPlaceholders(Math.random() * 20));
+			} else {
+				$('#community-search-container').append(appendPlaceholders(Math.random() * 20));
+			}
+
+			$.ajax({
+				url: `${api}searchitem/${search_string}/${page}`,
+				type: 'GET',
+				contentType: 'application/json; charset=utf-8',
+				dataType: 'json',
+				success: function (response) {
+					console.log(response);
+
+					if (response.success === true && response.pagination.total >= 1) {
+						if (page === 0) $('#community-search-container').empty();
+						var children = [];
+
+						$.each(response.data, function (key, item) {
+							var child = generateItem(item.id, item.preview, item.name, item.author);
+							children.push(child);
+						});
+
+						$('#community-search-container').find('.placeholder-item').remove();
+						$('#community-search-container').append(children);
+						if (response.pagination.hasMore) {
+							$('#search-load-more-btn').attr('data-page', response.pagination.nextPage);
+							$('#search-load-more-btn').prop('disabled', false);
+						} else {
+							$('#search-load-more-btn').prop('disabled', true);
+						}
+					}
+				},
+				error: function (err) {
+					$('#community-search-container').find('.placeholder-item').remove();
+					console.log(err);
+					swalBS.fire({
+						icon: "error",
+						title: getCorrectTranslation('oops'),
+						theme: "dark",
+						text: err.statusText,
+					});
+				}
+			});
+		}
+
+		$('#community-search').click(function (evt) {
+			if ($('#txt-search').val()) {
+				$('#search-load-more-btn').attr('data-page', 0);
+				searchCommunityItems($('#txt-search').val());
+			}
+		});
+
+		$('#txt-search').on('input', function (evt) {
+			// Store the current selection range
+			var start = this.selectionStart;
+			var end = this.selectionEnd;
+
+			// Convert text to lowercase
+			$(this).val($(this).val().toLowerCase());
+
+			// Restore the selection range
+			this.setSelectionRange(start, end);
+		});
+
+		function getCommunityItems(page = 0) {
+			if (page === 0) {
+				$('#community-container').empty().append(appendPlaceholders(Math.random() * 20));
+			} else {
+				$('#community-container').append(appendPlaceholders(Math.random() * 20));
+			}
+
+			$.ajax({
+				url: `${api}allitems/${page}`,
+				type: 'GET',
+				contentType: 'application/json; charset=utf-8',
+				dataType: 'json',
+				success: function (response) {
+					if (response.success === true && response.pagination.total >= 1) {
+						if (page === 0) $('#community-container').empty();
+						var children = [];
+
+						$.each(response.data, function (key, item) {
+							var child = generateItem(item.id, item.preview, item.name, item.author);
+							children.push(child);
+						});
+
+						$('#community-container').find('.placeholder-item').remove();
+						$('#community-container').append(children);
+						if (response.pagination.hasMore) {
+							$('#community-load-more-btn').attr('data-page', response.pagination.nextPage);
+							$('#community-load-more-btn').prop('disabled', false);
+						} else {
+							$('#community-load-more-btn').prop('disabled', true);
+						}
+					}
+				},
+				error: function (err) {
+					$('#community-container').find('.placeholder-item').remove();
+					console.log(err);
+					swalBS.fire({
+						icon: "error",
+						title: getCorrectTranslation('oops'),
+						theme: "dark",
+						text: err.statusText,
+					});
+				}
+			});
+		}
+
+		function getFavoritesCommunityItems(page = 0) {
+			if (page === 0) {
+				$('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 20));
+			} else {
+				$('#community-favorites-container').append(appendPlaceholders(Math.random() * 20));
+			}
+
+			$.ajax({
+				url: `${api}items/${JSON.stringify(favorites)}/${page}`,
+				type: 'GET',
+				contentType: 'application/json; charset=utf-8',
+				dataType: 'json',
+				success: function (response) {
+					if (response.success === true && response.pagination.total >= 1) {
+						if (page === 0) $('#community-favorites-container').empty();
+						var children = [];
+
+						$.each(response.data, function (key, item) {
+							var child = generateItem(item.id, item.preview, item.name, item.author);
+							children.push(child);
+						});
+
+						$('#community-favorites-container').find('.placeholder-item').remove();
+						$('#community-favorites-container').append(children);
+						if (response.pagination.hasMore) {
+							$('#favorites-load-more-btn').attr('data-page', response.pagination.nextPage);
+							$('#favorites-load-more-btn').prop('disabled', false);
+						} else {
+							$('#favorites-load-more-btn').prop('disabled', true);
+						}
+					}
+				},
+				error: function (err) {
+					$('#community-favorites-container').find('.placeholder-item').remove();
+					console.log(err);
+					swalBS.fire({
+						icon: "error",
+						title: getCorrectTranslation('oops'),
+						theme: "dark",
+						text: err.statusText,
+					});
+				}
+			});
+		}
+
+		function canvasToBase64() {
+			var canvas = $('#matrix-canvas')[0]; // Get the DOM element
+			resizeCanvas(true);
+			var base64String = canvas.toDataURL('image/jpeg', 0.5); // Default is PNG format
+			return base64String;
+		}
+
+		$('#btnUpdateConfirm').click(function (evt) {
+			if (!$('#txtUpdateName').val()) {
+				$('#txtUpdateName').addClass('is-invalid');
+				$('#txtUpdateName').focus();
+			} else if (naughtyWords.includes($('#txtUpdateName').val())) {
+				$('#txtUpdateName').addClass('is-invalid');
+				$('#txtUpdateName').focus();
+				swalBS.fire({
+					icon: "error",
+					title: getCorrectTranslation('oops'),
+					theme: "dark",
+					text: getCorrectTranslation('inappropriateTextWarning'),
+				});
+			} else {
+				const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+				var json = {
+					author: sessionStorage.getItem('username'),
+					name: $('#txtUpdateName').val(),
+					size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
+					data: dataStr,
+					preview: canvasToBase64()
+				};
+				var jsonData = JSON.stringify(json);
+				var updateId = parseInt($('#txtUpdateId').val());
+				$.ajax({
+					url: `${api}updateitem/${updateId}`,
+					type: 'POST',
+					data: jsonData,
+					contentType: 'application/json; charset=utf-8',
+					dataType: 'json',
+					success: function (response) {
+						if (response.success === true) {
+							swalBS.fire({
+								position: "top-end",
+								icon: "success",
+								theme: "dark",
+								title: getCorrectTranslation('updated'),
+								showConfirmButton: false,
+								timer: 1500
+							});
+
+							$('#txtUpdateName').val('');
+							if ($('#txtUpdateName').hasClass('is-invalid')) $('#txtUpdateName').removeClass('is-invalid');
+
+							$('#modal-update').modal('hide');
+
+							$('#editItem').css('display', 'none');
+							$('#txtUpdateId').val('-1');
+							$('#btnShare').prop('disabled', false);
+						} else {
+							swalBS.fire({
+								icon: "error",
+								title: getCorrectTranslation('oops'),
+								theme: "dark",
+								text: getCorrectTranslation('itemExists'),
+							});
+						}
+					},
+					error: function (err) {
+						swalBS.fire({
+							icon: "error",
+							title: getCorrectTranslation('oops'),
+							theme: "dark",
+							text: err.statusText,
+						});
+					}
+				});
+			}
+
+			resizeCanvas();
+		});
+
+		$('#btnShareConfirm').click(function (evt) {
+			if (!$('#txtShareName').val()) {
+				$('#txtShareName').addClass('is-invalid');
+				$('#txtShareName').focus();
+			} else if (naughtyWords.includes($('#txtShareName').val())) {
+				$('#txtShareName').addClass('is-invalid');
+				$('#txtShareName').focus();
+				swalBS.fire({
+					icon: "error",
+					title: getCorrectTranslation('oops'),
+					theme: "dark",
+					text: getCorrectTranslation('inappropriateTextWarning'),
+				});
+			} else {
+				const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+				var json = {
+					author: sessionStorage.getItem('username'),
+					name: $('#txtShareName').val(),
+					size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
+					data: dataStr,
+					preview: canvasToBase64()
+				};
+				var jsonData = JSON.stringify(json);
+				$.ajax({
+					url: `${api}items`,
+					type: 'POST',
+					data: jsonData,
+					contentType: 'application/json; charset=utf-8',
+					dataType: 'json',
+					success: function (response) {
+						if (response.success === true) {
+							swalBS.fire({
+								position: "top-end",
+								icon: "success",
+								theme: "dark",
+								title: getCorrectTranslation('shared'),
+								showConfirmButton: false,
+								timer: 1500
+							});
+
+							$('#txtShareName').val('');
+							if ($('#txtShareName').hasClass('is-invalid')) $('#txtShareName').removeClass('is-invalid');
+
+							$('#modal-share').modal('hide');
+						} else {
+							swalBS.fire({
+								icon: "error",
+								title: getCorrectTranslation('oops'),
+								theme: "dark",
+								text: getCorrectTranslation('itemExists'),
+							});
+						}
+					},
+					error: function (err) {
+						swalBS.fire({
+							icon: "error",
+							title: getCorrectTranslation('oops'),
+							theme: "dark",
+							text: err.statusText,
+						});
+					}
+				});
+
+				resizeCanvas();
+			}
+		});
+
+		function downloadItem(id, edit = false) {
+			$.ajax({
+				url: `${api}item/${id}`,
+				type: 'GET',
+				contentType: 'application/json; charset=utf-8',
+				dataType: 'json',
+				success: function (response) {
+					if (response.success === true) {
+						let $item = response.data;
+
+						COLS = $item.size[0];
+						ROWS = $item.size[1];
+
+						matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+						resizeCanvas();
+
+						matrixData = JSON.parse($item.data);
+						matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
+						canvasHistory.saveState(matrixData);
+						drawMatrix();
+
+						$('#size-cols').val(COLS);
+						$('#size-rows').val(ROWS);
+
+						$('#community').offcanvas('hide');
+
+						if (edit) {
+							$('#editItem').css('display', 'block');
+							$('#txtUpdateId').val(id);
+							$('#txtUpdateName').val($item.name);
+							$('#btnShare').prop('disabled', true);
+						}
+					}
+				},
+				error: function (err) {
+					console.log(err);
+					swalBS.fire({
+						icon: "error",
+						title: getCorrectTranslation('oops'),
+						theme: "dark",
+						text: err.statusText,
+					});
+				}
+			});
+		}
+
+		function cancelEdit() {
+			$('#editItem').css('display', 'none');
+			$('#txtUpdateId').val('-1');
+			$('#btnShare').prop('disabled', false);
+			fillAll('#000000');
+		}
+
+		$(document).keydown(function (e) {
+			// If any div has the class '.modal.show' or '.offcanvas.show', exit early
+			if ($('div.modal.show').length > 0 || $('div.offcanvas.show').length > 0) {
+				return
+			}
+
+			// Undo
+			if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+				e.preventDefault()
+				canvasHistory.undo()
+				return
+			}
+
+			// Redo
+			if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+				e.preventDefault()
+				canvasHistory.redo()
+				return
+			}
+		})
+
+		$('#community-load-more-btn').click(function (evt) {
+			getCommunityItems(parseInt($(this).attr('data-page')))
+		})
+
+		$('#search-load-more-btn').click(function (evt) {
+			searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')))
+		})
+
+		$('#favorites-load-more-btn').click(function (evt) {
+			getFavoritesCommunityItems($(this.attr('data-page')))
+		})
+
+		function addToFavorite(id) {
+			if (!favorites.includes(id)) {
+				favorites.push(id)
+				localStorage.setItem('favorites', JSON.stringify(favorites))
+				$(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-outline-danger').addClass('btn-danger')
+			} else {
+				favorites.splice($.inArray(id, favorites), 1)
+				localStorage.setItem('favorites', JSON.stringify(favorites))
+				$(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-danger').addClass('btn-outline-danger')
+			}
+		}
+
+		function removeItem(id) {
+			var json = {
+				author: sessionStorage.getItem('username')
+			}
+			var jsonData = JSON.stringify(json)
+			var url = `${api}deleteitem/${id}`
+
+			$.ajax({
+				url: url,
+				type: 'POST',
+				data: jsonData,
+				contentType: 'application/json; charset=utf-8',
+				dataType: 'json',
+				success: function (response) {
+					if (response.success === true) {
+						swalBS.fire({
+							position: "top-end",
+							icon: "success",
+							theme: "dark",
+							title: getCorrectTranslation('removed'),
+							showConfirmButton: false,
+							timer: 1500
+						})
+					} else {
+						swalBS.fire({
+							icon: "error",
+							title: getCorrectTranslation('oops'),
+							theme: "dark",
+							text: getCorrectTranslation('removeFailed'),
+						})
+					}
+				},
+				error: function (err) {
+					swalBS.fire({
+						icon: "error",
+						title: getCorrectTranslation('oops'),
+						theme: "dark",
+						text: err.statusText,
+					})
+				}
+			})
+		}
+	</script>
+
+	<script>
+		const canvas = document.getElementById('matrix-canvas');
+		const ctx = canvas.getContext('2d');
+		const mousePosDisplay = document.getElementById('mouse-pos');
+		const cellSizeDisplay = document.getElementById('cell-size');
+
+		// Matrix dimensions
+		let COLS = parseInt($('#size-cols').val());
+		let ROWS = parseInt($('#size-rows').val());
+		let cellWidth, cellHeight;
+
+		// Matrix data - stores color for each cell
+		let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill(black));
+
+		//Wrapped matrix to hold matrix info for nudging
+		let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill(black));
+
+		let canvasHistory = new HistoryManager(matrixData);
+		canvasHistory.saveState(matrixData);
+
+		// Drawing state
+		let isDrawing = false;
+		let currentMode = $('input[name="draw-mode"]:checked').val();
+		let currentColor = parseFloat($('#input[name="draw-color"]:checked').val()) || 1;
+
+		// Resize the canvas to fill the screen while maintaining aspect ratio
+		function resizeCanvas() {
+			const maxWidth = window.innerWidth * 0.95;
+			const maxHeight = window.innerHeight * 0.7;
+
+			// Calculate the cell size to fit the matrix in the available space
+			const cellWidthByWidth = maxWidth / COLS;
+			const cellHeightByHeight = maxHeight / ROWS;
+
+			// Use the smaller of the two to ensure the entire matrix fits
+			const cellSize = Math.floor(Math.min(cellWidthByWidth, cellHeightByHeight));
+
+			cellWidth = cellSize;
+			cellHeight = cellSize;
+
+			canvas.width = COLS * cellWidth;
+			canvas.height = ROWS * cellHeight;
+
+			cellSizeDisplay.textContent = `${getCorrectTranslation('cellsize2')} ${cellWidth}x${cellHeight}`;
+
+			// Redraw the matrix with the current data
+			drawMatrix();
+		};
+
+		// Draw the entire matrix
+		function drawMatrix() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+			// Draw each cell
+			for (let row = 0; row < ROWS; row++) {
+				for (let col = 0; col < COLS; col++) {
+					const x = col * cellWidth;
+					const y = row * cellHeight;
+
+					// Draw the cell background
+					ctx.fillStyle = matrixData[row][col];
+					ctx.fillRect(x, y, cellWidth, cellHeight);
+
+					// Draw the cell border
+					ctx.strokeStyle = '#333333';
+					ctx.strokeRect(x, y, cellWidth, cellHeight);
+				};
+			};
+		};
+
+		// Convert mouse position to matrix coordinates
+		function getMatrixCoords(event) {
+			const rect = canvas.getBoundingClientRect();
+			const x = event.clientX - rect.left;
+			const y = event.clientY - rect.top;
+
+			const col = Math.floor(x / cellWidth);
+			const row = Math.floor(y / cellHeight);
+
+			// Make sure we're within bounds
+			if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+				return { row, col };
+			};
+
+			return null;
+		};
+
+		// Update a cell's color
+		function updateCell(row, col, color) {
+			if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {;
+				matrixData[row][col] = color;
+
+				// Redraw just this cell
+				const x = col * cellWidth;
+				const y = row * cellHeight;
+
+				ctx.fillStyle = color;
+				ctx.fillRect(x, y, cellWidth, cellHeight);
+
+				ctx.strokeStyle = '#333333';
+				ctx.strokeRect(x, y, cellWidth, cellHeight);
+			};
+		};
+
+		// Fill all cells with a specific color
+		function clearAll(color) {
+			canvasHistory.saveState(matrixData);
+			for (let row = 0; row < ROWS; row++) {
+				for (let col = 0; col < COLS; col++) {;
+					matrixData[row][col] = color;
+				};
+			};
+			drawMatrix();
+		};
+
+		// Fill all contiguous cells with a specific color
+		function fillAll(row, col, color) {
+			canvasHistory.saveState(matrixData);
+			fillAllRecursive(row, col, color);
+		};
+
+		function fillAllRecursive(row, col, color) {
+			originalColor = matrixData[row][col];
+			if (originalColor != color) {
+				updateCell(row, col, color);
+				if (row > 0 && matrixData[row - 1][col] == originalColor) {
+					fillAllRecursive(row - 1, col, color);
+				};
+				if (row < ROWS - 1 && matrixData[row + 1][col] == originalColor) {
+					fillAllRecursive(row + 1, col, color);
+				};
+				if (col > 0 && matrixData[row][col - 1] == originalColor) {
+					fillAllRecursive(row, col - 1, color);
+				};
+				if (col < COLS - 1 && matrixData[row][col + 1] == originalColor) {
+					fillAllRecursive(row, col + 1, color);
+				};
+			};
+		};
+
+		function undo() {
+			canvasHistory.undo();
+		};
+
+		function redo() {
+			canvasHistory.redo();
+		};
+
+	   //Invert all cells
+		function invertAll() {
+			canvasHistory.saveState(matrixData);
+			for (let row = 0; row < ROWS; row++) {
+				for (let col = 0; col < COLS; col++) {
+					switch (matrixData[row][col]) {
+						case white:
+							matrixData[row][col] = black;
+							break;
+						case black:
+							matrixData[row][col] = white;
+							break;
+					};
+				};
+			};
+			drawMatrix();
+		};
+		
+		function invertGreys() {
+			canvasHistory.saveState(matrixData)
+			for (let row = 0; row < ROWS; row++) {
+				for (let col = 0; col < COLS; col++) {
+					switch (matrixData[row][col]) {
+						case lightGrey:
+							matrixData[row][col] = darkGrey;
+							break;
+						case darkGrey:
+							matrixData[row][col] = lightGrey;
+							break;
+					};
+				};
+			};
+			drawMatrix();
+		};
+
+		function mirrorHorizontal() {
+			canvasHistory.saveState(matrixData)
+			for (let row = 0; row < ROWS; row++) {
+				for (let col = 0; col < COLS / 2; col++) {
+					matrixData[row][COLS - col - 1] = matrixData[row][col];
+				};
+			};
+			drawMatrix();
+		};
+
+		function mirrorVertical() {
+			canvasHistory.saveState(matrixData);
+			for (let row = 0; row < ROWS / 2; row++) {
+				for (let col = 0; col < COLS; col++) {
+					matrixData[ROWS - row - 1][col] = matrixData[row][col];
+				};
+			};
+			drawMatrix();
+		};
+
+		function flip(direction = 'horizontal') {
+			canvasHistory.saveState(matrixData);
+			if (direction === 'horizontal') {
+				console.log("flip horizontal");
+				matrixData = matrixData.map(row => row.slice().reverse());
+			} else if (direction === 'vertical') {
+				console.log("flip vertical");
+				matrixData = matrixData.slice().reverse();
+			};
+			drawMatrix();
+		};
+
+		function copyToClipboard(text) {
+			console.log(text);
+			var $temp = $('<input>');
+			$('body').append($temp);
+			$temp.val(text).select();
+			document.execCommand('copy');
+			$temp.remove()
+
+			swalBS.fire({
+				position: "top-end",
+				icon: "success",
+				theme: "dark",
+				title: getCorrectTranslation('copied'),
+				showConfirmButton: false,
+				timer: 1500
+			});
+		};
+
+		function copyWrappedToMatrix() {
+			for (let row = 0; row < ROWS; row++) {
+				for (let col = 0; col < COLS; col++) {
+					matrixData[row][col] = wrappedMatrix[row][col];
+				};
+			};
+		};
+
+		function moveUp() {
+			canvasHistory.saveState(matrixData);
+			for (let row = 0; row < ROWS - 1; row++) {
+				for (let col = 0; col < COLS; col++) {
+					const srcRow = (row + 1) % ROWS;
+					wrappedMatrix[row][col] = matrixData[srcRow][col];
+				};
+			};
+			copyWrappedToMatrix();
+			drawMatrix();
+			nudgeY();
+		};
+
+		function moveDown() {
+			canvasHistory.saveState(matrixData);
+			for (let row = ROWS - 1; row > 0; row--) {
+				for (let col = 0; col < COLS; col++) {
+					const srcRow = (row - 1 + ROWS) % ROWS;
+					wrappedMatrix[row][col] = matrixData[srcRow][col];
+				};
+			};
+			copyWrappedToMatrix();
+			drawMatrix();
+			nudgeY();
+		};
+
+		function moveLeft() {
+			canvasHistory.saveState(matrixData);
+			for (let row = 0; row < ROWS; row++) {
+				for (let col = 0; col < COLS - 1; col++) {
+					const srcCol = (col + 1) % COLS;
+					wrappedMatrix[row][col] = matrixData[row][srcCol];
+				};
+			};
+			copyWrappedToMatrix();
+			drawMatrix();
+			nudgeX();
+		}
+
+		function moveRight() {
+			canvasHistory.saveState(matrixData)
+			for (let row = 0; row < ROWS; row++) {
+				for (let col = COLS - 1; col > 0; col--) {
+					const srcCol = (col - 1 + COLS) % COLS;
+					wrappedMatrix[row][col] = matrixData[row][srcCol];
+				}
+			}
+			copyWrappedToMatrix();
+			drawMatrix();
+			nudgeX();
+		}
+
+		function nudgeX() {
+			$('#canvas-container').addClass('nudgeX');
+
+			setTimeout(() => {
+				$('#canvas-container').removeClass('nudgeX')
+			}, 700);
+		};
+
+		function nudgeY() {
+			$('#canvas-container').addClass('nudgeY');
+
+			setTimeout(() => {
+				$('#canvas-container').removeClass('nudgeY')
+			}, 700);
+		};
+
+		// Export matrix data as JSON
+		function exportData() {
+			console.log(matrixData)
+			const dataStr = JSON.stringify(matrixData.map(row =>row.map(color => colorMap[color] ?? color)))
+			console.log(dataStr)
+			swalBS.fire({
+				title: getCorrectTranslation('copycode'),
+				icon: "success",
+				theme: "dark",
+				html: `<div class="code-container"><code>${dataStr}</code><button class="btn btn-outline-primary copy-code" onclick="copyToClipboard('${dataStr}');">${getCorrectTranslation('copy')}</button></div>`,
+				showCloseButton: false,
+				showCancelButton: false,
+				focusConfirm: false,
+				confirmButtonText: getCorrectTranslation('ok'),
+				confirmButtonAriaLabel: 'OK',
+				cancelButtonText: 'Cancel',
+				cancelButtonAriaLabel: "Thumbs down"
+			});
+		};
+
+		// Event listeners
+		
+		window.addEventListener('DOMContentLoaded', () => {
+			document.getElementById('draw-white').value = whiteValue;
+			document.getElementById('draw-lightGrey').value = lightGreyValue;
+			document.getElementById('draw-darkGrey').value = darkGreyValue;
+			document.getElementById('draw-black').value = blackValue;
+		});
+		
+		//Lazy loading of community items
+		const communityDiv = document.querySelector('#community .offcanvas-body');
+		const loadMoreBtn = document.getElementById('community-load-more-btn');
+	   
+		communityDiv.addEventListener('scroll', () => {
+			const isAtBottom = communityDiv.scrollTop + communityDiv.clientHeight >= communityDiv.scrollHeight;
+			if (isAtBottom) {
+				loadMoreBtn.click();
+			};
+		});
+		
+		canvas.addEventListener('mousedown', (e) => {
+			isDrawing = true;
+
+			const coords = getMatrixCoords(e);
+			if (coords) {
+				switch (currentMode) {
+					case 'draw':
+						switch (currentColor) {
+							case 1:
+								updateCell(coords.row, coords.col, white);
+								break;
+							case 0.5:
+								updateCell(coords.row, coords.col, darkGrey);
+								break;
+							case 0.7:
+								updateCell(coords.row, coords.col, lightGrey);
+								break;
+							case 0:
+								updateCell(coords.row, coords.col, black);
+								break;
+						};
+						break;
+					case 'fill':
+						switch (currentColor) {
+							case 1:
+								fillAll(coords.row, coords.col, white);
+								break;
+							case 0.5:
+								fillAll(coords.row, coords.col, darkGrey);
+								break;
+							case 0.7:
+								fillAll(coords.row, coords.col, lightGrey);
+								break;
+							case 0:
+								fillAll(coords.row, coords.col, black);
+								break;
+						};
+						break;
+				};
+			};
+		});
+
+		canvas.addEventListener('mousemove', (e) => {
+			const coords = getMatrixCoords(e);
+			if (coords) {
+
+				mousePosDisplay.textContent = `${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`;
+
+				if (isDrawing) {
+					switch (currentMode) {
+						case 'draw':
+							switch (currentColor) {
+								case 1:
+									updateCell(coords.row, coords.col, white);
+									break;
+								case 0.5:
+									updateCell(coords.row, coords.col, darkGrey);
+									break;
+								case 0.7:
+									updateCell(coords.row, coords.col, lightGrey);
+									break;
+								case 0:
+									updateCell(coords.row, coords.col, black);
+									break;
+							};
+							break;
+					};
+				};
+			} else {
+				mousePosDisplay.textContent = getCorrectTranslation('position1');
+			};
+		});
+
+		canvas.addEventListener('mouseout', () => {
+			mousePosDisplay.textContent = getCorrectTranslation('position1');
+		});
+
+		window.addEventListener('mouseup', () => {
+			isDrawing = false;
+			canvasHistory.saveState(matrixData);
+		});
+
+		window.addEventListener('resize', resizeCanvas);
+
+		// Initial setup
+		resizeCanvas();
+
+		$(document).keydown(function (e) {
+			switch (e.which) {
+				case 37: // left arrow key
+					moveLeft();
+					break;
+				case 38: // up arrow key
+					moveUp();
+					break;
+				case 39: // right arrow key
+					moveRight();
+					break;
+				case 40: // down arrow key
+					moveDown();
+					break;
+				default: return; // exit this handler for other keys
+			};
+
+			e.preventDefault(); // prevent the default action (scroll / move caret)
+		});
+	</script>
+
+	<!-- User functions -->
+	<script>
+		function loginUser(id, username) {
+			sessionStorage.setItem('id', id);
+			sessionStorage.setItem('username', username);
+
+			$('#ddLogin, #btnSignup').css('display', 'none');
+			$('#member, #btnShare').css('display', 'block');
+			$('#member button.dropdown-toggle').text(username);
+		};
+
+		$('#btnLoginConfirm').click(function (evt) {
+			if (!$('#txtLoginUsername').val()) {
+				$('#txtLoginUsername').addClass('is-invalid');
+				$('#txtLoginUsername').focus();
+			} else if (!$('#txtLoginPassword').val()) {
+				$('#txtLoginPassword').addClass('is-invalid');
+				$('#txtLoginPassword').focus();
+			} else {
+				$.ajax({
+					url: `${api}loginuser/${$('#txtLoginUsername').val()}/${$('#txtLoginPassword').val()}`,
+					type: 'GET',
+					contentType: 'application/json; charset=utf-8',
+					dataType: 'json',
+					success: function (response) {
+						if (response.success === true) {
+							swalBS.fire({
+								position: "top-end",
+								icon: "success",
+								theme: "dark",
+								title: getCorrectTranslation('welcomeUser').replace('{user}', response.data.data.username),
+								showConfirmButton: false,
+								timer: 1500
+							});
+
+							loginUser(response.data.data.id, $('#txtLoginUsername').val());
+
+							if ($('#chkLoginRemember').is(':checked')) {
+								localStorage.setItem('username', $('#txtLoginUsername').val());
+								localStorage.setItem('password', $('#txtLoginPassword').val());
+								localStorage.setItem('remember', true);
+							};
+
+							$('#txtLoginUsername, #txtLoginPassword').val('');
+							if ($('#txtLoginUsername').hasClass('is-invalid')) $('#txtLoginUsername').removeClass('is-invalid');
+							if ($('#txtLoginPassword').hasClass('is-invalid')) $('#txtLoginPassword').removeClass('is-invalid');
+
+							//if ($('#frmLogin').hasClass('show')) $('#frmLogin').removeClass('show')
+							$('#frmLogin').dropdown('hide');
+						} else {
+							swalBS.fire({
+								icon: "error",
+								title: getCorrectTranslation('oops'),
+								theme: "dark",
+								text: getCorrectTranslation(response.data.code),
+							});
+						};
+					},
+					error: function (err) {
+						swalBS.fire({
+							icon: "error",
+							title: getCorrectTranslation('oops'),
+							theme: "dark",
+							text: err.statusText,
+						});
+					}
+				});
+			};
+		});
+
+		$('#btnSignupConfirm').click(function (evt) {
+			if (!$('#txtSignupEmail').val()) {
+				$('#txtSignupEmail').addClass('is-invalid');
+				$('#txtSignupEmail').focus();
+			} else if (!$('#txtSignupUsername').val()) {
+				$('#txtSignupUsername').addClass('is-invalid');
+				$('#txtSignupUsername').focus();
+			} else if (naughtyWords.includes($('#txtSignupUsername').val())) {
+				$('#txtSignupUsername').addClass('is-invalid');
+				$('#txtSignupUsername').focus();
+				swalBS.fire({
+					icon: "error",
+					title: getCorrectTranslation('oops'),
+					theme: "dark",
+					text: getCorrectTranslation('inappropriateTextWarning'),
+				});
+			} else if (!$('#txtSignupPassword').val()) {
+				$('#txtSignupPassword').addClass('is-invalid');
+				$('#txtSignupPassword').focus();
+			} else if (!$('#txtSignupConfirmPassword').val()) {
+				$('#txtSignupConfirmPassword').addClass('is-invalid');
+				$('#txtSignupConfirmPassword').focus();
+			} else if ($('#txtSignupPassword').val() != $('#txtSignupConfirmPassword').val()) {
+				$('#txtSignupPassword').addClass('is-invalid');
+				$('#txtSignupConfirmPassword').addClass('is-invalid');
+				$('#txtSignupPassword').focus();
+				swalBS.fire({
+					icon: "error",
+					title: getCorrectTranslation('oops'),
+					theme: "dark",
+					text: getCorrectTranslation('passwordNotMatch'),
+				});
+			} else {
+				var json = {
+					username: $('#txtSignupUsername').val(),
+					email: $('#txtSignupEmail').val(),
+					password: $('#txtSignupConfirmPassword').val()
+				};
+				var jsonData = JSON.stringify(json);
+
+				$.ajax({
+					url: `${api}users`,
+					type: 'POST',
+					data: jsonData,
+					contentType: 'application/json; charset=utf-8',
+					dataType: 'json',
+					success: function (response) {
+						if (response.success === true) {
+							swalBS.fire({
+								position: "top-end",
+								icon: "success",
+								theme: "dark",
+								title: getCorrectTranslation('signedUp'),
+								showConfirmButton: false,
+								timer: 1500
+							})
+
+							loginUser(response.id, $('#txtSignupUsername').val())
+
+							$('#txtSignupEmail, #txtSignupUsername, #txtSignupConfirmPassword, #txtSignupPassword').val('');
+							if ($('#txtSignupEmail').hasClass('is-invalid')) $('#txtSignupEmail').removeClass('is-invalid');
+							if ($('#txtSignupUsername').hasClass('is-invalid')) $('#txtSignupUsername').removeClass('is-invalid');
+							if ($('#txtSignupConfirmPassword').hasClass('is-invalid')) $('#txtSignupConfirmPassword').removeClass('is-invalid');
+							if ($('#txtSignupPassword').hasClass('is-invalid')) $('#txtSignupPassword').removeClass('is-invalid');
+
+							$('#modal-signup').modal('hide');
+						} else {
+							swalBS.fire({
+								icon: "error",
+								title: getCorrectTranslation('oops'),
+								theme: "dark",
+								text: getCorrectTranslation(response.data.code),
+							});
+						};
+					},
+					error: function (err) {
+						swalBS.fire({
+							icon: "error",
+							title: getCorrectTranslation('oops'),
+							theme: "dark",
+							text: err.statusText,
+						});
+					}
+				});
+			};
+		});
+
+		$('#btnChangePasswordConfirm').click(function (evt) {
+			if (!$('#txtCurrentPassword').val()) {
+				$('#txtCurrentPassword').addClass('is-invalid');
+				$('#txtCurrentPassword').focus();
+			} else if (!$('#txtNewPassword').val()) {
+				$('#txtNewPassword').addClass('is-invalid');
+				$('#txtNewPassword').focus();
+			} else if (!$('#txtConfirmNewPassword').val()) {
+				$('#txtConfirmNewPassword').addClass('is-invalid');
+				$('#txtConfirmNewPassword').focus();
+			} else if ($('#txtNewPassword').val() != $('#txtConfirmNewPassword').val()) {
+				$('#txtSignupPassword').addClass('is-invalid');
+				$('#txtConfirmNewPassword').addClass('is-invalid');
+				$('#txtNewPassword').focus();
+				swalBS.fire({
+					icon: "error",
+					title: getCorrectTranslation('oops'),
+					theme: "dark",
+					text: getCorrectTranslation('passwordNotMatch'),
+				});
+			} else {
+				var json = { currentPassword: $('#txtCurrentPassword').val(), newPassword: $('#txtConfirmNewPassword').val() };
+				var jsonData = JSON.stringify(json);
+
+				$.ajax({
+					url: `${api}updateuser/${parseInt(sessionStorage.getItem('id') || -1)}`,
+					type: 'POST',
+					data: jsonData,
+					contentType: 'application/json; charset=utf-8',
+					dataType: 'json',
+					success: function (response) {
+						if (response.success === true) {
+							swalBS.fire({
+								position: "top-end",
+								icon: "success",
+								theme: "dark",
+								title: getCorrectTranslation('passwordChanged'),
+								showConfirmButton: false,
+								timer: 1500
+							});
+
+							sessionStorage.clear();
+
+							$('#ddLogin, #btnSignup').css('display', 'block');
+							$('#member, #btnShare').css('display', 'none');
+							$('#member button.dropdown-toggle').text('Guest');
+
+							$('#txtCurrentPassword, #txtNewPassword, #txtConfirmNewPassword').val('');
+							if ($('#txtCurrentPassword').hasClass('is-invalid')) $('#txtCurrentPassword').removeClass('is-invalid');
+							if ($('#txtNewPassword').hasClass('is-invalid')) $('#txtNewPassword').removeClass('is-invalid');
+							if ($('#txtConfirmNewPassword').hasClass('is-invalid')) $('#txtConfirmNewPassword').removeClass('is-invalid');
+
+							$('#modal-change-password').modal('hide');
+						} else {
+							swalBS.fire({
+								icon: "error",
+								title: getCorrectTranslation('oops'),
+								theme: "dark",
+								text: getCorrectTranslation(response.data.code),
+							});
+						};
+					},
+					error: function (err) {
+						swalBS.fire({
+							icon: "error",
+							title: getCorrectTranslation('oops'),
+							theme: "dark",
+							text: err.statusText,
+						});
+					}
+				});
+			};
+		});
+
+		$('#aLogout').click(function (evt) {
+			sessionStorage.clear();
+
+			$('#ddLogin, #btnSignup').css('display', 'block');
+			$('#member, #btnShare').css('display', 'none');
+			$('#member button.dropdown-toggle').text('Guest');
+		});
+
+		$('#btnShare').click(function (evt) {
+			let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
+			if (loggedIn.userid != null && loggedIn.username != null) {
+				$('#modal-share').modal('show');
+			} else {
+				$('#frmLogin').dropdown('show');
+			};
+		});
+	</script>
 </body>
 </html>
