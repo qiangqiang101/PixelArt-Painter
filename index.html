@@ -15,6 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
         crossorigin="anonymous"></script>
+    <script src="variable_declaration.js"></script>
 </head>
 
 <body>
@@ -165,14 +166,14 @@
             </div>
 
             <div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
-                <!-- <div class="col-auto">
+                <div class="col-auto">
                     <div class="btn-group">
                         <button type="button" class="btn btn-primary" id="btnUndo" onclick="undo();">
                             <span class="mdi mdi-undo"></span> Undo</button>
                         <button type="button" class="btn btn-primary" id="btnRedo" onclick="redo();">
                             <span class="mdi mdi-redo"></span> Redo</button>
                     </div>
-                </div> -->
+                </div>
 
                 <div class="col-auto">
                     <div class="btn-group">
@@ -503,72 +504,7 @@
     <script src="script.js"></script>
 
     <!-- History Manager -->
-    <script>
-        const MAX_HISTORY = 100;
-
-        class HistoryManager {
-            isEqual(a, b) {
-                return JSON.stringify(a) === JSON.stringify(b);
-            }
-
-            constructor(initialState) {
-                this.undoStack = [];
-                this.redoStack = [];
-                this.currentState = initialState;
-            }
-
-            saveState(newState) {
-                const clonedNewState = this.clone(newState);
-                const lastUndoState = this.undoStack[this.undoStack.length - 1];
-
-                if (lastUndoState && this.isEqual(clonedNewState, lastUndoState)) {
-                    return;
-                }
-
-                this.undoStack.push(this.clone(this.currentState));
-                if (this.undoStack.length > MAX_HISTORY) this.undoStack.shift();
-
-                this.currentState = clonedNewState;
-                this.redoStack = [];
-            }
-
-            clear(initialState) {
-                this.undoStack = [];
-                this.redoStack = [];
-                this.currentState = initialState;
-            }
-
-            undo() {
-                if (this.undoStack.length === 0) {
-                    console.log("Nothing to undo");
-                } else {
-                    this.redoStack.push(this.clone(this.currentState));
-                    this.currentState = this.undoStack.pop();
-                }
-                matrixData = this.clone(this.currentState);
-                drawMatrix();
-            }
-
-            redo() {
-                if (this.redoStack.length === 0) {
-                    console.log("Nothing to redo");
-                } else {
-                    this.undoStack.push(this.clone(this.currentState));
-                    this.currentState = this.redoStack.pop();
-                }
-                matrixData = this.clone(this.currentState);
-                drawMatrix();
-            }
-
-            clone(state) {
-                return JSON.parse(JSON.stringify(state));
-            }
-
-            getCurrentState() {
-                return this.clone(this.currentState);
-            }
-        }
-    </script>
+<script src="history_manager.js"></script>
 
     <script>
         //const api = 'http://localhost:3001/api/';
@@ -813,9 +749,24 @@
                                 </ul>
                             </div>`;
             }
+            
+            let itemData;
+
+            getItemJSON(123)
+            .then(data => {
+                itemData = data;
+                console.log("Item data:", itemData);
+            })
+            .catch(err => {
+                console.error("Error loading item:", err);
+            });
+
+            console.log(itemData)
+            
 
             var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">
                             <div class="card shadow-sm">
+                                <canvas id="canvas-${id}" width="600px" height="600px"></canvas>
                                 <img src="${preview}" class="image-fluid card-img-top" />
                                 <div class="card-body">
                                     <p class="card-text">${name}</p>
@@ -1161,6 +1112,36 @@
                 }
             });
         }
+        
+        function getItemJSON(id) {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: `${api}item/${id}`,
+                    type: 'GET',
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success === true) {
+                            let $item = response.data;
+                            let data = JSON.parse($item.data);
+                            resolve(data);
+                        } else {
+                            reject(new Error("Error en la respuesta del servidor"));
+                        }
+                    },
+                    error: function (err) {
+                        console.log(err);
+                        swalBS.fire({
+                            icon: "error",
+                            title: getCorrectTranslation('oops'),
+                            theme: "dark",
+                            text: err.statusText,
+                        });
+                        reject(err);
+                    }
+                });
+            });
+        }
 
         function cancelEdit() {
             $('#editItem').css('display', 'none');
@@ -1169,10 +1150,10 @@
             fillAll('#000000');
         }
 
-        $('#txt-search').on('keydown', function (e) {
-            if (e.keyCode === 13) {
-                $('#community-search').click();
-                e.preventDefault()
+        $(document).keydown(function (e) {
+            // If any div has the class '.modal.show' or '.offcanvas.show', exit early
+            if ($('div.modal.show').length > 0 || $('div.offcanvas.show').length > 0) {
+                return;
             }
 
             // Undo
