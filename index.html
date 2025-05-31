@@ -208,29 +208,34 @@
                                 class="mdi mdi-invert-colors"></span>
                             Invert</button>
                         <div class="btn-group dropdown">
-                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-flip-to-front"></span> Mirror
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#" onclick="mirrorHorizontal();">
-                                    <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
-                                </a></li>
-                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#" onclick="mirrorVertical();">
-                                    <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
-                                </a></li>
+                                <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#"
+                                        onclick="mirrorHorizontal();">
+                                        <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
+                                    </a></li>
+                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#"
+                                        onclick="mirrorVertical();">
+                                        <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
+                                    </a></li>
                             </ul>
                         </div>
                         <div class="btn-group dropdown">
-                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-rotate-orbit"></span> Flip
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" id="btnFlipHorizontal" href="#" onclick="flip('horizontal');">
-                                    <span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
-                                </a></li>
+                                <li><a class="dropdown-item" id="btnFlipHorizontal" href="#"
+                                        onclick="flip('horizontal');">
+                                        <span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
+                                    </a></li>
                                 <li><a class="dropdown-item" id="btnFlipVertical" href="#" onclick="flip('vertical');">
-                                    <span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
-                                </a></li>
+                                        <span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
+                                    </a></li>
                             </ul>
                         </div>
                     </div>
@@ -709,7 +714,7 @@
         }
 
         function appendPlaceholders(count) {
-            var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex">
+            var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex placeholder-item">
                                     <div class="card" aria-hidden="true">
                                         <svg class="bd-placeholder-img card-img-top" width="100%" height="180"
                                             xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder"
@@ -745,7 +750,7 @@
                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="#" onclick="downloadItem(${id}, true);">${getCorrectTranslation('edit')}</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="removeItem(${id});">${getCorrectTranslation('remove')}</a></li>
+                                    <li><a class="dropdown-item remove-item" href="#" data-id="${id}"">${getCorrectTranslation('remove')}</a></li>
                                 </ul>
                             </div>`;
             }
@@ -764,7 +769,7 @@
             console.log(itemData)
             
 
-            var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">
+            var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch generated-item">
                             <div class="card shadow-sm">
                                 <canvas id="canvas-${id}" width="600px" height="600px"></canvas>
                                 <img src="${preview}" class="image-fluid card-img-top" />
@@ -789,7 +794,11 @@
         }
 
         function searchCommunityItems(search_string, page = 0) {
-            if (page === 0) $('#community-search-container').empty().append(appendPlaceholders(Math.random() * 30));
+            if (page === 0) {
+                $('#community-search-container').empty().append(appendPlaceholders(Math.random() * 20));
+            } else {
+                $('#community-search-container').append(appendPlaceholders(Math.random() * 20));
+            }
 
             $.ajax({
                 url: `${api}searchitem/${search_string}/${page}`,
@@ -808,6 +817,7 @@
                             children.push(child);
                         });
 
+                        $('#community-search-container').find('.placeholder-item').remove();
                         $('#community-search-container').append(children);
                         if (response.pagination.hasMore) {
                             $('#search-load-more-btn').attr('data-page', response.pagination.nextPage);
@@ -818,6 +828,7 @@
                     }
                 },
                 error: function (err) {
+                    $('#community-search-container').find('.placeholder-item').remove();
                     console.log(err);
                     swalBS.fire({
                         icon: "error",
@@ -849,7 +860,11 @@
         });
 
         function getCommunityItems(page = 0) {
-            if (page === 0) $('#community-container').empty().append(appendPlaceholders(Math.random() * 30));
+            if (page === 0) {
+                $('#community-container').empty().append(appendPlaceholders(Math.random() * 20));
+            } else {
+                $('#community-container').append(appendPlaceholders(Math.random() * 20));
+            }
 
             $.ajax({
                 url: `${api}allitems/${page}`,
@@ -866,6 +881,7 @@
                             children.push(child);
                         });
 
+                        $('#community-container').find('.placeholder-item').remove();
                         $('#community-container').append(children);
                         if (response.pagination.hasMore) {
                             $('#community-load-more-btn').attr('data-page', response.pagination.nextPage);
@@ -876,6 +892,7 @@
                     }
                 },
                 error: function (err) {
+                    $('#community-container').find('.placeholder-item').remove();
                     console.log(err);
                     swalBS.fire({
                         icon: "error",
@@ -888,7 +905,11 @@
         }
 
         function getFavoritesCommunityItems(page = 0) {
-            if (page === 0) $('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 30));
+            if (page === 0) {
+                $('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 20));
+            } else {
+                $('#community-favorites-container').append(appendPlaceholders(Math.random() * 20));
+            }
 
             $.ajax({
                 url: `${api}items/${JSON.stringify(favorites)}/${page}`,
@@ -905,6 +926,7 @@
                             children.push(child);
                         });
 
+                        $('#community-favorites-container').find('.placeholder-item').remove();
                         $('#community-favorites-container').append(children);
                         if (response.pagination.hasMore) {
                             $('#favorites-load-more-btn').attr('data-page', response.pagination.nextPage);
@@ -915,6 +937,7 @@
                     }
                 },
                 error: function (err) {
+                    $('#community-favorites-container').find('.placeholder-item').remove();
                     console.log(err);
                     swalBS.fire({
                         icon: "error",
@@ -928,7 +951,8 @@
 
         function canvasToBase64() {
             var canvas = $('#matrix-canvas')[0]; // Get the DOM element
-            var base64String = canvas.toDataURL('image/png', 0.1); // Default is PNG format
+            resizeCanvas(true);
+            var base64String = canvas.toDataURL('image/jpeg', 0.5); // Default is PNG format
             return base64String;
         }
 
@@ -1000,6 +1024,8 @@
                     }
                 });
             }
+
+            resizeCanvas();
         });
 
         $('#btnShareConfirm').click(function (evt) {
@@ -1064,6 +1090,8 @@
                         });
                     }
                 });
+
+                resizeCanvas();
             }
         });
 
@@ -1173,14 +1201,17 @@
 
         $('#community-load-more-btn').click(function (evt) {
             getCommunityItems(parseInt($(this).attr('data-page')));
+            $('#community-load-more-btn').prop('disabled', true);
         });
 
         $('#search-load-more-btn').click(function (evt) {
             searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')));
+            $('#search-load-more-btn').prop('disabled', true);
         });
 
         $('#favorites-load-more-btn').click(function (evt) {
             getFavoritesCommunityItems($(this.attr('data-page')));
+            $('#favorites-load-more-btn').prop('disabled', true);
         })
 
         function addToFavorite(id) {
@@ -1195,7 +1226,10 @@
             }
         }
 
-        function removeItem(id) {
+        //Remove Item and remove div from container
+        $(document).on('click', '.remove-item', function(evt) {
+            var item = $(this).closest('div.generated-item');
+            var id = parseInt($(this).attr('data-id'));
             var json = {
                 author: sessionStorage.getItem('username')
             };
@@ -1218,6 +1252,7 @@
                             showConfirmButton: false,
                             timer: 1500
                         });
+                        item.remove();
                     } else {
                         swalBS.fire({
                             icon: "error",
@@ -1236,7 +1271,7 @@
                     });
                 }
             });
-        }
+        });
     </script>
 
     <script>
@@ -1265,9 +1300,13 @@
         let currentColor = parseFloat($('#input[name="draw-color"]:checked').val()) || 1;
 
         // Resize the canvas to fill the screen while maintaining aspect ratio
-        function resizeCanvas() {
-            const maxWidth = window.innerWidth * 0.95;
-            const maxHeight = window.innerHeight * 0.7;
+        function resizeCanvas(manual = false, mwidth = 250, mheight = 250) {
+            var maxWidth = window.innerWidth * 0.95;
+            var maxHeight = window.innerHeight * 0.7;
+            if (manual === true) {
+                maxWidth = mwidth;
+                maxHeight = mheight;
+            }
 
             // Calculate the cell size to fit the matrix in the available space
             const cellWidthByWidth = maxWidth / COLS;
