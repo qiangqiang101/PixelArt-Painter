@@ -219,9 +219,8 @@
                 </div>
                 <div class="col-auto">
                     <div class="btn-group">
-                        <button id="btnInvert" class="btn btn-primary" onclick="invertAll();"><span
-                                class="mdi mdi-invert-colors"></span>
-                            Invert</button>
+                        <button id="btnInvertBW" class="btn btn-primary text-dark" onclick="invertAll();"><span class="mdi mdi-invert-colors"></span> Invert White/Black</button>
+                        <button id="btnInvertGreys" class="btn btn-primary" onclick="invertGreys();"><span class="mdi mdi-invert-colors"></span> Invert Greys</button>
                         <div class="btn-group dropdown">
                             <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-flip-to-front"></span> Mirror
@@ -1388,22 +1387,39 @@
             canvasHistory.redo()
         }
 
-        //Invert all cells
+       //Invert all cells
         function invertAll() {
             canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
-                        case '#ffffff':
-                            matrixData[row][col] = black
-                            break
-                        case '#000000':
-                            matrixData[row][col] = white
-                            break
+                        case white:
+                            matrixData[row][col] = black;
+                            break;
+                        case black:
+                            matrixData[row][col] = white;
+                            break;
                     }
                 }
             }
-            drawMatrix()
+            drawMatrix();
+        }
+        
+        function invertGreys() {
+            canvasHistory.saveState(matrixData)
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    switch (matrixData[row][col]) {
+                        case lightGrey:
+                            matrixData[row][col] = darkGrey;
+                            break;
+                        case darkGrey:
+                            matrixData[row][col] = lightGrey;
+                            break;
+                    }
+                }
+            }
+            drawMatrix();
         }
 
         function mirrorHorizontal() {

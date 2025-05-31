@@ -150,3 +150,26 @@ form.dropdown-menu {
     transform: translateY(-6px);
     z-index: 1;
 }
+
+#btnInvertBW {
+  background: linear-gradient(135deg, white 50%, black 50%);
+  color: black;
+  border: 1px solid #ccc;
+}
+
+#btnInvertBW:hover {
+  background: linear-gradient(135deg, black 50%, white 50%);
+  color: white;
+}
+
+#btnInvertGreys {
+  background: linear-gradient(135deg, #A9A9A9 50%, #505050 50%);
+  color: white;
+}
+
+#btnInvertGreys:hover {
+  background: linear-gradient(135deg, #505050 50%, #A9A9A9 50%);
+  color: black;
+  border: 1px solid #ccc;
+}
+
