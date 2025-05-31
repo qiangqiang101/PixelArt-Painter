@@ -56,7 +56,7 @@ const langDB = {
     infoCode: { en: 'Code', zh: '代码' },
     colorFull: { en: '<span class="mdi mdi-water"></span> Full Color', zh: '<span class="mdi mdi-water"></span> 全色' },
     colorTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明' },
-    colorOff: {en: '<span class="mdi mdi-water-outline"></span> Off', zh: '<span class="mdi mdi-water-outline"></span> 关灯' },
+    colorOff: {en: '<span class="mdi mdi-water-outline"></span> Black', zh: '<span class="mdi mdi-water-outline"></span> 黑色' },
     inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' },
     navLogin: { en: '<span class="mdi mdi-login"></span> Login', zh: '<span class="mdi mdi-login"></span> 登入' },
     navSignUp: { en: '<span class="mdi mdi-account-plus-outline"></span> Sign Up', zh: '<span class="mdi mdi-account-plus-outline"></span> 注册' },

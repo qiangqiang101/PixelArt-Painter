@@ -588,6 +588,11 @@
 
         var favorites = [];
 
+        const white = '#ffffff';
+        const lightGrey = '#808080';
+        const darkGrey = '#262626';
+        const black = '#000000'
+
         $(document).ready(function () {
             let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
             if (loggedIn.userid != null && loggedIn.username != null) loginUser(loggedIn.userid, loggedIn.username);
@@ -645,7 +650,7 @@
             }
             try {
                 matrixData = JSON.parse($('#clipboard').val());
-                matrixData = matrixData.map(row => row.map(value => value === 0 ? "#000000" : (value === 1 ? "#ffffff" : "#808080")));
+                matrixData = matrixData.map(row => row.map(value => (value === 0) ? black : (value === 1) ? white : (value === 0.5) ? lightGrey : darkGrey));
                 canvasHistory.saveState(matrixData);
                 drawMatrix();
             } catch (e) {
@@ -687,7 +692,7 @@
                     resizeCanvas();
 
                     matrixData = JSON.parse($select.val());
-                    matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
+                    matrixData = matrixData.map(row => row.map(value => (value === 0) ? black : (value === 1) ? white : (value === 0.5) ? lightGrey : darkGrey));
                     canvasHistory.saveState(matrixData);
                     drawMatrix();
 
@@ -723,7 +728,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7');
                 const name = $('#txt-save').val();
                 const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
                 localStorage.setItem(`item-${name}`, JSON.stringify(obj));
@@ -1019,7 +1024,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7');
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtUpdateName').val(),
@@ -1091,7 +1096,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7');
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtShareName').val(),
@@ -1161,7 +1166,7 @@
                         resizeCanvas();
 
                         matrixData = JSON.parse($item.data);
-                        matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
+                        matrixData = matrixData.map(row => row.map(value => (value === 0) ? black : (value === 1) ? white : (value === 0.5) ? lightGrey : darkGrey));
                         canvasHistory.saveState(matrixData);
                         drawMatrix();
 
@@ -1451,11 +1456,51 @@
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
-                        case '#ffffff':
-                            matrixData[row][col] = '#000000';
+                        case white:
+                            matrixData[row][col] = black;
                             break;
-                        case '#000000':
-                            matrixData[row][col] = '#ffffff';
+                        case black:
+                            matrixData[row][col] = white;
+                            break;
+                        case lightGrey:
+                            matrixData[row][col] = darkGrey;
+                            break;
+                        case darkGrey:
+                            matrixData[row][col] = lightGrey;
+                            break;
+                    }
+                }
+            }
+            drawMatrix();
+        }
+
+        function invertBlackWhite() {
+            canvasHistory.saveState(matrixData);
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    switch (matrixData[row][col]) {
+                        case white:
+                            matrixData[row][col] = black;
+                            break;
+                        case black:
+                            matrixData[row][col] = white;
+                            break;
+                    }
+                }
+            }
+            drawMatrix();
+        }
+
+        function invertGreys() {
+            canvasHistory.saveState(matrixData)
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    switch (matrixData[row][col]) {
+                        case lightGrey:
+                            matrixData[row][col] = darkGrey;
+                            break;
+                        case darkGrey:
+                            matrixData[row][col] = lightGrey;
                             break;
                     }
                 }
@@ -1599,7 +1644,7 @@
 
         // Export matrix data as JSON
         function exportData() {
-            const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+            const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626', '0.7');
 
             swalBS.fire({
                 title: getCorrectTranslation('copycode'),
@@ -1626,26 +1671,32 @@
                     case 'draw':
                         switch (currentColor) {
                             case 1:
-                                updateCell(coords.row, coords.col, '#ffffff');
+                                updateCell(coords.row, coords.col, white);
+                                break;
+                            case 0.7:
+                                updateCell(coords.row, coords.col, darkGrey);
                                 break;
                             case 0.5:
-                                updateCell(coords.row, coords.col, '#808080');
+                                updateCell(coords.row, coords.col, lightGrey);
                                 break;
                             case 0:
-                                updateCell(coords.row, coords.col, '#000000');
+                                updateCell(coords.row, coords.col, black);
                                 break;
                         }
                         break;
                     case 'fill':
                         switch (currentColor) {
                             case 1:
-                                fillAll(coords.row, coords.col, '#ffffff');
+                                fillAll(coords.row, coords.col, white);
+                                break;
+                            case 0.7:
+                                fillAll(coords.row, coords.col, darkGrey);
                                 break;
                             case 0.5:
-                                fillAll(coords.row, coords.col, '#808080');
+                                fillAll(coords.row, coords.col, lightGrey);
                                 break;
                             case 0:
-                                fillAll(coords.row, coords.col, '#000000');
+                                fillAll(coords.row, coords.col, black);
                                 break;
                         }
                         break;
@@ -1664,13 +1715,16 @@
                         case 'draw':
                             switch (currentColor) {
                                 case 1:
-                                    updateCell(coords.row, coords.col, '#ffffff');
+                                    updateCell(coords.row, coords.col, white);
+                                    break;
+                                case 0.7:
+                                    updateCell(coords.row, coords.col, darkGrey);
                                     break;
                                 case 0.5:
-                                    updateCell(coords.row, coords.col, '#808080');
+                                    updateCell(coords.row, coords.col, lightGrey);
                                     break;
                                 case 0:
-                                    updateCell(coords.row, coords.col, '#000000');
+                                    updateCell(coords.row, coords.col, black);
                                     break;
                             }
                             break;
