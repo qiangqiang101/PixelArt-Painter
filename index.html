@@ -29,19 +29,19 @@
 		let blackValue = 0
 
 		const colorMap = {
-			[white]: whiteValue,
-			[black]: blackValue,
-			[darkGrey]: darkGreyValue,
-			[oldDarkGrey]: darkGreyValue,
-			[lightGrey]: lightGreyValue
+			[white.toUpperCase()]: whiteValue,
+			[black.toUpperCase()]: blackValue,
+			[darkGrey.toUpperCase()]: darkGreyValue,
+			[oldDarkGrey.toUpperCase()]: darkGreyValue,
+			[lightGrey.toUpperCase()]: lightGreyValue
 		};
 
 		const colorMapReverse = {
-			[whiteValue]: white,
-			[blackValue]: black,
-			[darkGreyValue]: darkGrey,
-			[oldDarkGreyValue]: oldDarkGrey,
-			[lightGreyValue]: lightGrey
+			[whiteValue]: white.toUpperCase(),
+			[blackValue]: black.toUpperCase(),
+			[darkGreyValue]: darkGrey.toUpperCase(),
+			[oldDarkGreyValue]: oldDarkGrey.toUpperCase(),
+			[lightGreyValue]: lightGrey.toUpperCase()
 		};
 	</script>
 </head>
@@ -593,7 +593,7 @@
 			}
 			try {
 				matrixData = JSON.parse($('#clipboard').val());
-				matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color));
+				matrixData = matrixData.map(row =>row.map(color => colorMapReverse[color] ?? color));
 				canvasHistory.saveState(matrixData);
 				drawMatrix();
 			} catch (e) {
@@ -612,7 +612,7 @@
 				$('#select-load').addClass('is-invalid');
 			} else {
 				let name = $('#select-load option:selected').text();
-				console.log(name);
+				//console.log(name);
 				localStorage.removeItem(`item-${name}`);
 
 				if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
@@ -645,7 +645,7 @@
 					if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
 					$('#modal-load').modal('hide');
 				} catch (e) {
-					console.log(e);
+					//console.log(e);
 					swalBS.fire({
 						icon: "error",
 						title: getCorrectTranslation('oops'),
@@ -803,7 +803,7 @@
 				contentType: 'application/json; charset=utf-8',
 				dataType: 'json',
 				success: function (response) {
-					console.log(response);
+					//console.log(response);
 
 					if (response.success === true && response.pagination.total >= 1) {
 						if (page === 0) $('#community-search-container').empty();
@@ -1440,17 +1440,14 @@
 		function flip(direction = 'horizontal') {
 			canvasHistory.saveState(matrixData);
 			if (direction === 'horizontal') {
-				console.log("flip horizontal");
 				matrixData = matrixData.map(row => row.slice().reverse());
 			} else if (direction === 'vertical') {
-				console.log("flip vertical");
 				matrixData = matrixData.slice().reverse();
 			};
 			drawMatrix();
 		};
 
 		function copyToClipboard(text) {
-			console.log(text);
 			var $temp = $('<input>');
 			$('body').append($temp);
 			$temp.val(text).select();
@@ -1545,9 +1542,7 @@
 
 		// Export matrix data as JSON
 		function exportData() {
-			console.log(matrixData)
 			const dataStr = JSON.stringify(matrixData.map(row =>row.map(color => colorMap[color] ?? color)))
-			console.log(dataStr)
 			swalBS.fire({
 				title: getCorrectTranslation('copycode'),
 				icon: "success",
@@ -1585,7 +1580,7 @@
 		
 		canvas.addEventListener('mousedown', (e) => {
 			isDrawing = true;
-
+			canvasHistory.saveState(matrixData);
 			const coords = getMatrixCoords(e);
 			if (coords) {
 				switch (currentMode) {
@@ -1658,6 +1653,7 @@
 
 		canvas.addEventListener('mouseout', () => {
 			mousePosDisplay.textContent = getCorrectTranslation('position1');
+			canvasHistory.saveState(matrixData);
 		});
 
 		window.addEventListener('mouseup', () => {
@@ -1671,25 +1667,133 @@
 		resizeCanvas();
 
 		$(document).keydown(function (e) {
-			switch (e.which) {
-				case 37: // left arrow key
-					moveLeft();
-					break;
-				case 38: // up arrow key
-					moveUp();
-					break;
-				case 39: // right arrow key
-					moveRight();
-					break;
-				case 40: // down arrow key
-					moveDown();
-					break;
-				default: return; // exit this handler for other keys
-			};
+            // If any div has the class '.modal.show' or '.offcanvas.show', exit early
+            if ($('div.modal.show').length > 0 || $('div.offcanvas.show').length > 0) {
+                return;
+            }
 
-			e.preventDefault(); // prevent the default action (scroll / move caret)
-		});
-	</script>
+            // Undo
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                e.preventDefault();
+                canvasHistory.undo();
+                return;
+            }
+
+            // Redo
+            if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                e.preventDefault();
+                canvasHistory.redo();
+                return;
+            }
+            
+            // Copy
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                e.preventDefault();
+                const dataStr = JSON.stringify(matrixData.map(row =>row.map(color => colorMap[color] ?? color)))
+                copyToClipboard(dataStr)
+                return;
+            }
+            
+            // Paste
+            if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                e.preventDefault();
+                importData();
+                return;
+            }
+            
+            // Export
+            if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                $('#export-btn').click();
+                return;
+            }
+            
+            // Draw
+            if (e.key === 'd') {
+                $('#draw').click();
+                return;
+            }
+            
+            // Fill
+            if (e.key === 'f') {
+                $('#fill').click();
+                return;
+            }
+            
+            // Clear
+            if (e.key === 'c') {
+                clearAll()
+                return;
+            }
+            
+            // Invert
+            if (e.key === 'i') {
+                invertAll()
+                return;
+            }
+            
+            // Invert Grey
+            if (e.key === 'r') {
+                invertGreys()
+                return;
+            }
+            
+            // White
+            if (e.key === 'w') {
+                $('#draw-full').click();
+                return;
+            }
+            
+            // Light Grey
+            if (e.key === 'l') {
+                $('#draw-light-grey').click();
+                return;
+            }
+            
+            // Dark Grey
+            if (e.key === 'g') {
+                $('#draw-dark-grey').click();
+                return;
+            }
+            
+            // Black
+            if (e.key === 'b') {
+                $('#draw-black').click();
+                return;
+            }
+
+            // Arrows
+            switch (e.which) {
+                case 37: // left
+                    canvasHistory.saveState(matrixData);
+                    moveLeft();
+                    break;
+                case 38: // up
+                    canvasHistory.saveState(matrixData);
+                    moveUp();
+                    break;
+                case 39: // right
+                    canvasHistory.saveState(matrixData);
+                    moveRight();
+                    break;
+                case 40: // down
+                    canvasHistory.saveState(matrixData);
+                    moveDown();
+                    break;
+                default:
+                    return;
+            }
+
+            e.preventDefault();
+        });
+        
+        document.getElementById('btnUndo').addEventListener('click', () => {
+            canvasHistory.undo();
+        });
+        
+        document.getElementById('btnRedo').addEventListener('click', () => {
+            canvasHistory.redo();
+        });
+    </script>
 
 	<!-- User functions -->
 	<script>
