@@ -21,19 +21,24 @@
         let darkGrey="#505050"
         let white="#FFFFFF"
         let black="#000000"
+        
+        let lightGreyValue = 0.7
+        let darkGreyValue = 0.5
+        let whiteValue = 1
+        let blackValue = 0
 
         const colorMap = {
-            [white]: 1,
-            [black]: 0,
-            [darkGrey]: 0.5,
-            [lightGrey]: 0.7
+            [white]: white,
+            [black]: black,
+            [darkGrey]: darkGreyValue,
+            [lightGrey]: lightGreyValue
         };
 
         const colorMapReverse = {
-            [1]: white,
-            [0]: black,
-            [0.5]: darkGrey,
-            [0.7]: lightGrey
+            [white]: white,
+            [black]: black,
+            [darkGreyValue]: darkGrey,
+            [lightGreyValue]: lightGrey
         };
     </script>
 </head>
@@ -197,29 +202,19 @@
 
                 <div class="col-auto">
                     <div class="btn-group">
-                        <input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked>
-                        <label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
-                        <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill">
-                        <label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span>
-                            Fill</label>
-                        <button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span
-                                class="mdi mdi-trash-can-outline"></span>
-                            Clear
-                            All</button>
+                        <input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked><label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
+                        <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill"><label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span> Fill</label>
                     </div>
+                    <button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span class="mdi mdi-trash-can-outline"></span> Clear All</button>
                 </div>
                 <div class="col-auto">
                     <div class="btn-group">
-                        <input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
-                        <label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> Full</label>
-                        <input type="radio" class="btn-check" id="draw-transparent" name="draw-color" value="0.5">
-                        <label for="draw-transparent" class="btn btn-primary"><span
-                                class="mdi mdi-water-opacity"></span>
-                            Transparent</label>
-
-                        <input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
-                        <label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span>
-                            Off</label>
+                        <!--<input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked><label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> White</label>-->
+                        <input type="radio" class="btn-check" id="draw-white" name="draw-color" value="1" checked><label for="draw-white" class="btn btn-white"><span class="mdi mdi-water"></span> White</label>
+                        <input type="radio" class="btn-check" id="draw-lightGrey" name="draw-color" value="0.7"><label for="draw-lightGrey" class="btn btn-light-grey"><span class="mdi mdi-water-opacity"></span> Light Grey</label>
+                        <input type="radio" class="btn-check" id="draw-darkGrey" name="draw-color" value="0.5"><label for="draw-darkGrey" class="btn btn-dark-grey"><span class="mdi mdi-water-opacity"></span> Dark Grey</label>
+                        <input type="radio" class="btn-check" id="draw-black" name="draw-color" value="0"><label for="draw-black" class="btn btn-black"><span class="mdi mdi-water-outline"></span> Black</label>
+                        <!--<input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0"><label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span> Off</label>-->
                     </div>
                 </div>
                 <div class="col-auto">
@@ -520,11 +515,11 @@
 
         </div>
     </div>
-
+    
     <script src="script.js"></script>
 
     <!-- History Manager -->
-<script src="history_manager.js"></script>
+    <script src="history_manager.js"></script>
 
     <script>
         //const api = 'http://localhost:3001/api/';
@@ -596,7 +591,7 @@
             }
             try {
                 matrixData = JSON.parse($('#clipboard').val());
-                matrixData = matrixData.map(row => row.map(value => value === 0 ? "#000000" : (value === 1 ? "#ffffff" : "#808080")));
+                matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color))
                 canvasHistory.saveState(matrixData);
                 drawMatrix();
             } catch (e) {
@@ -638,7 +633,7 @@
                     resizeCanvas();
 
                     matrixData = JSON.parse($select.val());
-                    matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
+                    matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color))
                     canvasHistory.saveState(matrixData);
                     drawMatrix();
 
@@ -662,22 +657,22 @@
 
         $('#save-confirm-btn').click(function (evt) {
             if (!$('#txt-save').val()) {
-                $('#txt-save').addClass('is-invalid');
-                $('#txt-save').focus();
+                $('#txt-save').addClass('is-invalid')
+                $('#txt-save').focus()
             } else if (naughtyWords.includes($('#txt-save').val())) {
-                $('#txt-save').addClass('is-invalid');
-                $('#txt-save').focus();
+                $('#txt-save').addClass('is-invalid')
+                $('#txt-save').focus()
                 swalBS.fire({
                     icon: "error",
                     title: getCorrectTranslation('oops'),
                     theme: "dark",
                     text: getCorrectTranslation('inappropriateTextWarning'),
-                });
+                })
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
-                const name = $('#txt-save').val();
-                const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
-                localStorage.setItem(`item-${name}`, JSON.stringify(obj));
+                const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue)
+                const name = $('#txt-save').val()
+                const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr }
+                localStorage.setItem(`item-${name}`, JSON.stringify(obj))
 
                 swalBS.fire({
                     position: "top-end",
@@ -686,46 +681,46 @@
                     title: getCorrectTranslation('saved'),
                     showConfirmButton: false,
                     timer: 1500
-                });
+                })
 
-                $('#txt-save').val('');
-                if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
-                $('#modal-save').modal('hide');
+                $('#txt-save').val('')
+                if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid')
+                $('#modal-save').modal('hide')
             }
-        });
+        })
 
         function reloadSavedPixelArt() {
-            $('#select-load').find('optgroup').remove();
-            $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')));
-            var values = stringifyLocalStorageExcept(['language', 'username', 'password', 'remember', 'favorites']);
+            $('#select-load').find('optgroup').remove()
+            $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')))
+            var values = stringifyLocalStorageExcept(['language', 'username', 'password', 'remember', 'favorites'])
             $.each(values, function (key, item) {
-                $('#select-load').append($(`<option data-size="[${item.size}]" data-group="${item.size[0]}x${item.size[1]}" value="${item.data}">${item.name}</option>`).val(item.data).html(item.name));
-            });
+                $('#select-load').append($(`<option data-size="[${item.size}]" data-group="${item.size[0]}x${item.size[1]}" value="${item.data}">${item.name}</option>`).val(item.data).html(item.name))
+            })
 
-            var optiongroups = {};
+            var optiongroups = {}
             $("#select-load option[data-group]").each(function () {
-                optiongroups[$.trim($(this).attr("data-group"))] = true;
-            });
+                optiongroups[$.trim($(this).attr("data-group"))] = true
+            })
             $.each(optiongroups, function (c) {
-                $("select option[data-group='" + c + "']").wrapAll('<optgroup label="' + c + '">');
-            });
-        };
+                $("select option[data-group='" + c + "']").wrapAll('<optgroup label="' + c + '">')
+            })
+        }
 
         function stringifyLocalStorageExcept(keysToSkip) {
-            if (!Array.isArray(keysToSkip)) keysToSkip = [keysToSkip];
+            if (!Array.isArray(keysToSkip)) keysToSkip = [keysToSkip]
 
-            const filtered = {};
+            const filtered = {}
             for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
+                const key = localStorage.key(i)
                 if (!keysToSkip.includes(key)) {
                     try {
-                        filtered[key] = JSON.parse(localStorage.getItem(key));
+                        filtered[key] = JSON.parse(localStorage.getItem(key))
                     } catch (e) {
-                        filtered[key] = localStorage.getItem(key);
+                        filtered[key] = localStorage.getItem(key)
                     }
                 }
             }
-            return filtered;
+            return filtered
         }
 
         function appendPlaceholders(count) {
@@ -752,14 +747,14 @@
                                             </div>
                                         </div>
                                     </div>
-                                </div>`;
-            var duplicate = placeholder.repeat(count);
-            return duplicate;
+                                </div>`
+            var duplicate = placeholder.repeat(count)
+            return duplicate
         }
 
         function generateItem(id, preview, name, author) {
-            let isFavorite = favorites.includes(id);
-            var dropdown = '';
+            let isFavorite = favorites.includes(id)
+            var dropdown = ''
             if (author === sessionStorage.getItem('username')) {
                 dropdown = `<div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
@@ -767,22 +762,8 @@
                                     <li><a class="dropdown-item" href="#" onclick="downloadItem(${id}, true);">${getCorrectTranslation('edit')}</a></li>
                                     <li><a class="dropdown-item" href="#" onclick="removeItem(${id});">${getCorrectTranslation('remove')}</a></li>
                                 </ul>
-                            </div>`;
+                            </div>`
             }
-            
-            let itemData;
-
-            getItemJSON(123)
-            .then(data => {
-                itemData = data;
-                console.log("Item data:", itemData);
-            })
-            .catch(err => {
-                console.error("Error loading item:", err);
-            });
-
-            console.log(itemData)
-            
 
             var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch">
                             <div class="card shadow-sm">
@@ -804,12 +785,12 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>`;
-            return item;
+                        </div>`
+            return item
         }
 
         function searchCommunityItems(search_string, page = 0) {
-            if (page === 0) $('#community-search-container').empty().append(appendPlaceholders(Math.random() * 30));
+            if (page === 0) $('#community-search-container').empty().append(appendPlaceholders(Math.random() * 30))
 
             $.ajax({
                 url: `${api}searchitem/${search_string}/${page}`,
@@ -817,59 +798,59 @@
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
                 success: function (response) {
-                    console.log(response);
+                    console.log(response)
 
                     if (response.success === true && response.pagination.total >= 1) {
-                        if (page === 0) $('#community-search-container').empty();
-                        var children = [];
+                        if (page === 0) $('#community-search-container').empty()
+                        var children = []
 
                         $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
-                            children.push(child);
-                        });
+                            var child = generateItem(item.id, item.preview, item.name, item.author)
+                            children.push(child)
+                        })
 
-                        $('#community-search-container').append(children);
+                        $('#community-search-container').append(children)
                         if (response.pagination.hasMore) {
-                            $('#search-load-more-btn').attr('data-page', response.pagination.nextPage);
-                            $('#search-load-more-btn').prop('disabled', false);
+                            $('#search-load-more-btn').attr('data-page', response.pagination.nextPage)
+                            $('#search-load-more-btn').prop('disabled', false)
                         } else {
-                            $('#search-load-more-btn').prop('disabled', true);
+                            $('#search-load-more-btn').prop('disabled', true)
                         }
                     }
                 },
                 error: function (err) {
-                    console.log(err);
+                    console.log(err)
                     swalBS.fire({
                         icon: "error",
                         title: getCorrectTranslation('oops'),
                         theme: "dark",
                         text: err.statusText,
-                    });
+                    })
                 }
-            });
+            })
         }
 
         $('#community-search').click(function (evt) {
             if ($('#txt-search').val()) {
-                $('#search-load-more-btn').attr('data-page', 0);
-                searchCommunityItems($('#txt-search').val());
+                $('#search-load-more-btn').attr('data-page', 0)
+                searchCommunityItems($('#txt-search').val())
             }
-        });
+        })
 
         $('#txt-search').on('input', function (evt) {
             // Store the current selection range
-            var start = this.selectionStart;
-            var end = this.selectionEnd;
+            var start = this.selectionStart
+            var end = this.selectionEnd
 
             // Convert text to lowercase
-            $(this).val($(this).val().toLowerCase());
+            $(this).val($(this).val().toLowerCase())
 
             // Restore the selection range
-            this.setSelectionRange(start, end);
-        });
+            this.setSelectionRange(start, end)
+        })
 
         function getCommunityItems(page = 0) {
-            if (page === 0) $('#community-container').empty().append(appendPlaceholders(Math.random() * 30));
+            if (page === 0) $('#community-container').empty().append(appendPlaceholders(Math.random() * 30))
 
             $.ajax({
                 url: `${api}allitems/${page}`,
@@ -878,37 +859,37 @@
                 dataType: 'json',
                 success: function (response) {
                     if (response.success === true && response.pagination.total >= 1) {
-                        if (page === 0) $('#community-container').empty();
-                        var children = [];
+                        if (page === 0) $('#community-container').empty()
+                        var children = []
 
                         $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
-                            children.push(child);
-                        });
+                            var child = generateItem(item.id, item.preview, item.name, item.author)
+                            children.push(child)
+                        })
 
-                        $('#community-container').append(children);
+                        $('#community-container').append(children)
                         if (response.pagination.hasMore) {
-                            $('#community-load-more-btn').attr('data-page', response.pagination.nextPage);
-                            $('#community-load-more-btn').prop('disabled', false);
+                            $('#community-load-more-btn').attr('data-page', response.pagination.nextPage)
+                            $('#community-load-more-btn').prop('disabled', false)
                         } else {
-                            $('#community-load-more-btn').prop('disabled', true);
+                            $('#community-load-more-btn').prop('disabled', true)
                         }
                     }
                 },
                 error: function (err) {
-                    console.log(err);
+                    console.log(err)
                     swalBS.fire({
                         icon: "error",
                         title: getCorrectTranslation('oops'),
                         theme: "dark",
                         text: err.statusText,
-                    });
+                    })
                 }
-            });
+            })
         }
 
         function getFavoritesCommunityItems(page = 0) {
-            if (page === 0) $('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 30));
+            if (page === 0) $('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 30))
 
             $.ajax({
                 url: `${api}items/${JSON.stringify(favorites)}/${page}`,
@@ -917,65 +898,65 @@
                 dataType: 'json',
                 success: function (response) {
                     if (response.success === true && response.pagination.total >= 1) {
-                        if (page === 0) $('#community-favorites-container').empty();
-                        var children = [];
+                        if (page === 0) $('#community-favorites-container').empty()
+                        var children = []
 
                         $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
-                            children.push(child);
-                        });
+                            var child = generateItem(item.id, item.preview, item.name, item.author)
+                            children.push(child)
+                        })
 
-                        $('#community-favorites-container').append(children);
+                        $('#community-favorites-container').append(children)
                         if (response.pagination.hasMore) {
-                            $('#favorites-load-more-btn').attr('data-page', response.pagination.nextPage);
-                            $('#favorites-load-more-btn').prop('disabled', false);
+                            $('#favorites-load-more-btn').attr('data-page', response.pagination.nextPage)
+                            $('#favorites-load-more-btn').prop('disabled', false)
                         } else {
-                            $('#favorites-load-more-btn').prop('disabled', true);
+                            $('#favorites-load-more-btn').prop('disabled', true)
                         }
                     }
                 },
                 error: function (err) {
-                    console.log(err);
+                    console.log(err)
                     swalBS.fire({
                         icon: "error",
                         title: getCorrectTranslation('oops'),
                         theme: "dark",
                         text: err.statusText,
-                    });
+                    })
                 }
-            });
+            })
         }
 
         function canvasToBase64() {
             var canvas = $('#matrix-canvas')[0]; // Get the DOM element
             var base64String = canvas.toDataURL('image/png', 0.1); // Default is PNG format
-            return base64String;
+            return base64String
         }
 
         $('#btnUpdateConfirm').click(function (evt) {
             if (!$('#txtUpdateName').val()) {
-                $('#txtUpdateName').addClass('is-invalid');
-                $('#txtUpdateName').focus();
+                $('#txtUpdateName').addClass('is-invalid')
+                $('#txtUpdateName').focus()
             } else if (naughtyWords.includes($('#txtUpdateName').val())) {
-                $('#txtUpdateName').addClass('is-invalid');
-                $('#txtUpdateName').focus();
+                $('#txtUpdateName').addClass('is-invalid')
+                $('#txtUpdateName').focus()
                 swalBS.fire({
                     icon: "error",
                     title: getCorrectTranslation('oops'),
                     theme: "dark",
                     text: getCorrectTranslation('inappropriateTextWarning'),
-                });
+                })
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue)
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtUpdateName').val(),
                     size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
                     data: dataStr,
                     preview: canvasToBase64()
-                };
-                var jsonData = JSON.stringify(json);
-                var updateId = parseInt($('#txtUpdateId').val());
+                }
+                var jsonData = JSON.stringify(json)
+                var updateId = parseInt($('#txtUpdateId').val())
                 $.ajax({
                     url: `${api}updateitem/${updateId}`,
                     type: 'POST',
@@ -991,23 +972,23 @@
                                 title: getCorrectTranslation('updated'),
                                 showConfirmButton: false,
                                 timer: 1500
-                            });
+                            })
 
-                            $('#txtUpdateName').val('');
-                            if ($('#txtUpdateName').hasClass('is-invalid')) $('#txtUpdateName').removeClass('is-invalid');
+                            $('#txtUpdateName').val('')
+                            if ($('#txtUpdateName').hasClass('is-invalid')) $('#txtUpdateName').removeClass('is-invalid')
 
-                            $('#modal-update').modal('hide');
+                            $('#modal-update').modal('hide')
 
-                            $('#editItem').css('display', 'none');
-                            $('#txtUpdateId').val('-1');
-                            $('#btnShare').prop('disabled', false);
+                            $('#editItem').css('display', 'none')
+                            $('#txtUpdateId').val('-1')
+                            $('#btnShare').prop('disabled', false)
                         } else {
                             swalBS.fire({
                                 icon: "error",
                                 title: getCorrectTranslation('oops'),
                                 theme: "dark",
                                 text: getCorrectTranslation('itemExists'),
-                            });
+                            })
                         }
                     },
                     error: function (err) {
@@ -1016,35 +997,35 @@
                             title: getCorrectTranslation('oops'),
                             theme: "dark",
                             text: err.statusText,
-                        });
+                        })
                     }
-                });
+                })
             }
-        });
+        })
 
         $('#btnShareConfirm').click(function (evt) {
             if (!$('#txtShareName').val()) {
-                $('#txtShareName').addClass('is-invalid');
-                $('#txtShareName').focus();
+                $('#txtShareName').addClass('is-invalid')
+                $('#txtShareName').focus()
             } else if (naughtyWords.includes($('#txtShareName').val())) {
-                $('#txtShareName').addClass('is-invalid');
-                $('#txtShareName').focus();
+                $('#txtShareName').addClass('is-invalid')
+                $('#txtShareName').focus()
                 swalBS.fire({
                     icon: "error",
                     title: getCorrectTranslation('oops'),
                     theme: "dark",
                     text: getCorrectTranslation('inappropriateTextWarning'),
-                });
+                })
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue)
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtShareName').val(),
                     size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
                     data: dataStr,
                     preview: canvasToBase64()
-                };
-                var jsonData = JSON.stringify(json);
+                }
+                var jsonData = JSON.stringify(json)
                 $.ajax({
                     url: `${api}items`,
                     type: 'POST',
@@ -1060,19 +1041,19 @@
                                 title: getCorrectTranslation('shared'),
                                 showConfirmButton: false,
                                 timer: 1500
-                            });
+                            })
 
-                            $('#txtShareName').val('');
-                            if ($('#txtShareName').hasClass('is-invalid')) $('#txtShareName').removeClass('is-invalid');
+                            $('#txtShareName').val('')
+                            if ($('#txtShareName').hasClass('is-invalid')) $('#txtShareName').removeClass('is-invalid')
 
-                            $('#modal-share').modal('hide');
+                            $('#modal-share').modal('hide')
                         } else {
                             swalBS.fire({
                                 icon: "error",
                                 title: getCorrectTranslation('oops'),
                                 theme: "dark",
                                 text: getCorrectTranslation('itemExists'),
-                            });
+                            })
                         }
                     },
                     error: function (err) {
@@ -1081,11 +1062,11 @@
                             title: getCorrectTranslation('oops'),
                             theme: "dark",
                             text: err.statusText,
-                        });
+                        })
                     }
-                });
+                })
             }
-        });
+        })
 
         function downloadItem(id, edit = false) {
             $.ajax({
@@ -1095,42 +1076,42 @@
                 dataType: 'json',
                 success: function (response) {
                     if (response.success === true) {
-                        let $item = response.data;
+                        let $item = response.data
 
-                        COLS = $item.size[0];
-                        ROWS = $item.size[1];
+                        COLS = $item.size[0]
+                        ROWS = $item.size[1]
 
-                        matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-                        resizeCanvas();
+                        matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'))
+                        resizeCanvas()
 
-                        matrixData = JSON.parse($item.data);
-                        matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
-                        canvasHistory.saveState(matrixData);
-                        drawMatrix();
+                        matrixData = JSON.parse($item.data)
+                        matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color))
+                        canvasHistory.saveState(matrixData)
+                        drawMatrix()
 
-                        $('#size-cols').val(COLS);
-                        $('#size-rows').val(ROWS);
+                        $('#size-cols').val(COLS)
+                        $('#size-rows').val(ROWS)
 
-                        $('#community').offcanvas('hide');
+                        $('#community').offcanvas('hide')
 
                         if (edit) {
-                            $('#editItem').css('display', 'block');
-                            $('#txtUpdateId').val(id);
-                            $('#txtUpdateName').val($item.name);
-                            $('#btnShare').prop('disabled', true);
+                            $('#editItem').css('display', 'block')
+                            $('#txtUpdateId').val(id)
+                            $('#txtUpdateName').val($item.name)
+                            $('#btnShare').prop('disabled', true)
                         }
                     }
                 },
                 error: function (err) {
-                    console.log(err);
+                    console.log(err)
                     swalBS.fire({
                         icon: "error",
                         title: getCorrectTranslation('oops'),
                         theme: "dark",
                         text: err.statusText,
-                    });
+                    })
                 }
-            });
+            })
         }
         
         function getItemJSON(id) {
@@ -1142,85 +1123,85 @@
                     dataType: 'json',
                     success: function (response) {
                         if (response.success === true) {
-                            let $item = response.data;
-                            let data = JSON.parse($item.data);
-                            resolve(data);
+                            let $item = response.data
+                            let data = JSON.parse($item.data)
+                            resolve(data)
                         } else {
-                            reject(new Error("Error en la respuesta del servidor"));
+                            reject(new Error("Error en la respuesta del servidor"))
                         }
                     },
                     error: function (err) {
-                        console.log(err);
+                        console.log(err)
                         swalBS.fire({
                             icon: "error",
                             title: getCorrectTranslation('oops'),
                             theme: "dark",
                             text: err.statusText,
-                        });
-                        reject(err);
+                        })
+                        reject(err)
                     }
-                });
-            });
+                })
+            })
         }
 
         function cancelEdit() {
-            $('#editItem').css('display', 'none');
-            $('#txtUpdateId').val('-1');
-            $('#btnShare').prop('disabled', false);
-            fillAll('#000000');
+            $('#editItem').css('display', 'none')
+            $('#txtUpdateId').val('-1')
+            $('#btnShare').prop('disabled', false)
+            fillAll('#000000')
         }
 
         $(document).keydown(function (e) {
             // If any div has the class '.modal.show' or '.offcanvas.show', exit early
             if ($('div.modal.show').length > 0 || $('div.offcanvas.show').length > 0) {
-                return;
+                return
             }
 
             // Undo
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                e.preventDefault();
-                canvasHistory.undo();
-                return;
+                e.preventDefault()
+                canvasHistory.undo()
+                return
             }
 
             // Redo
             if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-                e.preventDefault();
-                canvasHistory.redo();
-                return;
+                e.preventDefault()
+                canvasHistory.redo()
+                return
             }
-        });
+        })
 
         $('#community-load-more-btn').click(function (evt) {
-            getCommunityItems(parseInt($(this).attr('data-page')));
-        });
+            getCommunityItems(parseInt($(this).attr('data-page')))
+        })
 
         $('#search-load-more-btn').click(function (evt) {
-            searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')));
-        });
+            searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')))
+        })
 
         $('#favorites-load-more-btn').click(function (evt) {
-            getFavoritesCommunityItems($(this.attr('data-page')));
+            getFavoritesCommunityItems($(this.attr('data-page')))
         })
 
         function addToFavorite(id) {
             if (!favorites.includes(id)) {
-                favorites.push(id);
-                localStorage.setItem('favorites', JSON.stringify(favorites));
-                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-outline-danger').addClass('btn-danger');
+                favorites.push(id)
+                localStorage.setItem('favorites', JSON.stringify(favorites))
+                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-outline-danger').addClass('btn-danger')
             } else {
-                favorites.splice($.inArray(id, favorites), 1);
-                localStorage.setItem('favorites', JSON.stringify(favorites));
-                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-danger').addClass('btn-outline-danger');
+                favorites.splice($.inArray(id, favorites), 1)
+                localStorage.setItem('favorites', JSON.stringify(favorites))
+                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-danger').addClass('btn-outline-danger')
             }
         }
 
         function removeItem(id) {
             var json = {
                 author: sessionStorage.getItem('username')
-            };
-            var jsonData = JSON.stringify(json);
-            var url = `${api}deleteitem/${id}`;
+            }
+            var jsonData = JSON.stringify(json)
+            var url = `${api}deleteitem/${id}`
 
             $.ajax({
                 url: url,
@@ -1237,14 +1218,14 @@
                             title: getCorrectTranslation('removed'),
                             showConfirmButton: false,
                             timer: 1500
-                        });
+                        })
                     } else {
                         swalBS.fire({
                             icon: "error",
                             title: getCorrectTranslation('oops'),
                             theme: "dark",
                             text: getCorrectTranslation('removeFailed'),
-                        });
+                        })
                     }
                 },
                 error: function (err) {
@@ -1253,217 +1234,217 @@
                         title: getCorrectTranslation('oops'),
                         theme: "dark",
                         text: err.statusText,
-                    });
+                    })
                 }
-            });
+            })
         }
     </script>
 
     <script>
-        const canvas = document.getElementById('matrix-canvas');
-        const ctx = canvas.getContext('2d');
-        const mousePosDisplay = document.getElementById('mouse-pos');
-        const cellSizeDisplay = document.getElementById('cell-size');
+        const canvas = document.getElementById('matrix-canvas')
+        const ctx = canvas.getContext('2d')
+        const mousePosDisplay = document.getElementById('mouse-pos')
+        const cellSizeDisplay = document.getElementById('cell-size')
 
         // Matrix dimensions
-        let COLS = parseInt($('#size-cols').val());
-        let ROWS = parseInt($('#size-rows').val());
-        let cellWidth, cellHeight;
+        let COLS = parseInt($('#size-cols').val())
+        let ROWS = parseInt($('#size-rows').val())
+        let cellWidth, cellHeight
 
         // Matrix data - stores color for each cell
-        let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+        let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill(black))
 
         //Wrapped matrix to hold matrix info for nudging
-        let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+        let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill(black))
 
-        let canvasHistory = new HistoryManager(matrixData);
-        canvasHistory.saveState(matrixData);
+        let canvasHistory = new HistoryManager(matrixData)
+        canvasHistory.saveState(matrixData)
 
         // Drawing state
-        let isDrawing = false;
-        let currentMode = $('input[name="draw-mode"]:checked').val();
-        let currentColor = parseFloat($('#input[name="draw-color"]:checked').val()) || 1;
+        let isDrawing = false
+        let currentMode = $('input[name="draw-mode"]:checked').val()
+        let currentColor = parseFloat($('#input[name="draw-color"]:checked').val()) || 1
 
         // Resize the canvas to fill the screen while maintaining aspect ratio
         function resizeCanvas() {
-            const maxWidth = window.innerWidth * 0.95;
-            const maxHeight = window.innerHeight * 0.7;
+            const maxWidth = window.innerWidth * 0.95
+            const maxHeight = window.innerHeight * 0.7
 
             // Calculate the cell size to fit the matrix in the available space
-            const cellWidthByWidth = maxWidth / COLS;
-            const cellHeightByHeight = maxHeight / ROWS;
+            const cellWidthByWidth = maxWidth / COLS
+            const cellHeightByHeight = maxHeight / ROWS
 
             // Use the smaller of the two to ensure the entire matrix fits
-            const cellSize = Math.floor(Math.min(cellWidthByWidth, cellHeightByHeight));
+            const cellSize = Math.floor(Math.min(cellWidthByWidth, cellHeightByHeight))
 
-            cellWidth = cellSize;
-            cellHeight = cellSize;
+            cellWidth = cellSize
+            cellHeight = cellSize
 
-            canvas.width = COLS * cellWidth;
-            canvas.height = ROWS * cellHeight;
+            canvas.width = COLS * cellWidth
+            canvas.height = ROWS * cellHeight
 
-            cellSizeDisplay.textContent = `${getCorrectTranslation('cellsize2')} ${cellWidth}x${cellHeight}`;
+            cellSizeDisplay.textContent = `${getCorrectTranslation('cellsize2')} ${cellWidth}x${cellHeight}`
 
             // Redraw the matrix with the current data
-            drawMatrix();
+            drawMatrix()
         }
 
         // Draw the entire matrix
         function drawMatrix() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
 
             // Draw each cell
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    const x = col * cellWidth;
-                    const y = row * cellHeight;
+                    const x = col * cellWidth
+                    const y = row * cellHeight
 
                     // Draw the cell background
-                    ctx.fillStyle = matrixData[row][col];
-                    ctx.fillRect(x, y, cellWidth, cellHeight);
+                    ctx.fillStyle = matrixData[row][col]
+                    ctx.fillRect(x, y, cellWidth, cellHeight)
 
                     // Draw the cell border
-                    ctx.strokeStyle = '#333333';
-                    ctx.strokeRect(x, y, cellWidth, cellHeight);
+                    ctx.strokeStyle = '#333333'
+                    ctx.strokeRect(x, y, cellWidth, cellHeight)
                 }
             }
         }
 
         // Convert mouse position to matrix coordinates
         function getMatrixCoords(event) {
-            const rect = canvas.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
+            const rect = canvas.getBoundingClientRect()
+            const x = event.clientX - rect.left
+            const y = event.clientY - rect.top
 
-            const col = Math.floor(x / cellWidth);
-            const row = Math.floor(y / cellHeight);
+            const col = Math.floor(x / cellWidth)
+            const row = Math.floor(y / cellHeight)
 
             // Make sure we're within bounds
             if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
-                return { row, col };
+                return { row, col }
             }
 
-            return null;
+            return null
         }
 
         // Update a cell's color
         function updateCell(row, col, color) {
             if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
-                matrixData[row][col] = color;
+                matrixData[row][col] = color
 
                 // Redraw just this cell
-                const x = col * cellWidth;
-                const y = row * cellHeight;
+                const x = col * cellWidth
+                const y = row * cellHeight
 
-                ctx.fillStyle = color;
-                ctx.fillRect(x, y, cellWidth, cellHeight);
+                ctx.fillStyle = color
+                ctx.fillRect(x, y, cellWidth, cellHeight)
 
-                ctx.strokeStyle = '#333333';
-                ctx.strokeRect(x, y, cellWidth, cellHeight);
+                ctx.strokeStyle = '#333333'
+                ctx.strokeRect(x, y, cellWidth, cellHeight)
             }
         }
 
         // Fill all cells with a specific color
         function clearAll(color) {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    matrixData[row][col] = color;
+                    matrixData[row][col] = color
                 }
             }
-            drawMatrix();
+            drawMatrix()
         }
 
         // Fill all contiguous cells with a specific color
         function fillAll(row, col, color) {
-            canvasHistory.saveState(matrixData);
-            fillAllRecursive(row, col, color);
+            canvasHistory.saveState(matrixData)
+            fillAllRecursive(row, col, color)
         }
 
         function fillAllRecursive(row, col, color) {
-            originalColor = matrixData[row][col];
+            originalColor = matrixData[row][col]
             if (originalColor != color) {
-                updateCell(row, col, color);
+                updateCell(row, col, color)
                 if (row > 0 && matrixData[row - 1][col] == originalColor) {
-                    fillAllRecursive(row - 1, col, color);
+                    fillAllRecursive(row - 1, col, color)
                 }
                 if (row < ROWS - 1 && matrixData[row + 1][col] == originalColor) {
-                    fillAllRecursive(row + 1, col, color);
+                    fillAllRecursive(row + 1, col, color)
                 }
                 if (col > 0 && matrixData[row][col - 1] == originalColor) {
-                    fillAllRecursive(row, col - 1, color);
+                    fillAllRecursive(row, col - 1, color)
                 }
                 if (col < COLS - 1 && matrixData[row][col + 1] == originalColor) {
-                    fillAllRecursive(row, col + 1, color);
+                    fillAllRecursive(row, col + 1, color)
                 }
             }
         }
 
         function undo() {
-            canvasHistory.undo();
+            canvasHistory.undo()
         }
 
         function redo() {
-            canvasHistory.redo();
+            canvasHistory.redo()
         }
 
         //Invert all cells
         function invertAll() {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
                         case '#ffffff':
-                            matrixData[row][col] = '#000000';
-                            break;
+                            matrixData[row][col] = black
+                            break
                         case '#000000':
-                            matrixData[row][col] = '#ffffff';
-                            break;
+                            matrixData[row][col] = white
+                            break
                     }
                 }
             }
-            drawMatrix();
+            drawMatrix()
         }
 
         function mirrorHorizontal() {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS / 2; col++) {
-                    matrixData[row][COLS - col - 1] = matrixData[row][col];
+                    matrixData[row][COLS - col - 1] = matrixData[row][col]
                 }
             }
-            drawMatrix();
+            drawMatrix()
         }
 
         function mirrorVertical() {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS / 2; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    matrixData[ROWS - row - 1][col] = matrixData[row][col];
+                    matrixData[ROWS - row - 1][col] = matrixData[row][col]
                 }
             }
-            drawMatrix();
+            drawMatrix()
         }
 
         function flip(direction = 'horizontal') {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             if (direction === 'horizontal') {
-                console.log("flip horizontal");
-                matrixData = matrixData.map(row => row.slice().reverse());
+                console.log("flip horizontal")
+                matrixData = matrixData.map(row => row.slice().reverse())
             } else if (direction === 'vertical') {
-                console.log("flip vertical");
-                matrixData = matrixData.slice().reverse();
+                console.log("flip vertical")
+                matrixData = matrixData.slice().reverse()
             }
-            drawMatrix();
+            drawMatrix()
         }
 
         function copyToClipboard(text) {
-            console.log(text);
-            var $temp = $('<input>');
-            $('body').append($temp);
-            $temp.val(text).select();
-            document.execCommand('copy');
-            $temp.remove();
+            console.log(text)
+            var $temp = $('<input>')
+            $('body').append($temp)
+            $temp.val(text).select()
+            document.execCommand('copy')
+            $temp.remove()
 
             swalBS.fire({
                 position: "top-end",
@@ -1472,96 +1453,96 @@
                 title: getCorrectTranslation('copied'),
                 showConfirmButton: false,
                 timer: 1500
-            });
+            })
         }
 
         function copyWrappedToMatrix() {
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    matrixData[row][col] = wrappedMatrix[row][col];
+                    matrixData[row][col] = wrappedMatrix[row][col]
                 }
             }
         }
 
         function moveUp() {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS - 1; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    // matrixData[row][col] = matrixData[row + 1][col];
-                    // matrixData[row + 1][col] = '#000000';
-                    const srcRow = (row + 1) % ROWS;
-                    wrappedMatrix[row][col] = matrixData[srcRow][col];
+                    // matrixData[row][col] = matrixData[row + 1][col]
+                    // matrixData[row + 1][col] = black
+                    const srcRow = (row + 1) % ROWS
+                    wrappedMatrix[row][col] = matrixData[srcRow][col]
                 }
             }
-            copyWrappedToMatrix();
-            drawMatrix();
-            nudgeY();
+            copyWrappedToMatrix()
+            drawMatrix()
+            nudgeY()
         }
 
         function moveDown() {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = ROWS - 1; row > 0; row--) {
                 for (let col = 0; col < COLS; col++) {
-                    // matrixData[row][col] = matrixData[row - 1][col];
-                    // matrixData[row - 1][col] = '#000000';
-                    const srcRow = (row - 1 + ROWS) % ROWS;
-                    wrappedMatrix[row][col] = matrixData[srcRow][col];
+                    // matrixData[row][col] = matrixData[row - 1][col]
+                    // matrixData[row - 1][col] = black
+                    const srcRow = (row - 1 + ROWS) % ROWS
+                    wrappedMatrix[row][col] = matrixData[srcRow][col]
                 }
             }
-            copyWrappedToMatrix();
-            drawMatrix();
-            nudgeY();
+            copyWrappedToMatrix()
+            drawMatrix()
+            nudgeY()
         }
 
         function moveLeft() {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS - 1; col++) {
-                    // matrixData[row][col] = matrixData[row][col + 1];
-                    // matrixData[row][col + 1] = '#000000';
-                    const srcCol = (col + 1) % COLS;
-                    wrappedMatrix[row][col] = matrixData[row][srcCol];
+                    // matrixData[row][col] = matrixData[row][col + 1]
+                    // matrixData[row][col + 1] = black
+                    const srcCol = (col + 1) % COLS
+                    wrappedMatrix[row][col] = matrixData[row][srcCol]
                 }
             }
-            copyWrappedToMatrix();
-            drawMatrix();
-            nudgeX();
+            copyWrappedToMatrix()
+            drawMatrix()
+            nudgeX()
         }
 
         function moveRight() {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = COLS - 1; col > 0; col--) {
-                    // matrixData[row][col] = matrixData[row][col - 1];
-                    // matrixData[row][col - 1] = '#000000';
-                    const srcCol = (col - 1 + COLS) % COLS;
-                    wrappedMatrix[row][col] = matrixData[row][srcCol];
+                    // matrixData[row][col] = matrixData[row][col - 1]
+                    // matrixData[row][col - 1] = black
+                    const srcCol = (col - 1 + COLS) % COLS
+                    wrappedMatrix[row][col] = matrixData[row][srcCol]
                 }
             }
-            copyWrappedToMatrix();
-            drawMatrix();
-            nudgeX();
+            copyWrappedToMatrix()
+            drawMatrix()
+            nudgeX()
         }
 
         function nudgeX() {
-            $('#canvas-container').addClass('nudgeX');
+            $('#canvas-container').addClass('nudgeX')
 
             setTimeout(() => {
-                $('#canvas-container').removeClass('nudgeX');
-            }, 700);
+                $('#canvas-container').removeClass('nudgeX')
+            }, 700)
         }
 
         function nudgeY() {
-            $('#canvas-container').addClass('nudgeY');
+            $('#canvas-container').addClass('nudgeY')
 
             setTimeout(() => {
-                $('#canvas-container').removeClass('nudgeY');
-            }, 700);
+                $('#canvas-container').removeClass('nudgeY')
+            }, 700)
         }
 
         // Export matrix data as JSON
         function exportData() {
-            const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+            const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue)
 
             swalBS.fire({
                 title: getCorrectTranslation('copycode'),
@@ -1575,127 +1556,155 @@
                 confirmButtonAriaLabel: 'OK',
                 cancelButtonText: 'Cancel',
                 cancelButtonAriaLabel: "Thumbs down"
-            });
+            })
         }
 
         // Event listeners
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('draw-white').value = whiteValue;
+            document.getElementById('draw-lightGrey').value = lightGreyValue;
+            document.getElementById('draw-darkGrey').value = darkGreyValue;
+            document.getElementById('draw-black').value = blackValue;
+        })
+        
+        //Lazy loading of community items
+        const communityDiv = document.querySelector('#community .offcanvas-body')
+        const loadMoreBtn = document.getElementById('community-load-more-btn')
+       
+        communityDiv.addEventListener('scroll', () => {
+            const isAtBottom = communityDiv.scrollTop + communityDiv.clientHeight >= communityDiv.scrollHeight;
+            if (isAtBottom) {
+                loadMoreBtn.click()
+            }
+        })
+        
         canvas.addEventListener('mousedown', (e) => {
-            isDrawing = true;
+            isDrawing = true
 
-            const coords = getMatrixCoords(e);
+            const coords = getMatrixCoords(e)
             if (coords) {
                 switch (currentMode) {
                     case 'draw':
                         switch (currentColor) {
                             case 1:
-                                updateCell(coords.row, coords.col, '#ffffff');
-                                break;
+                                updateCell(coords.row, coords.col, white)
+                                break
                             case 0.5:
-                                updateCell(coords.row, coords.col, '#808080');
-                                break;
+                                updateCell(coords.row, coords.col, darkGrey)
+                                break
+                            case 0.7:
+                                updateCell(coords.row, coords.col, lightGrey)
+                                break
                             case 0:
-                                updateCell(coords.row, coords.col, '#000000');
-                                break;
+                                updateCell(coords.row, coords.col, black)
+                                break
                         }
-                        break;
+                        break
                     case 'fill':
                         switch (currentColor) {
                             case 1:
-                                fillAll(coords.row, coords.col, '#ffffff');
-                                break;
+                                fillAll(coords.row, coords.col, white)
+                                break
                             case 0.5:
-                                fillAll(coords.row, coords.col, '#808080');
-                                break;
+                                fillAll(coords.row, coords.col, darkGrey)
+                                break
+                            case 0.7:
+                                fillAll(coords.row, coords.col, lightGrey)
+                                break
                             case 0:
-                                fillAll(coords.row, coords.col, '#000000');
-                                break;
+                                fillAll(coords.row, coords.col, black)
+                                break
                         }
-                        break;
+                        break
                 }
             }
-        });
+        })
 
         canvas.addEventListener('mousemove', (e) => {
-            const coords = getMatrixCoords(e);
+            const coords = getMatrixCoords(e)
             if (coords) {
 
-                mousePosDisplay.textContent = `${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`;
+                mousePosDisplay.textContent = `${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`
 
                 if (isDrawing) {
                     switch (currentMode) {
                         case 'draw':
                             switch (currentColor) {
                                 case 1:
-                                    updateCell(coords.row, coords.col, '#ffffff');
-                                    break;
+                                    updateCell(coords.row, coords.col, white)
+                                    break
                                 case 0.5:
-                                    updateCell(coords.row, coords.col, '#808080');
-                                    break;
+                                    updateCell(coords.row, coords.col, darkGrey)
+                                    break
+                                case 0.7:
+                                    updateCell(coords.row, coords.col, lightGrey)
+                                    break
                                 case 0:
-                                    updateCell(coords.row, coords.col, '#000000');
-                                    break;
+                                    updateCell(coords.row, coords.col, black)
+                                    break
                             }
-                            break;
+                            break
                     }
                 }
             } else {
-                mousePosDisplay.textContent = getCorrectTranslation('position1');
+                mousePosDisplay.textContent = getCorrectTranslation('position1')
             }
-        });
+        })
 
         canvas.addEventListener('mouseout', () => {
-            mousePosDisplay.textContent = getCorrectTranslation('position1');
-        });
+            mousePosDisplay.textContent = getCorrectTranslation('position1')
+        })
 
         window.addEventListener('mouseup', () => {
-            isDrawing = false;
-            canvasHistory.saveState(matrixData);
-        });
+            isDrawing = false
+            canvasHistory.saveState(matrixData)
+        })
 
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('resize', resizeCanvas)
 
         // Initial setup
-        resizeCanvas();
+        resizeCanvas()
 
         $(document).keydown(function (e) {
             switch (e.which) {
                 case 37: // left arrow key
-                    moveLeft();
-                    break;
+                    moveLeft()
+                    break
                 case 38: // up arrow key
-                    moveUp();
-                    break;
+                    moveUp()
+                    break
                 case 39: // right arrow key
-                    moveRight();
-                    break;
+                    moveRight()
+                    break
                 case 40: // down arrow key
-                    moveDown();
-                    break;
+                    moveDown()
+                    break
                 default: return; // exit this handler for other keys
             }
 
             e.preventDefault(); // prevent the default action (scroll / move caret)
-        });
+        })
     </script>
 
     <!-- User functions -->
     <script>
         function loginUser(id, username) {
-            sessionStorage.setItem('id', id);
-            sessionStorage.setItem('username', username);
+            sessionStorage.setItem('id', id)
+            sessionStorage.setItem('username', username)
 
-            $('#ddLogin, #btnSignup').css('display', 'none');
-            $('#member, #btnShare').css('display', 'block');
-            $('#member button.dropdown-toggle').text(username);
+            $('#ddLogin, #btnSignup').css('display', 'none')
+            $('#member, #btnShare').css('display', 'block')
+            $('#member button.dropdown-toggle').text(username)
         }
 
         $('#btnLoginConfirm').click(function (evt) {
             if (!$('#txtLoginUsername').val()) {
-                $('#txtLoginUsername').addClass('is-invalid');
-                $('#txtLoginUsername').focus();
+                $('#txtLoginUsername').addClass('is-invalid')
+                $('#txtLoginUsername').focus()
             } else if (!$('#txtLoginPassword').val()) {
-                $('#txtLoginPassword').addClass('is-invalid');
-                $('#txtLoginPassword').focus();
+                $('#txtLoginPassword').addClass('is-invalid')
+                $('#txtLoginPassword').focus()
             } else {
                 $.ajax({
                     url: `${api}loginuser/${$('#txtLoginUsername').val()}/${$('#txtLoginPassword').val()}`,
@@ -1711,29 +1720,29 @@
                                 title: getCorrectTranslation('welcomeUser').replace('{user}', response.data.data.username),
                                 showConfirmButton: false,
                                 timer: 1500
-                            });
+                            })
 
-                            loginUser(response.data.data.id, $('#txtLoginUsername').val());
+                            loginUser(response.data.data.id, $('#txtLoginUsername').val())
 
                             if ($('#chkLoginRemember').is(':checked')) {
-                                localStorage.setItem('username', $('#txtLoginUsername').val());
-                                localStorage.setItem('password', $('#txtLoginPassword').val());
-                                localStorage.setItem('remember', true);
+                                localStorage.setItem('username', $('#txtLoginUsername').val())
+                                localStorage.setItem('password', $('#txtLoginPassword').val())
+                                localStorage.setItem('remember', true)
                             }
 
-                            $('#txtLoginUsername, #txtLoginPassword').val('');
-                            if ($('#txtLoginUsername').hasClass('is-invalid')) $('#txtLoginUsername').removeClass('is-invalid');
-                            if ($('#txtLoginPassword').hasClass('is-invalid')) $('#txtLoginPassword').removeClass('is-invalid');
+                            $('#txtLoginUsername, #txtLoginPassword').val('')
+                            if ($('#txtLoginUsername').hasClass('is-invalid')) $('#txtLoginUsername').removeClass('is-invalid')
+                            if ($('#txtLoginPassword').hasClass('is-invalid')) $('#txtLoginPassword').removeClass('is-invalid')
 
-                            //if ($('#frmLogin').hasClass('show')) $('#frmLogin').removeClass('show');
-                            $('#frmLogin').dropdown('hide');
+                            //if ($('#frmLogin').hasClass('show')) $('#frmLogin').removeClass('show')
+                            $('#frmLogin').dropdown('hide')
                         } else {
                             swalBS.fire({
                                 icon: "error",
                                 title: getCorrectTranslation('oops'),
                                 theme: "dark",
                                 text: getCorrectTranslation(response.data.code),
-                            });
+                            })
                         }
                     },
                     error: function (err) {
@@ -1742,51 +1751,51 @@
                             title: getCorrectTranslation('oops'),
                             theme: "dark",
                             text: err.statusText,
-                        });
+                        })
                     }
                 })
             }
-        });
+        })
 
         $('#btnSignupConfirm').click(function (evt) {
             if (!$('#txtSignupEmail').val()) {
-                $('#txtSignupEmail').addClass('is-invalid');
-                $('#txtSignupEmail').focus();
+                $('#txtSignupEmail').addClass('is-invalid')
+                $('#txtSignupEmail').focus()
             } else if (!$('#txtSignupUsername').val()) {
-                $('#txtSignupUsername').addClass('is-invalid');
-                $('#txtSignupUsername').focus();
+                $('#txtSignupUsername').addClass('is-invalid')
+                $('#txtSignupUsername').focus()
             } else if (naughtyWords.includes($('#txtSignupUsername').val())) {
-                $('#txtSignupUsername').addClass('is-invalid');
-                $('#txtSignupUsername').focus();
+                $('#txtSignupUsername').addClass('is-invalid')
+                $('#txtSignupUsername').focus()
                 swalBS.fire({
                     icon: "error",
                     title: getCorrectTranslation('oops'),
                     theme: "dark",
                     text: getCorrectTranslation('inappropriateTextWarning'),
-                });
+                })
             } else if (!$('#txtSignupPassword').val()) {
-                $('#txtSignupPassword').addClass('is-invalid');
-                $('#txtSignupPassword').focus();
+                $('#txtSignupPassword').addClass('is-invalid')
+                $('#txtSignupPassword').focus()
             } else if (!$('#txtSignupConfirmPassword').val()) {
-                $('#txtSignupConfirmPassword').addClass('is-invalid');
-                $('#txtSignupConfirmPassword').focus();
+                $('#txtSignupConfirmPassword').addClass('is-invalid')
+                $('#txtSignupConfirmPassword').focus()
             } else if ($('#txtSignupPassword').val() != $('#txtSignupConfirmPassword').val()) {
-                $('#txtSignupPassword').addClass('is-invalid');
-                $('#txtSignupConfirmPassword').addClass('is-invalid');
-                $('#txtSignupPassword').focus();
+                $('#txtSignupPassword').addClass('is-invalid')
+                $('#txtSignupConfirmPassword').addClass('is-invalid')
+                $('#txtSignupPassword').focus()
                 swalBS.fire({
                     icon: "error",
                     title: getCorrectTranslation('oops'),
                     theme: "dark",
                     text: getCorrectTranslation('passwordNotMatch'),
-                });
+                })
             } else {
                 var json = {
                     username: $('#txtSignupUsername').val(),
                     email: $('#txtSignupEmail').val(),
                     password: $('#txtSignupConfirmPassword').val()
-                };
-                var jsonData = JSON.stringify(json);
+                }
+                var jsonData = JSON.stringify(json)
 
                 $.ajax({
                     url: `${api}users`,
@@ -1803,24 +1812,24 @@
                                 title: getCorrectTranslation('signedUp'),
                                 showConfirmButton: false,
                                 timer: 1500
-                            });
+                            })
 
-                            loginUser(response.id, $('#txtSignupUsername').val());
+                            loginUser(response.id, $('#txtSignupUsername').val())
 
-                            $('#txtSignupEmail, #txtSignupUsername, #txtSignupConfirmPassword, #txtSignupPassword').val('');
-                            if ($('#txtSignupEmail').hasClass('is-invalid')) $('#txtSignupEmail').removeClass('is-invalid');
-                            if ($('#txtSignupUsername').hasClass('is-invalid')) $('#txtSignupUsername').removeClass('is-invalid');
-                            if ($('#txtSignupConfirmPassword').hasClass('is-invalid')) $('#txtSignupConfirmPassword').removeClass('is-invalid');
-                            if ($('#txtSignupPassword').hasClass('is-invalid')) $('#txtSignupPassword').removeClass('is-invalid');
+                            $('#txtSignupEmail, #txtSignupUsername, #txtSignupConfirmPassword, #txtSignupPassword').val('')
+                            if ($('#txtSignupEmail').hasClass('is-invalid')) $('#txtSignupEmail').removeClass('is-invalid')
+                            if ($('#txtSignupUsername').hasClass('is-invalid')) $('#txtSignupUsername').removeClass('is-invalid')
+                            if ($('#txtSignupConfirmPassword').hasClass('is-invalid')) $('#txtSignupConfirmPassword').removeClass('is-invalid')
+                            if ($('#txtSignupPassword').hasClass('is-invalid')) $('#txtSignupPassword').removeClass('is-invalid')
 
-                            $('#modal-signup').modal('hide');
+                            $('#modal-signup').modal('hide')
                         } else {
                             swalBS.fire({
                                 icon: "error",
                                 title: getCorrectTranslation('oops'),
                                 theme: "dark",
                                 text: getCorrectTranslation(response.data.code),
-                            });
+                            })
                         }
                     },
                     error: function (err) {
@@ -1829,35 +1838,35 @@
                             title: getCorrectTranslation('oops'),
                             theme: "dark",
                             text: err.statusText,
-                        });
+                        })
                     }
-                });
+                })
             }
-        });
+        })
 
         $('#btnChangePasswordConfirm').click(function (evt) {
             if (!$('#txtCurrentPassword').val()) {
-                $('#txtCurrentPassword').addClass('is-invalid');
-                $('#txtCurrentPassword').focus();
+                $('#txtCurrentPassword').addClass('is-invalid')
+                $('#txtCurrentPassword').focus()
             } else if (!$('#txtNewPassword').val()) {
-                $('#txtNewPassword').addClass('is-invalid');
-                $('#txtNewPassword').focus();
+                $('#txtNewPassword').addClass('is-invalid')
+                $('#txtNewPassword').focus()
             } else if (!$('#txtConfirmNewPassword').val()) {
-                $('#txtConfirmNewPassword').addClass('is-invalid');
-                $('#txtConfirmNewPassword').focus();
+                $('#txtConfirmNewPassword').addClass('is-invalid')
+                $('#txtConfirmNewPassword').focus()
             } else if ($('#txtNewPassword').val() != $('#txtConfirmNewPassword').val()) {
-                $('#txtSignupPassword').addClass('is-invalid');
-                $('#txtConfirmNewPassword').addClass('is-invalid');
-                $('#txtNewPassword').focus();
+                $('#txtSignupPassword').addClass('is-invalid')
+                $('#txtConfirmNewPassword').addClass('is-invalid')
+                $('#txtNewPassword').focus()
                 swalBS.fire({
                     icon: "error",
                     title: getCorrectTranslation('oops'),
                     theme: "dark",
                     text: getCorrectTranslation('passwordNotMatch'),
-                });
+                })
             } else {
-                var json = { currentPassword: $('#txtCurrentPassword').val(), newPassword: $('#txtConfirmNewPassword').val() };
-                var jsonData = JSON.stringify(json);
+                var json = { currentPassword: $('#txtCurrentPassword').val(), newPassword: $('#txtConfirmNewPassword').val() }
+                var jsonData = JSON.stringify(json)
 
                 $.ajax({
                     url: `${api}updateuser/${parseInt(sessionStorage.getItem('id') || -1)}`,
@@ -1874,27 +1883,27 @@
                                 title: getCorrectTranslation('passwordChanged'),
                                 showConfirmButton: false,
                                 timer: 1500
-                            });
+                            })
 
-                            sessionStorage.clear();
+                            sessionStorage.clear()
 
-                            $('#ddLogin, #btnSignup').css('display', 'block');
-                            $('#member, #btnShare').css('display', 'none');
-                            $('#member button.dropdown-toggle').text('Guest');
+                            $('#ddLogin, #btnSignup').css('display', 'block')
+                            $('#member, #btnShare').css('display', 'none')
+                            $('#member button.dropdown-toggle').text('Guest')
 
-                            $('#txtCurrentPassword, #txtNewPassword, #txtConfirmNewPassword').val('');
-                            if ($('#txtCurrentPassword').hasClass('is-invalid')) $('#txtCurrentPassword').removeClass('is-invalid');
-                            if ($('#txtNewPassword').hasClass('is-invalid')) $('#txtNewPassword').removeClass('is-invalid');
-                            if ($('#txtConfirmNewPassword').hasClass('is-invalid')) $('#txtConfirmNewPassword').removeClass('is-invalid');
+                            $('#txtCurrentPassword, #txtNewPassword, #txtConfirmNewPassword').val('')
+                            if ($('#txtCurrentPassword').hasClass('is-invalid')) $('#txtCurrentPassword').removeClass('is-invalid')
+                            if ($('#txtNewPassword').hasClass('is-invalid')) $('#txtNewPassword').removeClass('is-invalid')
+                            if ($('#txtConfirmNewPassword').hasClass('is-invalid')) $('#txtConfirmNewPassword').removeClass('is-invalid')
 
-                            $('#modal-change-password').modal('hide');
+                            $('#modal-change-password').modal('hide')
                         } else {
                             swalBS.fire({
                                 icon: "error",
                                 title: getCorrectTranslation('oops'),
                                 theme: "dark",
                                 text: getCorrectTranslation(response.data.code),
-                            });
+                            })
                         }
                     },
                     error: function (err) {
@@ -1903,28 +1912,28 @@
                             title: getCorrectTranslation('oops'),
                             theme: "dark",
                             text: err.statusText,
-                        });
+                        })
                     }
-                });
+                })
             }
-        });
+        })
 
         $('#aLogout').click(function (evt) {
-            sessionStorage.clear();
+            sessionStorage.clear()
 
-            $('#ddLogin, #btnSignup').css('display', 'block');
-            $('#member, #btnShare').css('display', 'none');
-            $('#member button.dropdown-toggle').text('Guest');
-        });
+            $('#ddLogin, #btnSignup').css('display', 'block')
+            $('#member, #btnShare').css('display', 'none')
+            $('#member button.dropdown-toggle').text('Guest')
+        })
 
         $('#btnShare').click(function (evt) {
-            let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
+            let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null }
             if (loggedIn.userid != null && loggedIn.username != null) {
-                $('#modal-share').modal('show');
+                $('#modal-share').modal('show')
             } else {
-                $('#frmLogin').dropdown('show');
+                $('#frmLogin').dropdown('show')
             }
-        });
+        })
     </script>
 
 
