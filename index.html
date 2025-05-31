@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -15,6 +14,32 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
         crossorigin="anonymous"></script>
+    <script>
+        // Colors
+        let lightGrey="#A9A9A9"
+        let darkGrey="#505050"
+        let white="#FFFFFF"
+        let black="#000000"
+        
+        let lightGreyValue = 0.7
+        let darkGreyValue = 0.5
+        let whiteValue = 1
+        let blackValue = 0
+
+        const colorMap = {
+            [white]: white,
+            [black]: black,
+            [darkGrey]: darkGreyValue,
+            [lightGrey]: lightGreyValue
+        };
+
+        const colorMapReverse = {
+            [white]: white,
+            [black]: black,
+            [darkGreyValue]: darkGrey,
+            [lightGreyValue]: lightGrey
+        };
+    </script>
 </head>
 
 <body>
@@ -165,76 +190,60 @@
             </div>
 
             <div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
-                <!-- <div class="col-auto">
+                <div class="col-auto">
                     <div class="btn-group">
                         <button type="button" class="btn btn-primary" id="btnUndo" onclick="undo();">
                             <span class="mdi mdi-undo"></span> Undo</button>
                         <button type="button" class="btn btn-primary" id="btnRedo" onclick="redo();">
                             <span class="mdi mdi-redo"></span> Redo</button>
                     </div>
-                </div> -->
+                </div>
 
                 <div class="col-auto">
                     <div class="btn-group">
-                        <input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked>
-                        <label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
-                        <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill">
-                        <label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span>
-                            Fill</label>
-                        <button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span
-                                class="mdi mdi-trash-can-outline"></span>
-                            Clear
-                            All</button>
+                        <input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked><label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
+                        <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill"><label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span> Fill</label>
+                    </div>
+                    <button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span class="mdi mdi-trash-can-outline"></span> Clear All</button>
+                </div>
+                <div class="col-auto">
+                    <div class="btn-group">
+                        <!--<input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked><label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> White</label>-->
+                        <input type="radio" class="btn-check" id="draw-white" name="draw-color" value="1" checked><label for="draw-white" class="btn btn-white"><span class="mdi mdi-water"></span> White</label>
+                        <input type="radio" class="btn-check" id="draw-lightGrey" name="draw-color" value="0.7"><label for="draw-lightGrey" class="btn btn-light-grey"><span class="mdi mdi-water-opacity"></span> Light Grey</label>
+                        <input type="radio" class="btn-check" id="draw-darkGrey" name="draw-color" value="0.5"><label for="draw-darkGrey" class="btn btn-dark-grey"><span class="mdi mdi-water-opacity"></span> Dark Grey</label>
+                        <input type="radio" class="btn-check" id="draw-black" name="draw-color" value="0"><label for="draw-black" class="btn btn-black"><span class="mdi mdi-water-outline"></span> Black</label>
+                        <!--<input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0"><label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span> Off</label>-->
                     </div>
                 </div>
                 <div class="col-auto">
                     <div class="btn-group">
-                        <input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
-                        <label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> Full</label>
-                        <input type="radio" class="btn-check" id="draw-transparent" name="draw-color" value="0.5">
-                        <label for="draw-transparent" class="btn btn-primary"><span
-                                class="mdi mdi-water-opacity"></span>
-                            Transparent</label>
-
-                        <input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
-                        <label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span>
-                            Off</label>
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <div class="btn-group">
-                        <button id="btnInvert" class="btn btn-primary" onclick="invertAll();"><span
-                                class="mdi mdi-invert-colors"></span>
-                            Invert</button>
+                        <button id="btnInvertBW" class="btn btn-primary text-dark" onclick="invertAll();"><span class="mdi mdi-invert-colors"></span> Invert White/Black</button>
+                        <button id="btnInvertGreys" class="btn btn-primary" onclick="invertGreys();"><span class="mdi mdi-invert-colors"></span> Invert Greys</button>
                         <div class="btn-group dropdown">
-                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-flip-to-front"></span> Mirror
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#"
-                                        onclick="mirrorHorizontal();">
-                                        <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
-                                    </a></li>
-                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#"
-                                        onclick="mirrorVertical();">
-                                        <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
-                                    </a></li>
+                                <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#" onclick="mirrorHorizontal();">
+                                    <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
+                                </a></li>
+                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#" onclick="mirrorVertical();">
+                                    <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
+                                </a></li>
                             </ul>
                         </div>
                         <div class="btn-group dropdown">
-                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <span class="mdi mdi-rotate-orbit"></span> Flip
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" id="btnFlipHorizontal" href="#"
-                                        onclick="flip('horizontal');">
-                                        <span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
-                                    </a></li>
+                                <li><a class="dropdown-item" id="btnFlipHorizontal" href="#" onclick="flip('horizontal');">
+                                    <span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
+                                </a></li>
                                 <li><a class="dropdown-item" id="btnFlipVertical" href="#" onclick="flip('vertical');">
-                                        <span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
-                                    </a></li>
+                                    <span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
+                                </a></li>
                             </ul>
                         </div>
                     </div>
@@ -504,76 +513,11 @@
 
         </div>
     </div>
-
+    
     <script src="script.js"></script>
 
     <!-- History Manager -->
-    <script>
-        const MAX_HISTORY = 100;
-
-        class HistoryManager {
-            isEqual(a, b) {
-                return JSON.stringify(a) === JSON.stringify(b);
-            }
-
-            constructor(initialState) {
-                this.undoStack = [];
-                this.redoStack = [];
-                this.currentState = initialState;
-            }
-
-            saveState(newState) {
-                const clonedNewState = this.clone(newState);
-                const lastUndoState = this.undoStack[this.undoStack.length - 1];
-
-                if (lastUndoState && this.isEqual(clonedNewState, lastUndoState)) {
-                    return;
-                }
-
-                this.undoStack.push(this.clone(this.currentState));
-                if (this.undoStack.length > MAX_HISTORY) this.undoStack.shift();
-
-                this.currentState = clonedNewState;
-                this.redoStack = [];
-            }
-
-            clear(initialState) {
-                this.undoStack = [];
-                this.redoStack = [];
-                this.currentState = initialState;
-            }
-
-            undo() {
-                if (this.undoStack.length === 0) {
-                    console.log("Nothing to undo");
-                } else {
-                    this.redoStack.push(this.clone(this.currentState));
-                    this.currentState = this.undoStack.pop();
-                }
-                matrixData = this.clone(this.currentState);
-                drawMatrix();
-            }
-
-            redo() {
-                if (this.redoStack.length === 0) {
-                    console.log("Nothing to redo");
-                } else {
-                    this.undoStack.push(this.clone(this.currentState));
-                    this.currentState = this.redoStack.pop();
-                }
-                matrixData = this.clone(this.currentState);
-                drawMatrix();
-            }
-
-            clone(state) {
-                return JSON.parse(JSON.stringify(state));
-            }
-
-            getCurrentState() {
-                return this.clone(this.currentState);
-            }
-        }
-    </script>
+    <script src="history_manager.js"></script>
 
     <script>
         //const api = 'http://localhost:3001/api/';
@@ -645,7 +589,7 @@
             }
             try {
                 matrixData = JSON.parse($('#clipboard').val());
-                matrixData = matrixData.map(row => row.map(value => value === 0 ? "#000000" : (value === 1 ? "#ffffff" : "#808080")));
+                matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color));
                 canvasHistory.saveState(matrixData);
                 drawMatrix();
             } catch (e) {
@@ -687,7 +631,7 @@
                     resizeCanvas();
 
                     matrixData = JSON.parse($select.val());
-                    matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
+                    matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color));
                     canvasHistory.saveState(matrixData);
                     drawMatrix();
 
@@ -723,7 +667,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+                const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue);
                 const name = $('#txt-save').val();
                 const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
                 localStorage.setItem(`item-${name}`, JSON.stringify(obj));
@@ -775,7 +719,7 @@
                 }
             }
             return filtered;
-        }
+        };
 
         function appendPlaceholders(count) {
             var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex placeholder-item">
@@ -1197,63 +1141,57 @@
             fillAll('#000000');
         }
 
-        $('#txt-search').on('keydown', function (e) {
-            if (e.keyCode === 13) {
-                $('#community-search').click();
-                e.preventDefault()
+        $(document).keydown(function (e) {
+            // If any div has the class '.modal.show' or '.offcanvas.show', exit early
+            if ($('div.modal.show').length > 0 || $('div.offcanvas.show').length > 0) {
+                return
             }
 
             // Undo
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                e.preventDefault();
-                canvasHistory.undo();
-                return;
+                e.preventDefault()
+                canvasHistory.undo()
+                return
             }
 
             // Redo
             if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-                e.preventDefault();
-                canvasHistory.redo();
-                return;
+                e.preventDefault()
+                canvasHistory.redo()
+                return
             }
-        });
+        })
 
         $('#community-load-more-btn').click(function (evt) {
-            getCommunityItems(parseInt($(this).attr('data-page')));
-            $('#community-load-more-btn').prop('disabled', true);
-        });
+            getCommunityItems(parseInt($(this).attr('data-page')))
+        })
 
         $('#search-load-more-btn').click(function (evt) {
-            searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')));
-            $('#search-load-more-btn').prop('disabled', true);
-        });
+            searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')))
+        })
 
         $('#favorites-load-more-btn').click(function (evt) {
-            getFavoritesCommunityItems($(this.attr('data-page')));
-            $('#favorites-load-more-btn').prop('disabled', true);
+            getFavoritesCommunityItems($(this.attr('data-page')))
         })
 
         function addToFavorite(id) {
             if (!favorites.includes(id)) {
-                favorites.push(id);
-                localStorage.setItem('favorites', JSON.stringify(favorites));
-                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-outline-danger').addClass('btn-danger');
+                favorites.push(id)
+                localStorage.setItem('favorites', JSON.stringify(favorites))
+                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-outline-danger').addClass('btn-danger')
             } else {
-                favorites.splice($.inArray(id, favorites), 1);
-                localStorage.setItem('favorites', JSON.stringify(favorites));
-                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-danger').addClass('btn-outline-danger');
+                favorites.splice($.inArray(id, favorites), 1)
+                localStorage.setItem('favorites', JSON.stringify(favorites))
+                $(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-danger').addClass('btn-outline-danger')
             }
         }
 
-        //Remove Item and remove div from container
-        $(document).on('click', '.remove-item', function(evt) {
-            var item = $(this).closest('div.generated-item');
-            var id = parseInt($(this).attr('data-id'));
+        function removeItem(id) {
             var json = {
                 author: sessionStorage.getItem('username')
-            };
-            var jsonData = JSON.stringify(json);
-            var url = `${api}deleteitem/${id}`;
+            }
+            var jsonData = JSON.stringify(json)
+            var url = `${api}deleteitem/${id}`
 
             $.ajax({
                 url: url,
@@ -1270,15 +1208,14 @@
                             title: getCorrectTranslation('removed'),
                             showConfirmButton: false,
                             timer: 1500
-                        });
-                        item.remove();
+                        })
                     } else {
                         swalBS.fire({
                             icon: "error",
                             title: getCorrectTranslation('oops'),
                             theme: "dark",
                             text: getCorrectTranslation('removeFailed'),
-                        });
+                        })
                     }
                 },
                 error: function (err) {
@@ -1287,10 +1224,10 @@
                         title: getCorrectTranslation('oops'),
                         theme: "dark",
                         text: err.statusText,
-                    });
+                    })
                 }
-            });
-        });
+            })
+        }
     </script>
 
     <script>
@@ -1305,10 +1242,10 @@
         let cellWidth, cellHeight;
 
         // Matrix data - stores color for each cell
-        let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+        let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill(black));
 
         //Wrapped matrix to hold matrix info for nudging
-        let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+        let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill(black));
 
         let canvasHistory = new HistoryManager(matrixData);
         canvasHistory.saveState(matrixData);
@@ -1319,13 +1256,9 @@
         let currentColor = parseFloat($('#input[name="draw-color"]:checked').val()) || 1;
 
         // Resize the canvas to fill the screen while maintaining aspect ratio
-        function resizeCanvas(manual = false, mwidth = 250, mheight = 250) {
-            var maxWidth = window.innerWidth * 0.95;
-            var maxHeight = window.innerHeight * 0.7;
-            if (manual === true) {
-                maxWidth = mwidth;
-                maxHeight = mheight;
-            }
+        function resizeCanvas() {
+            const maxWidth = window.innerWidth * 0.95;
+            const maxHeight = window.innerHeight * 0.7;
 
             // Calculate the cell size to fit the matrix in the available space
             const cellWidthByWidth = maxWidth / COLS;
@@ -1344,7 +1277,7 @@
 
             // Redraw the matrix with the current data
             drawMatrix();
-        }
+        };
 
         // Draw the entire matrix
         function drawMatrix() {
@@ -1363,9 +1296,9 @@
                     // Draw the cell border
                     ctx.strokeStyle = '#333333';
                     ctx.strokeRect(x, y, cellWidth, cellHeight);
-                }
-            }
-        }
+                };
+            };
+        };
 
         // Convert mouse position to matrix coordinates
         function getMatrixCoords(event) {
@@ -1379,14 +1312,14 @@
             // Make sure we're within bounds
             if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
                 return { row, col };
-            }
+            };
 
             return null;
-        }
+        };
 
         // Update a cell's color
         function updateCell(row, col, color) {
-            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+            if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {;
                 matrixData[row][col] = color;
 
                 // Redraw just this cell
@@ -1398,25 +1331,25 @@
 
                 ctx.strokeStyle = '#333333';
                 ctx.strokeRect(x, y, cellWidth, cellHeight);
-            }
-        }
+            };
+        };
 
         // Fill all cells with a specific color
         function clearAll(color) {
             canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS; col++) {
+                for (let col = 0; col < COLS; col++) {;
                     matrixData[row][col] = color;
-                }
-            }
+                };
+            };
             drawMatrix();
-        }
+        };
 
         // Fill all contiguous cells with a specific color
         function fillAll(row, col, color) {
             canvasHistory.saveState(matrixData);
             fillAllRecursive(row, col, color);
-        }
+        };
 
         function fillAllRecursive(row, col, color) {
             originalColor = matrixData[row][col];
@@ -1424,64 +1357,81 @@
                 updateCell(row, col, color);
                 if (row > 0 && matrixData[row - 1][col] == originalColor) {
                     fillAllRecursive(row - 1, col, color);
-                }
+                };
                 if (row < ROWS - 1 && matrixData[row + 1][col] == originalColor) {
                     fillAllRecursive(row + 1, col, color);
-                }
+                };
                 if (col > 0 && matrixData[row][col - 1] == originalColor) {
                     fillAllRecursive(row, col - 1, color);
-                }
+                };
                 if (col < COLS - 1 && matrixData[row][col + 1] == originalColor) {
                     fillAllRecursive(row, col + 1, color);
-                }
-            }
-        }
+                };
+            };
+        };
 
         function undo() {
             canvasHistory.undo();
-        }
+        };
 
         function redo() {
             canvasHistory.redo();
-        }
+        };
 
-        //Invert all cells
+       //Invert all cells
         function invertAll() {
             canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
-                        case '#ffffff':
-                            matrixData[row][col] = '#000000';
+                        case white:
+                            matrixData[row][col] = black;
                             break;
-                        case '#000000':
-                            matrixData[row][col] = '#ffffff';
+                        case black:
+                            matrixData[row][col] = white;
                             break;
-                    }
-                }
-            }
+                    };
+                };
+            };
             drawMatrix();
-        }
+        };
+        
+        function invertGreys() {
+            canvasHistory.saveState(matrixData)
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    switch (matrixData[row][col]) {
+                        case lightGrey:
+                            matrixData[row][col] = darkGrey;
+                            break;
+                        case darkGrey:
+                            matrixData[row][col] = lightGrey;
+                            break;
+                    };
+                };
+            };
+            drawMatrix();
+        };
 
         function mirrorHorizontal() {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS / 2; col++) {
                     matrixData[row][COLS - col - 1] = matrixData[row][col];
-                }
-            }
+                };
+            };
             drawMatrix();
-        }
+        };
 
         function mirrorVertical() {
             canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS / 2; row++) {
                 for (let col = 0; col < COLS; col++) {
                     matrixData[ROWS - row - 1][col] = matrixData[row][col];
-                }
-            }
+                };
+            };
             drawMatrix();
-        }
+        };
 
         function flip(direction = 'horizontal') {
             canvasHistory.saveState(matrixData);
@@ -1491,9 +1441,9 @@
             } else if (direction === 'vertical') {
                 console.log("flip vertical");
                 matrixData = matrixData.slice().reverse();
-            }
+            };
             drawMatrix();
-        }
+        };
 
         function copyToClipboard(text) {
             console.log(text);
@@ -1501,7 +1451,7 @@
             $('body').append($temp);
             $temp.val(text).select();
             document.execCommand('copy');
-            $temp.remove();
+            $temp.remove()
 
             swalBS.fire({
                 position: "top-end",
@@ -1511,67 +1461,59 @@
                 showConfirmButton: false,
                 timer: 1500
             });
-        }
+        };
 
         function copyWrappedToMatrix() {
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     matrixData[row][col] = wrappedMatrix[row][col];
-                }
-            }
-        }
+                };
+            };
+        };
 
         function moveUp() {
             canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS - 1; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    // matrixData[row][col] = matrixData[row + 1][col];
-                    // matrixData[row + 1][col] = '#000000';
                     const srcRow = (row + 1) % ROWS;
                     wrappedMatrix[row][col] = matrixData[srcRow][col];
-                }
-            }
+                };
+            };
             copyWrappedToMatrix();
             drawMatrix();
             nudgeY();
-        }
+        };
 
         function moveDown() {
             canvasHistory.saveState(matrixData);
             for (let row = ROWS - 1; row > 0; row--) {
                 for (let col = 0; col < COLS; col++) {
-                    // matrixData[row][col] = matrixData[row - 1][col];
-                    // matrixData[row - 1][col] = '#000000';
                     const srcRow = (row - 1 + ROWS) % ROWS;
                     wrappedMatrix[row][col] = matrixData[srcRow][col];
-                }
-            }
+                };
+            };
             copyWrappedToMatrix();
             drawMatrix();
             nudgeY();
-        }
+        };
 
         function moveLeft() {
             canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS - 1; col++) {
-                    // matrixData[row][col] = matrixData[row][col + 1];
-                    // matrixData[row][col + 1] = '#000000';
                     const srcCol = (col + 1) % COLS;
                     wrappedMatrix[row][col] = matrixData[row][srcCol];
-                }
-            }
+                };
+            };
             copyWrappedToMatrix();
             drawMatrix();
             nudgeX();
         }
 
         function moveRight() {
-            canvasHistory.saveState(matrixData);
+            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = COLS - 1; col > 0; col--) {
-                    // matrixData[row][col] = matrixData[row][col - 1];
-                    // matrixData[row][col - 1] = '#000000';
                     const srcCol = (col - 1 + COLS) % COLS;
                     wrappedMatrix[row][col] = matrixData[row][srcCol];
                 }
@@ -1585,21 +1527,21 @@
             $('#canvas-container').addClass('nudgeX');
 
             setTimeout(() => {
-                $('#canvas-container').removeClass('nudgeX');
+                $('#canvas-container').removeClass('nudgeX')
             }, 700);
-        }
+        };
 
         function nudgeY() {
             $('#canvas-container').addClass('nudgeY');
 
             setTimeout(() => {
-                $('#canvas-container').removeClass('nudgeY');
+                $('#canvas-container').removeClass('nudgeY')
             }, 700);
-        }
+        };
 
         // Export matrix data as JSON
         function exportData() {
-            const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+            const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue);
 
             swalBS.fire({
                 title: getCorrectTranslation('copycode'),
@@ -1614,9 +1556,28 @@
                 cancelButtonText: 'Cancel',
                 cancelButtonAriaLabel: "Thumbs down"
             });
-        }
+        };
 
         // Event listeners
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('draw-white').value = whiteValue;
+            document.getElementById('draw-lightGrey').value = lightGreyValue;
+            document.getElementById('draw-darkGrey').value = darkGreyValue;
+            document.getElementById('draw-black').value = blackValue;
+        });
+        
+        //Lazy loading of community items
+        const communityDiv = document.querySelector('#community .offcanvas-body');
+        const loadMoreBtn = document.getElementById('community-load-more-btn');
+       
+        communityDiv.addEventListener('scroll', () => {
+            const isAtBottom = communityDiv.scrollTop + communityDiv.clientHeight >= communityDiv.scrollHeight;
+            if (isAtBottom) {
+                loadMoreBtn.click();
+            };
+        });
+        
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
 
@@ -1626,31 +1587,37 @@
                     case 'draw':
                         switch (currentColor) {
                             case 1:
-                                updateCell(coords.row, coords.col, '#ffffff');
+                                updateCell(coords.row, coords.col, white);
                                 break;
                             case 0.5:
-                                updateCell(coords.row, coords.col, '#808080');
+                                updateCell(coords.row, coords.col, darkGrey);
+                                break;
+                            case 0.7:
+                                updateCell(coords.row, coords.col, lightGrey);
                                 break;
                             case 0:
-                                updateCell(coords.row, coords.col, '#000000');
+                                updateCell(coords.row, coords.col, black);
                                 break;
-                        }
+                        };
                         break;
                     case 'fill':
                         switch (currentColor) {
                             case 1:
-                                fillAll(coords.row, coords.col, '#ffffff');
+                                fillAll(coords.row, coords.col, white);
                                 break;
                             case 0.5:
-                                fillAll(coords.row, coords.col, '#808080');
+                                fillAll(coords.row, coords.col, darkGrey);
+                                break;
+                            case 0.7:
+                                fillAll(coords.row, coords.col, lightGrey);
                                 break;
                             case 0:
-                                fillAll(coords.row, coords.col, '#000000');
+                                fillAll(coords.row, coords.col, black);
                                 break;
-                        }
+                        };
                         break;
-                }
-            }
+                };
+            };
         });
 
         canvas.addEventListener('mousemove', (e) => {
@@ -1664,21 +1631,24 @@
                         case 'draw':
                             switch (currentColor) {
                                 case 1:
-                                    updateCell(coords.row, coords.col, '#ffffff');
+                                    updateCell(coords.row, coords.col, white);
                                     break;
                                 case 0.5:
-                                    updateCell(coords.row, coords.col, '#808080');
+                                    updateCell(coords.row, coords.col, darkGrey);
+                                    break;
+                                case 0.7:
+                                    updateCell(coords.row, coords.col, lightGrey);
                                     break;
                                 case 0:
-                                    updateCell(coords.row, coords.col, '#000000');
+                                    updateCell(coords.row, coords.col, black);
                                     break;
-                            }
+                            };
                             break;
-                    }
-                }
+                    };
+                };
             } else {
                 mousePosDisplay.textContent = getCorrectTranslation('position1');
-            }
+            };
         });
 
         canvas.addEventListener('mouseout', () => {
@@ -1710,7 +1680,7 @@
                     moveDown();
                     break;
                 default: return; // exit this handler for other keys
-            }
+            };
 
             e.preventDefault(); // prevent the default action (scroll / move caret)
         });
@@ -1725,7 +1695,7 @@
             $('#ddLogin, #btnSignup').css('display', 'none');
             $('#member, #btnShare').css('display', 'block');
             $('#member button.dropdown-toggle').text(username);
-        }
+        };
 
         $('#btnLoginConfirm').click(function (evt) {
             if (!$('#txtLoginUsername').val()) {
@@ -1757,13 +1727,13 @@
                                 localStorage.setItem('username', $('#txtLoginUsername').val());
                                 localStorage.setItem('password', $('#txtLoginPassword').val());
                                 localStorage.setItem('remember', true);
-                            }
+                            };
 
                             $('#txtLoginUsername, #txtLoginPassword').val('');
                             if ($('#txtLoginUsername').hasClass('is-invalid')) $('#txtLoginUsername').removeClass('is-invalid');
                             if ($('#txtLoginPassword').hasClass('is-invalid')) $('#txtLoginPassword').removeClass('is-invalid');
 
-                            //if ($('#frmLogin').hasClass('show')) $('#frmLogin').removeClass('show');
+                            //if ($('#frmLogin').hasClass('show')) $('#frmLogin').removeClass('show')
                             $('#frmLogin').dropdown('hide');
                         } else {
                             swalBS.fire({
@@ -1772,7 +1742,7 @@
                                 theme: "dark",
                                 text: getCorrectTranslation(response.data.code),
                             });
-                        }
+                        };
                     },
                     error: function (err) {
                         swalBS.fire({
@@ -1782,8 +1752,8 @@
                             text: err.statusText,
                         });
                     }
-                })
-            }
+                });
+            };
         });
 
         $('#btnSignupConfirm').click(function (evt) {
@@ -1841,9 +1811,9 @@
                                 title: getCorrectTranslation('signedUp'),
                                 showConfirmButton: false,
                                 timer: 1500
-                            });
+                            })
 
-                            loginUser(response.id, $('#txtSignupUsername').val());
+                            loginUser(response.id, $('#txtSignupUsername').val())
 
                             $('#txtSignupEmail, #txtSignupUsername, #txtSignupConfirmPassword, #txtSignupPassword').val('');
                             if ($('#txtSignupEmail').hasClass('is-invalid')) $('#txtSignupEmail').removeClass('is-invalid');
@@ -1859,7 +1829,7 @@
                                 theme: "dark",
                                 text: getCorrectTranslation(response.data.code),
                             });
-                        }
+                        };
                     },
                     error: function (err) {
                         swalBS.fire({
@@ -1870,7 +1840,7 @@
                         });
                     }
                 });
-            }
+            };
         });
 
         $('#btnChangePasswordConfirm').click(function (evt) {
@@ -1933,7 +1903,7 @@
                                 theme: "dark",
                                 text: getCorrectTranslation(response.data.code),
                             });
-                        }
+                        };
                     },
                     error: function (err) {
                         swalBS.fire({
@@ -1944,7 +1914,7 @@
                         });
                     }
                 });
-            }
+            };
         });
 
         $('#aLogout').click(function (evt) {
@@ -1961,11 +1931,8 @@
                 $('#modal-share').modal('show');
             } else {
                 $('#frmLogin').dropdown('show');
-            }
+            };
         });
     </script>
-
-
 </body>
-
 </html>

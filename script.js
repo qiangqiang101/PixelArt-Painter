@@ -57,6 +57,10 @@ const langDB = {
     colorFull: { en: '<span class="mdi mdi-water"></span> Full Color', zh: '<span class="mdi mdi-water"></span> 全色' },
     colorTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明' },
     colorOff: {en: '<span class="mdi mdi-water-outline"></span> Off', zh: '<span class="mdi mdi-water-outline"></span> 关灯' },
+    colorWhite: { en: '<span class="mdi mdi-water"></span> White', zh: '<span class="mdi mdi-water"></span> 白色的' },
+    colorBlack: { en: '<span class="mdi mdi-water"></span> Black', zh: '<span class="mdi mdi-water"></span> 黑色的' },
+    colorLightGrey: { en: '<span class="mdi mdi-water"></span> Light Grey', zh: '<span class="mdi mdi-water"></span> 浅灰色' },
+    colorDarkGrey: { en: '<span class="mdi mdi-water"></span> Dark Grey', zh: '<span class="mdi mdi-water"></span> 深灰色' },
     inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' },
     navLogin: { en: '<span class="mdi mdi-login"></span> Login', zh: '<span class="mdi mdi-login"></span> 登入' },
     navSignUp: { en: '<span class="mdi mdi-account-plus-outline"></span> Sign Up', zh: '<span class="mdi mdi-account-plus-outline"></span> 注册' },
@@ -144,6 +148,12 @@ function changeLanguage(lang) {
             $('label[for="draw-full"]').html(langDB.colorFull.zh);
             $('label[for="draw-transparent"]').html(langDB.colorTranslucent.zh);
             $('label[for="draw-clear"]').html(langDB.colorOff.zh);
+            
+            $('label[for="draw-white"]').html(langDB.colorWhite.zh);
+            $('label[for="draw-black"]').html(langDB.colorBlack.zh);
+            $('label[for="draw-lightGrey"]').html(langDB.colorLightGrey.zh);
+            $('label[for="draw-darkGrey"]').html(langDB.colorDarkGrey.zh);
+            
             $('#btnLogin').html(langDB.navLogin.zh);
             $('#btnSignup').html(langDB.navSignUp.zh);
             $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.zh);
@@ -214,6 +224,10 @@ function changeLanguage(lang) {
             $('label[for="draw-full"]').html(langDB.colorFull.en);
             $('label[for="draw-transparent"]').html(langDB.colorTranslucent.en);
             $('label[for="draw-clear"]').html(langDB.colorOff.en);
+            $('label[for="draw-white"]').html(langDB.colorWhite.en);
+            $('label[for="draw-black"]').html(langDB.colorBlack.en);
+            $('label[for="draw-lightGrey"]').html(langDB.colorLightGrey.en);
+            $('label[for="draw-darkGrey"]').html(langDB.colorDarkGrey.en);
             $('#btnLogin').html(langDB.navLogin.en);
             $('#btnSignup').html(langDB.navSignUp.en);
             $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.en);

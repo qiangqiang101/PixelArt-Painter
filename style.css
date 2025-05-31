@@ -39,6 +39,7 @@ canvas {
     border-bottom-left-radius: 4px !important;
 }
 
+/*
 .nudgeX {
     animation: nudgeX-animation 0.3s ease-in-out;
 }
@@ -46,6 +47,7 @@ canvas {
 .nudgeY {
     animation: nudgeY-animation 0.3s ease-in-out;
 }
+
 
 @keyframes nudgeX-animation {
     0% {
@@ -99,6 +101,75 @@ canvas {
     }
 }
 
+*/
 form.dropdown-menu {
     width: 18rem;
 }
+
+.btn-white,
+.btn-white:active,
+.btn-check:checked + .btn-white,
+.btn-white:focus,
+.btn-white.active {
+    background-color: #ffffff !important;
+    border-color: #ffffff !important;
+    color: black !important;
+}
+
+.btn-light-grey,
+.btn-light-grey:active,
+.btn-check:checked + .btn-light-grey,
+.btn-light-grey:focus,
+.btn-light-grey.active {
+    background-color: #A9A9A9 !important;
+    border-color: #A9A9A9 !important;
+    color: white !important;
+}
+
+.btn-dark-grey,
+.btn-dark-grey:active,
+.btn-check:checked + .btn-dark-grey,
+.btn-dark-grey:focus,
+.btn-dark-grey.active {
+    background-color: #505050 !important;
+    border-color: #505050 !important;
+    color: white !important;
+}
+
+.btn-black,
+.btn-black:active,
+.btn-check:checked + .btn-black,
+.btn-black:focus,
+.btn-black.active {
+    background-color: #000000 !important;
+    border-color: #000000 !important;
+    color: white !important;
+}
+
+.btn-check:checked + .btn {
+    transform: translateY(-6px);
+    z-index: 1;
+}
+
+#btnInvertBW {
+  background: linear-gradient(135deg, white 50%, black 50%);
+  color: black;
+  border: 1px solid #ccc;
+}
+
+#btnInvertBW:hover {
+  background: linear-gradient(135deg, black 50%, white 50%);
+  color: white;
+}
+
+#btnInvertGreys {
+  background: linear-gradient(135deg, #A9A9A9 50%, #505050 50%);
+  color: white;
+}
+
+#btnInvertGreys:hover {
+  background: linear-gradient(135deg, #505050 50%, #A9A9A9 50%);
+  color: black;
+  border: 1px solid #ccc;
+}
+
