@@ -17,24 +17,32 @@
 		crossorigin="anonymous"></script>
     <script>
         // Undo/Redo Manager
-        function createUndoRedoManager(initialState = []) {
+        function createUndoRedoManager(initialState = [], initialCols = 16, initialRows = 16) {
             let undoStack = [];
             let redoStack = [];
-            let currentState = JSON.parse(JSON.stringify(initialState)); // Deep copy initial state
+            let currentState = {
+                matrix: JSON.parse(JSON.stringify(initialState)), // Deep copy matrix
+                cols: initialCols,
+                rows: initialRows
+            };
 
             return {
                 getState: () => JSON.parse(JSON.stringify(currentState)), // Return deep copy of current state
-                setState: (newState) => {
+                setState: (newState, cols, rows) => {
                     console.log("Saving state to undo stack");
                     undoStack.push(JSON.parse(JSON.stringify(currentState))); // Deep copy current state to undo stack
-                    currentState = JSON.parse(JSON.stringify(newState)); // Deep copy new state
+                    currentState = {
+                        matrix: JSON.parse(JSON.stringify(newState)), // Deep copy new matrix
+                        cols: cols,
+                        rows: rows
+                    };
                     redoStack = []; // Clear redo stack on new action
                 },
                 undo: () => {
                     if (undoStack.length > 0) {
                         console.log("Undoing action");
                         redoStack.push(JSON.parse(JSON.stringify(currentState))); // Save current state to redo
-                        currentState = undoStack.pop(); // Restore previous state
+                        currentState = undoStack.pop();
                         return JSON.parse(JSON.stringify(currentState)); // Return deep copy
                     }
                     console.log("Nothing to undo");
@@ -44,7 +52,7 @@
                     if (redoStack.length > 0) {
                         console.log("Redoing action");
                         undoStack.push(JSON.parse(JSON.stringify(currentState))); // Save current state to undo
-                        currentState = redoStack.pop(); // Restore next state
+                        currentState = redoStack.pop();
                         return JSON.parse(JSON.stringify(currentState)); // Return deep copy
                     }
                     console.log("Nothing to redo");
@@ -53,7 +61,11 @@
                 clear: () => {
                     undoStack = [];
                     redoStack = [];
-                    currentState = JSON.parse(JSON.stringify(initialState)); // Reset to initial state
+                    currentState = {
+                        matrix: JSON.parse(JSON.stringify(initialState)),
+                        cols: initialCols,
+                        rows: initialRows
+                    };
                     return JSON.parse(JSON.stringify(currentState));
                 }
             };
@@ -61,27 +73,41 @@
 
         // Global variables
         let matrixData = Array(16).fill().map(() => Array(16).fill('#000000'));
-        const history = createUndoRedoManager(matrixData);
+        const history = createUndoRedoManager(matrixData, 16, 16);
 
         // Set new state
-        function setState(newState) {
-            history.setState(JSON.parse(JSON.stringify(newState))); // Deep copy
+        function setState(newState, cols = COLS, rows = ROWS) {
+            history.setState(JSON.parse(JSON.stringify(newState)), cols, rows); // Deep copy with dimensions
             matrixData = JSON.parse(JSON.stringify(newState));
-            drawMatrix();
+            COLS = cols;
+            ROWS = rows;
+            resizeCanvas();
         }
 
+        // Modified undo to handle dimensions
         function undo() {
             const previous = history.undo();
             if (previous) {
-                matrixData = JSON.parse(JSON.stringify(previous));
+                matrixData = JSON.parse(JSON.stringify(previous.matrix));
+                COLS = previous.cols;
+                ROWS = previous.rows;
+                $('#size-cols').val(COLS); // Update input fields
+                $('#size-rows').val(ROWS);
+                resizeCanvas();
                 drawMatrix();
             }
         }
 
+        // Modified redo to handle dimensions
         function redo() {
             const next = history.redo();
             if (next) {
-                matrixData = JSON.parse(JSON.stringify(next));
+                matrixData = JSON.parse(JSON.stringify(next.matrix));
+                COLS = next.cols;
+                ROWS = next.rows;
+                $('#size-cols').val(COLS); // Update input fields
+                $('#size-rows').val(ROWS);
+                resizeCanvas();
                 drawMatrix();
             }
         }
@@ -649,18 +675,23 @@
 		const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
 			'dick', 'dumb', 'fag', 'nigga', 'piss', 'slut', 'wanker', 'ccp', '共产党', '傻逼', '维尼', 'pooh', '西藏', '防火墙', '天安门'];
 
-		$('#size-cols, #size-rows').on('input', function (e) {
-            COLS = parseInt($('#size-cols').val());
-            ROWS = parseInt($('#size-rows').val());
-            matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-            historyClear(); // Clear history on resize
-            setState(matrixData); // Save new state
-            resizeCanvas();
+		let resizeTimeout;
+        $('#size-cols, #size-rows').on('input', function () {
+            clearTimeout(resizeTimeout); // Clear previous timeout
+            resizeTimeout = setTimeout(() => {
+                const newCols = parseInt($('#size-cols').val()) || 16; // Fallback to 16 if invalid
+                const newRows = parseInt($('#size-rows').val()) || 16;
+                
+                // Create new matrix, preserving old data where possible
+                const newMatrix = Array(newRows).fill().map((_, row) =>
+                    Array(newCols).fill('#000000').map((_, col) =>
+                        row < ROWS && col < COLS ? matrixData[row][col] : '#000000'
+                    )
+                );
+                
+                setState(newMatrix, newCols, newRows); // Save state with new dimensions
+            }, 500); // 500ms debounce
         });
-
-		$('input[name="draw-mode"]').change(function () {
-			currentMode = this.value;
-		});
 
 		$('input[name="draw-color"]').change(function () {
 			currentColor = parseFloat(this.value);
@@ -1765,7 +1796,7 @@
                 undo();
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
                 e.preventDefault();
-                redoAction();
+                redo();
             } else {
                 switch (e.which) {
                     case 37: // left arrow key
