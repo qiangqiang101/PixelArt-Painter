@@ -82,6 +82,9 @@
             COLS = cols;
             ROWS = rows;
             resizeCanvas();
+            $('#size-cols').val(COLS); // Update input fields
+            $('#size-rows').val(ROWS);
+            drawMatrix(); // Ensure canvas is redrawn
         }
 
         // Modified undo to handle dimensions
@@ -113,8 +116,18 @@
         }
 
         function historyClear() {
-            matrixData = JSON.parse(JSON.stringify(history.clear()));
-            drawMatrix();
+            const clearedState = history.clear();
+            matrixData = JSON.parse(JSON.stringify(clearedState.matrix));
+            COLS = clearedState.cols;
+            ROWS = clearedState.rows;
+            $('#size-cols').val(COLS);
+            $('#size-rows').val(ROWS);
+            resizeCanvas();
+            if (matrixData && Array.isArray(matrixData) && matrixData.length > 0) {
+                drawMatrix(); // Only draw if matrixData is valid
+            } else {
+                console.warn('matrixData is invalid in historyClear, skipping drawMatrix');
+            }
         }
     </script>
 </head>
@@ -692,6 +705,10 @@
                 setState(newMatrix, newCols, newRows); // Save state with new dimensions
             }, 500); // 500ms debounce
         });
+        
+        $('input[name="draw-mode"]').change(function () {
+			currentMode = this.value;
+		});
 
 		$('input[name="draw-color"]').change(function () {
 			currentColor = parseFloat(this.value);
@@ -1232,42 +1249,76 @@
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
                 success: function (response) {
-                    if (response.success === true) {
-                        let $item = response.data;
-                        COLS = $item.size[0];
-                        ROWS = $item.size[1];
-                        matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-                        historyClear(); // Clear history
-                        resizeCanvas();
-                        matrixData = JSON.parse($item.data);
-                        matrixData = matrixData.map(row => row.map(function (value) {
+                    try {
+                        if (!response.success || !response.data) {
+                            throw new Error('Invalid response: success false or no data');
+                        }
+                        const $item = response.data;
+                        
+                        // Validate size
+                        if (!$item.size || !Array.isArray($item.size) || $item.size.length !== 2) {
+                            throw new Error('Invalid size format');
+                        }
+                        const newCols = parseInt($item.size[0]);
+                        const newRows = parseInt($item.size[1]);
+                        if (isNaN(newCols) || isNaN(newRows) || newCols <= 0 || newRows <= 0) {
+                            throw new Error('Invalid dimensions: cols or rows invalid');
+                        }
+
+                        // Parse data
+                        let newMatrix;
+                        try {
+                            newMatrix = JSON.parse($item.data);
+                        } catch (e) {
+                            throw new Error(`Failed to parse data: ${e.message}`);
+                        }
+                        if (!Array.isArray(newMatrix) || newMatrix.length !== newRows || !newMatrix.every(row => Array.isArray(row) && row.length === newCols)) {
+                            throw new Error('Matrix data dimensions mismatch');
+                        }
+
+                        // Map values to colors
+                        newMatrix = newMatrix.map(row => row.map(value => {
                             switch (value) {
                                 case 0: return colorMap.black;
                                 case 0.3: return colorMap.forced;
                                 case 0.5: return colorMap.lightTranslucent;
                                 case 0.7: return colorMap.darkTranslucent;
                                 case 1: return colorMap.white;
+                                default: return colorMap.black; // Fallback for invalid values
                             }
                         }));
-                        setState(matrixData); // Save state
-                        $('#size-cols').val(COLS);
-                        $('#size-rows').val(ROWS);
+
+                        // Update state
+                        setState(newMatrix, newCols, newRows);
+                        $('#size-cols').val(newCols);
+                        $('#size-rows').val(newRows);
                         $('#community').offcanvas('hide');
+
                         if (edit) {
                             $('#editItem').css('display', 'block');
                             $('#txtUpdateId').val(id);
                             $('#txtUpdateName').val($item.name);
                             $('#btnShare').prop('disabled', true);
                         }
+
+                        console.log(`Successfully loaded community drawing ${id}: ${newCols}x${newRows}`);
+                    } catch (error) {
+                        console.error('Error loading community drawing:', error);
+                        swalBS.fire({
+                            icon: 'error',
+                            title: getCorrectTranslation('oops'),
+                            theme: 'dark',
+                            text: 'Failed to load community drawing: ' + error.message
+                        });
                     }
                 },
                 error: function (err) {
-                    console.log(err);
+                    console.error('AJAX error:', err);
                     swalBS.fire({
-                        icon: "error",
+                        icon: 'error',
                         title: getCorrectTranslation('oops'),
-                        theme: "dark",
-                        text: err.statusText,
+                        theme: 'dark',
+                        text: 'Error fetching community drawing: ' + (err.statusText || 'Network error')
                     });
                 }
             });
