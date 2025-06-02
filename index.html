@@ -477,7 +477,7 @@
             </ul>
 
             <div class="tab-content mt-3" id="stepTabContent">
-                <div class="tab-pane fade show active" id="new-items">
+                <div class="tab-pane fade active show" id="new-items">
                     <div class="row mb-3" id="community-container">
                     </div>
                     <div class="row">
@@ -1293,7 +1293,25 @@
                 canvasHistory.redo();
                 e.preventDefault();
             }
-        })
+        });
+
+        // Lazyload
+        $('#community').find('.offcanvas-body').scroll(function () {
+            if ($(this).scrollTop() + $(this).innerHeight() >= $(this)[0].scrollHeight - 10 && $('#community-load-more-btn').is(':enabled')) {
+                var currentTab = $('#stepTabContent').find('.tab-pane.fade.show');
+                switch (currentTab.attr('aria-labelledby')) {
+                    case 'search-items-tab':
+                        $('#search-load-more-btn').trigger('click');
+                        break;
+                    case 'favorites-items-tab':
+                        $('#favorites-load-more-btn').trigger('click');
+                        break;
+                    default:
+                        $('#community-load-more-btn').trigger('click');
+                }
+
+            }
+        });
 
         $('#community-load-more-btn').click(function (evt) {
             getCommunityItems(parseInt($(this).attr('data-page')));
