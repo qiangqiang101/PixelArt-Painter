@@ -1389,10 +1389,10 @@
     </script>
 
     <script>
-        const canvas = document.getElementById('matrix-canvas');
+        const canvas = $('#matrix-canvas')[0];
         const ctx = canvas.getContext('2d');
-        const mousePosDisplay = document.getElementById('mouse-pos');
-        const cellSizeDisplay = document.getElementById('cell-size');
+        const mousePosDisplay = $('#mouse-pos');
+        const cellSizeDisplay = $('#cell-size');
 
         // Matrix dimensions
         let COLS = parseInt($('#size-cols').val());
@@ -2109,8 +2109,6 @@
             }
         });
     </script>
-
-
 </body>
 
 </html>
