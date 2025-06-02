@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
+
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,37 +15,86 @@
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
 		integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
 		crossorigin="anonymous"></script>
-	<script>
-		// Colors
-		let lightGrey="#A9A9A9";
-		let darkGrey="#505050";
-		let oldDarkGrey="#808080";
-		let white="#FFFFFF";
-		let black="#000000";
-		
-		let lightGreyValue = 0.7
-		let darkGreyValue = 0.5
-		let oldDarkGreyValue = 0.5
-		let whiteValue = 1
-		let blackValue = 0
+    <script>
+        // Undo/Redo Manager
+        function createUndoRedoManager(initialState = []) {
+            let undoStack = [];
+            let redoStack = [];
+            let currentState = JSON.parse(JSON.stringify(initialState)); // Deep copy initial state
 
-		const colorMap = {
-			[white.toUpperCase()]: whiteValue,
-			[black.toUpperCase()]: blackValue,
-			[darkGrey.toUpperCase()]: darkGreyValue,
-			[oldDarkGrey.toUpperCase()]: darkGreyValue,
-			[lightGrey.toUpperCase()]: lightGreyValue
-		};
+            return {
+                getState: () => JSON.parse(JSON.stringify(currentState)), // Return deep copy of current state
+                setState: (newState) => {
+                    console.log("Saving state to undo stack");
+                    undoStack.push(JSON.parse(JSON.stringify(currentState))); // Deep copy current state to undo stack
+                    currentState = JSON.parse(JSON.stringify(newState)); // Deep copy new state
+                    redoStack = []; // Clear redo stack on new action
+                },
+                undo: () => {
+                    if (undoStack.length > 0) {
+                        console.log("Undoing action");
+                        redoStack.push(JSON.parse(JSON.stringify(currentState))); // Save current state to redo
+                        currentState = undoStack.pop(); // Restore previous state
+                        return JSON.parse(JSON.stringify(currentState)); // Return deep copy
+                    }
+                    console.log("Nothing to undo");
+                    return null;
+                },
+                redo: () => {
+                    if (redoStack.length > 0) {
+                        console.log("Redoing action");
+                        undoStack.push(JSON.parse(JSON.stringify(currentState))); // Save current state to undo
+                        currentState = redoStack.pop(); // Restore next state
+                        return JSON.parse(JSON.stringify(currentState)); // Return deep copy
+                    }
+                    console.log("Nothing to redo");
+                    return null;
+                },
+                clear: () => {
+                    undoStack = [];
+                    redoStack = [];
+                    currentState = JSON.parse(JSON.stringify(initialState)); // Reset to initial state
+                    return JSON.parse(JSON.stringify(currentState));
+                }
+            };
+        }
 
-		const colorMapReverse = {
-			[whiteValue]: white.toUpperCase(),
-			[blackValue]: black.toUpperCase(),
-			[darkGreyValue]: darkGrey.toUpperCase(),
-			[oldDarkGreyValue]: oldDarkGrey.toUpperCase(),
-			[lightGreyValue]: lightGrey.toUpperCase()
-		};
-	</script>
+        // Global variables
+        let matrixData = Array(16).fill().map(() => Array(16).fill('#000000'));
+        const history = createUndoRedoManager(matrixData);
+
+        // Set new state
+        function setState(newState) {
+            history.setState(JSON.parse(JSON.stringify(newState))); // Deep copy
+            matrixData = JSON.parse(JSON.stringify(newState));
+            drawMatrix();
+        }
+
+        function undo() {
+            const previous = history.undo();
+            if (previous) {
+                matrixData = JSON.parse(JSON.stringify(previous));
+                drawMatrix();
+            }
+        }
+
+        function redo() {
+            const next = history.redo();
+            if (next) {
+                matrixData = JSON.parse(JSON.stringify(next));
+                drawMatrix();
+            }
+        }
+
+        function historyClear() {
+            matrixData = JSON.parse(JSON.stringify(history.clear()));
+            drawMatrix();
+        }
+    </script>
 </head>
+
+
+
 
 <body>
 	<header>
@@ -153,7 +203,7 @@
 		<section class="py-4 text-center container">
 			<div id="controls" class="row mb-3 g-3 d-flex justify-content-center">
 				<div class="col-auto">
-					<div class="input-group">
+					<div class="input-group input-group-sm">
 						<span class="input-group-text" id="size-label"><span
 								class="mdi mdi-image-size-select-small"></span> Size</span>
 						<input class="form-control" id="size-cols" type="number" value="16" min="1" step="1" max="99"
@@ -163,22 +213,22 @@
 					</div>
 				</div>
 				<div class="col-auto">
-					<button type="button" class="btn btn-primary" id="import-btn" onclick="importData();"><span
+					<button type="button" class="btn btn-primary btn-sm" id="import-btn" onclick="importData();"><span
 							class="mdi mdi-import"></span> Import Data</button>
-					<button type="button" class="btn btn-primary" id="export-btn" onclick="exportData();"><span
+					<button type="button" class="btn btn-primary btn-sm" id="export-btn" onclick="exportData();"><span
 							class="mdi mdi-export"></span> Export Data</button>
 					<input type="hidden" id="clipboard" />
-					<button type="button" class="btn btn-primary" id="load-btn" data-bs-toggle="modal"
+					<button type="button" class="btn btn-primary btn-sm" id="load-btn" data-bs-toggle="modal"
 						data-bs-target="#modal-load" onclick="reloadSavedPixelArt();">
 						<span class="mdi mdi-cloud-outline"></span> Load
 					</button>
-					<button type="button" class="btn btn-primary" id="save-btn" data-bs-toggle="modal"
+					<button type="button" class="btn btn-primary btn-sm" id="save-btn" data-bs-toggle="modal"
 						data-bs-target="#modal-save">
 						<span class="mdi mdi-content-save-outline"></span> Save
 					</button>
 				</div>
 				<div class="col-auto" id="editItem" style="display: none;">
-					<div class="btn-group">
+					<div class="btn-group btn-group-sm">
 						<button type="button" class="btn btn-outline-success" id="btnUpdateEdit" data-bs-toggle="modal"
 							data-bs-target="#modal-update">
 							<span class="mdi mdi-content-save-outline"></span> Update
@@ -195,59 +245,94 @@
 
 			<div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
 				<div class="col-auto">
-					<div class="btn-group">
-						<button type="button" class="btn btn-primary" id="btnUndo" onclick="undo();">
-							<span class="mdi mdi-undo"></span> Undo</button>
-						<button type="button" class="btn btn-primary" id="btnRedo" onclick="redo();">
-							<span class="mdi mdi-redo"></span> Redo</button>
+					<div class="btn-group btn-group-sm">
+						<button type="button" class="btn btn-primary" id="btnUndo"><span class="mdi mdi-undo"></span> Undo</button>
+						<button type="button" class="btn btn-primary" id="btnRedo"><span class="mdi mdi-redo"></span> Redo</button>
 					</div>
 				</div>
 
 				<div class="col-auto">
-					<div class="btn-group">
-						<input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked><label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
-						<input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill"><label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span> Fill</label>
-					</div>
-					<button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span class="mdi mdi-trash-can-outline"></span> Clear All</button>
-				</div>
-				<div class="col-auto">
-					<div class="btn-group">
-						<!--<input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked><label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> White</label>-->
-						<input type="radio" class="btn-check" id="draw-white" name="draw-color" value="1" checked><label for="draw-white" class="btn btn-white"><span class="mdi mdi-water"></span> White</label>
-						<input type="radio" class="btn-check" id="draw-lightGrey" name="draw-color" value="0.7"><label for="draw-lightGrey" class="btn btn-light-grey"><span class="mdi mdi-water-opacity"></span> Light Grey</label>
-						<input type="radio" class="btn-check" id="draw-darkGrey" name="draw-color" value="0.5"><label for="draw-darkGrey" class="btn btn-dark-grey"><span class="mdi mdi-water-opacity"></span> Dark Grey</label>
-						<input type="radio" class="btn-check" id="draw-black" name="draw-color" value="0"><label for="draw-black" class="btn btn-black"><span class="mdi mdi-water-outline"></span> Black</label>
-						<!--<input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0"><label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span> Off</label>-->
+					<div class="btn-group btn-group-sm">
+						<input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked>
+						<label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
+						<input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill">
+						<label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span>
+							Fill</label>
+						<button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span
+								class="mdi mdi-trash-can-outline"></span>
+							Clear
+							All</button>
 					</div>
 				</div>
 				<div class="col-auto">
-					<div class="btn-group">
-						<button id="btnInvertBW" class="btn btn-primary text-dark" onclick="invertAll();"><span class="mdi mdi-invert-colors"></span> Invert White/Black</button>
-						<button id="btnInvertGreys" class="btn btn-primary" onclick="invertGreys();"><span class="mdi mdi-invert-colors"></span> Invert Greys</button>
-						<div class="btn-group dropdown">
-							<a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+					<div class="btn-group btn-group-sm">
+						<input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
+						<label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> Full</label>
+						<input type="radio" class="btn-check" id="draw-forced" name="draw-color" value="0.3">
+						<label for="draw-forced" class="btn btn-primary"><span class="mdi mdi-water"></span>
+							Forced</label>
+						<input type="radio" class="btn-check" id="draw-translucent" name="draw-color" value="0.5">
+						<label for="draw-translucent" class="btn btn-primary"><span
+								class="mdi mdi-water-opacity"></span> Translucent</label>
+						<input type="radio" class="btn-check" id="draw-semi-translucent" name="draw-color" value="0.7">
+						<label for="draw-semi-translucent" class="btn btn-primary"><span
+								class="mdi mdi-water-opacity"></span> Semi Translucent</label>
+						<input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
+						<label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span>
+							Black</label>
+					</div>
+				</div>
+				<div class="col-auto">
+					<div class="btn-group btn-group-sm">
+						<div class="btn-group dropdown btn-group-sm">
+							<a class="btn btn-primary dropdown-toggle" id="ddInvert" href="#" role="button"
+								data-bs-toggle="dropdown" aria-expanded="false">
+								<span class="mdi mdi-invert-colors"></span> Invert
+							</a>
+							<ul class="dropdown-menu">
+								<li><a class="dropdown-item" id="btnInvert" href="#" onclick="invertAll();">
+										<span class="mdi mdi-invert-colors"></span> Invert All
+									</a></li>
+								<li><a class="dropdown-item" id="btnInvertBlackWhite" href="#"
+										onclick="invertBlackWhite();">
+										<span class="mdi mdi-flip-vertical"></span> Invert Black & White
+									</a></li>
+								<li><a class="dropdown-item" id="btnInvertTranslucents" href="#"
+										onclick="invertTranslucents();">
+										<span class="mdi mdi-flip-vertical"></span> Invert Translucents
+									</a></li>
+							</ul>
+						</div>
+
+						<div class="btn-group dropdown btn-group-sm">
+							<a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button"
+								data-bs-toggle="dropdown" aria-expanded="false">
 								<span class="mdi mdi-flip-to-front"></span> Mirror
 							</a>
 							<ul class="dropdown-menu">
-								<li><a class="dropdown-item" id="btnMirrorHorizontal" href="#" onclick="mirrorHorizontal();">
-									<span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
-								</a></li>
-								<li><a class="dropdown-item" id="btnMirrorVertical" href="#" onclick="mirrorVertical();">
-									<span class="mdi mdi-flip-vertical"></span> Mirror Vertical
-								</a></li>
+								<li><a class="dropdown-item" id="btnMirrorHorizontal" href="#"
+										onclick="mirrorHorizontal();">
+										<span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
+									</a></li>
+								<li><a class="dropdown-item" id="btnMirrorVertical" href="#"
+										onclick="mirrorVertical();">
+										<span class="mdi mdi-flip-vertical"></span> Mirror Vertical
+									</a></li>
 							</ul>
 						</div>
-						<div class="btn-group dropdown">
-							<a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+						<div class="btn-group dropdown btn-group-sm">
+							<a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button"
+								data-bs-toggle="dropdown" aria-expanded="false">
 								<span class="mdi mdi-rotate-orbit"></span> Flip
 							</a>
 							<ul class="dropdown-menu">
-								<li><a class="dropdown-item" id="btnFlipHorizontal" href="#" onclick="flip('horizontal');">
-									<span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
-								</a></li>
+								<li><a class="dropdown-item" id="btnFlipHorizontal" href="#"
+										onclick="flip('horizontal');">
+										<span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal
+									</a></li>
 								<li><a class="dropdown-item" id="btnFlipVertical" href="#" onclick="flip('vertical');">
-									<span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
-								</a></li>
+										<span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical
+									</a></li>
 							</ul>
 						</div>
 					</div>
@@ -517,11 +602,8 @@
 
 		</div>
 	</div>
-	
-	<script src="script.js"></script>
 
-	<!-- History Manager -->
-	<script src="history_manager.js"></script>
+	<script src="script.js?ver=01062025"></script>
 
 	<script>
 		//const api = 'http://localhost:3001/api/';
@@ -536,34 +618,45 @@
 
 		var favorites = [];
 
+		const colorMap = { white: '#FFFFFF', lightTranslucent: '#808080', darkTranslucent: '#262626', black: '#000000', forced: '#2FACED' };
+
 		$(document).ready(function () {
-			let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
-			if (loggedIn.userid != null && loggedIn.username != null) loginUser(loggedIn.userid, loggedIn.username);
+            let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
+            if (loggedIn.userid != null && loggedIn.username != null) loginUser(loggedIn.userid, loggedIn.username);
 
-			let remember = localStorage.getItem('remember') || false;
-			let language = localStorage.getItem('language') || 'english';
-			favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+            let remember = localStorage.getItem('remember') || false;
+            let language = localStorage.getItem('language') || 'english';
+            favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 
-			$('body').attr('data-language', language);
-			if (remember) {
-				$('#txtLoginUsername').val(localStorage.getItem('username'));
-				$('#txtLoginPassword').val(localStorage.getItem('password'));
-				$('#chkLoginRemember').prop('checked', true);
-			}
-			changeLanguage(language);
-		});
+            $('body').attr('data-language', language);
+            if (remember) {
+                $('#txtLoginUsername').val(localStorage.getItem('username'));
+                $('#txtLoginPassword').val(localStorage.getItem('password'));
+                $('#chkLoginRemember').prop('checked', true);
+            }
+            changeLanguage(language);
+
+            // Initialize matrix and history
+            COLS = parseInt($('#size-cols').val());
+            ROWS = parseInt($('#size-rows').val());
+            matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+            history.clear(); // Reset history
+            setState(matrixData); // Save initial state
+            resizeCanvas();
+        });
+
 
 		const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
 			'dick', 'dumb', 'fag', 'nigga', 'piss', 'slut', 'wanker', 'ccp', '共产党', '傻逼', '维尼', 'pooh', '西藏', '防火墙', '天安门'];
 
 		$('#size-cols, #size-rows').on('input', function (e) {
-			COLS = parseInt($('#size-cols').val());
-			ROWS = parseInt($('#size-rows').val());
-
-			matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-			canvasHistory.clear(matrixData);
-			resizeCanvas();
-		});
+            COLS = parseInt($('#size-cols').val());
+            ROWS = parseInt($('#size-rows').val());
+            matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+            historyClear(); // Clear history on resize
+            setState(matrixData); // Save new state
+            resizeCanvas();
+        });
 
 		$('input[name="draw-mode"]').change(function () {
 			currentMode = this.value;
@@ -574,45 +667,52 @@
 		})
 
 		async function importData() {
-			var text = null;
-			try {
-				text = await navigator.clipboard.readText()
-				$('#clipboard').val(text);
-			} catch (error) {
-				swalBS.fire({
-					icon: "error",
-					title: getCorrectTranslation('oops'),
-					theme: "dark",
-					text: "Failed to read clipboard. Using execCommand instead.",
-				});
-
-				$('#clipboard').focus();
-				$('#clipboard').val('');
-				text = document.execCommand('paste')
-				$('#clipboard').val(text);
-			}
-			try {
-				matrixData = JSON.parse($('#clipboard').val());
-				matrixData = matrixData.map(row =>row.map(color => colorMapReverse[color] ?? color));
-				canvasHistory.saveState(matrixData);
-				drawMatrix();
-			} catch (e) {
-				console.log(e);
-				swalBS.fire({
-					icon: "error",
-					title: getCorrectTranslation('oops'),
-					theme: "dark",
-					text: getCorrectTranslation('errorParsingJson'),
-				});
-			}
-		}
+            var text = null;
+            try {
+                text = await navigator.clipboard.readText();
+                $('#clipboard').val(text);
+            } catch (error) {
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: "Failed to read clipboard. Using execCommand instead.",
+                });
+                $('#clipboard').focus();
+                $('#clipboard').val('');
+                text = document.execCommand('paste');
+                $('#clipboard').val(text);
+            }
+            try {
+                matrixData = JSON.parse($('#clipboard').val());
+                matrixData = matrixData.map(row => row.map(function (value) {
+                    switch (value) {
+                        case 0: return colorMap.black;
+                        case 0.3: return colorMap.forced;
+                        case 0.5: return colorMap.lightTranslucent;
+                        case 0.7: return colorMap.darkTranslucent;
+                        case 1: return colorMap.white;
+                    }
+                }));
+                setState(matrixData); // Save state
+            } catch (e) {
+                console.log(e);
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('errorParsingJson'),
+                });
+                undo(); // Revert on error
+            }
+        }
 
 		$('#remove-confirm-btn').click(function (evt) {
 			if ($('#select-load').val() === 'null') {
 				$('#select-load').addClass('is-invalid');
 			} else {
 				let name = $('#select-load option:selected').text();
-				//console.log(name);
+				console.log(name);
 				localStorage.removeItem(`item-${name}`);
 
 				if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
@@ -621,41 +721,43 @@
 		});
 
 		$('#load-confirm-btn').click(function (evt) {
-			if ($('#select-load').val() === 'null') {
-				$('#select-load').addClass('is-invalid');
-			} else {
-				try {
-					canvasHistory.saveState(matrixData);
-					var $select = $('#select-load option:selected');
-
-					COLS = parseInt($select.data('size')[0]);
-					ROWS = parseInt($select.data('size')[1]);
-
-					matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-					resizeCanvas();
-
-					matrixData = JSON.parse($select.val());
-					matrixData = matrixData.map(row =>row.map(color => colorMap[color] ?? color));
-					canvasHistory.saveState(matrixData);
-					drawMatrix();
-
-					$('#size-cols').val(COLS);
-					$('#size-rows').val(ROWS);
-
-					if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
-					$('#modal-load').modal('hide');
-				} catch (e) {
-					//console.log(e);
-					swalBS.fire({
-						icon: "error",
-						title: getCorrectTranslation('oops'),
-						theme: "dark",
-						text: getCorrectTranslation('errorParsingJson'),
-					});
-				}
-			}
-
-		});
+            if ($('#select-load').val() === 'null') {
+                $('#select-load').addClass('is-invalid');
+            } else {
+                try {
+                    var $select = $('#select-load option:selected');
+                    COLS = parseInt($select.data('size')[0]);
+                    ROWS = parseInt($select.data('size')[1]);
+                    matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+                    historyClear(); // Clear history
+                    resizeCanvas();
+                    matrixData = JSON.parse($select.val());
+                    matrixData = matrixData.map(row => row.map(function (value) {
+                        switch (value) {
+                            case 0: return colorMap.black;
+                            case 0.3: return colorMap.forced;
+                            case 0.5: return colorMap.lightTranslucent;
+                            case 0.7: return colorMap.darkTranslucent;
+                            case 1: return colorMap.white;
+                        }
+                    }));
+                    setState(matrixData); // Save state
+                    $('#size-cols').val(COLS);
+                    $('#size-rows').val(ROWS);
+                    if ($('#select-load').hasClass('is-invalid')) $('#select-load').removeClass('is-invalid');
+                    $('#modal-load').modal('hide');
+                } catch (e) {
+                    console.log(e);
+                    swalBS.fire({
+                        icon: "error",
+                        title: getCorrectTranslation('oops'),
+                        theme: "dark",
+                        text: getCorrectTranslation('errorParsingJson'),
+                    });
+                    undo(); // Revert on error
+                }
+            }
+        });
 
 		$('#save-confirm-btn').click(function (evt) {
 			if (!$('#txt-save').val()) {
@@ -671,7 +773,7 @@
 					text: getCorrectTranslation('inappropriateTextWarning'),
 				});
 			} else {
-				const dataStr = JSON.stringify(matrixData).replaceAll(white, whiteValue).replaceAll(black, blackValue).replaceAll(darkGrey, darkGreyValue).replaceAll(lightGrey, lightGreyValue);
+				const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
 				const name = $('#txt-save').val();
 				const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
 				localStorage.setItem(`item-${name}`, JSON.stringify(obj));
@@ -723,7 +825,7 @@
 				}
 			}
 			return filtered;
-		};
+		}
 
 		function appendPlaceholders(count) {
 			var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex placeholder-item">
@@ -803,7 +905,7 @@
 				contentType: 'application/json; charset=utf-8',
 				dataType: 'json',
 				success: function (response) {
-					//console.log(response);
+					console.log(response);
 
 					if (response.success === true && response.pagination.total >= 1) {
 						if (page === 0) $('#community-search-container').empty();
@@ -967,7 +1069,7 @@
 					text: getCorrectTranslation('inappropriateTextWarning'),
 				});
 			} else {
-				const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+				const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
 				var json = {
 					author: sessionStorage.getItem('username'),
 					name: $('#txtUpdateName').val(),
@@ -1039,7 +1141,7 @@
 					text: getCorrectTranslation('inappropriateTextWarning'),
 				});
 			} else {
-				const dataStr = JSON.stringify(matrixData).replaceAll('"#ffffff"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5');
+				const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
 				var json = {
 					author: sessionStorage.getItem('username'),
 					name: $('#txtShareName').val(),
@@ -1093,50 +1195,52 @@
 		});
 
 		function downloadItem(id, edit = false) {
-			$.ajax({
-				url: `${api}item/${id}`,
-				type: 'GET',
-				contentType: 'application/json; charset=utf-8',
-				dataType: 'json',
-				success: function (response) {
-					if (response.success === true) {
-						let $item = response.data;
-
-						COLS = $item.size[0];
-						ROWS = $item.size[1];
-
-						matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-						resizeCanvas();
-
-						matrixData = JSON.parse($item.data);
-						matrixData = matrixData.map(row => row.map(value => (value === 0) ? "#000000" : (value === 1) ? "#ffffff" : "#808080"));
-						canvasHistory.saveState(matrixData);
-						drawMatrix();
-
-						$('#size-cols').val(COLS);
-						$('#size-rows').val(ROWS);
-
-						$('#community').offcanvas('hide');
-
-						if (edit) {
-							$('#editItem').css('display', 'block');
-							$('#txtUpdateId').val(id);
-							$('#txtUpdateName').val($item.name);
-							$('#btnShare').prop('disabled', true);
-						}
-					}
-				},
-				error: function (err) {
-					console.log(err);
-					swalBS.fire({
-						icon: "error",
-						title: getCorrectTranslation('oops'),
-						theme: "dark",
-						text: err.statusText,
-					});
-				}
-			});
-		}
+            $.ajax({
+                url: `${api}item/${id}`,
+                type: 'GET',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success === true) {
+                        let $item = response.data;
+                        COLS = $item.size[0];
+                        ROWS = $item.size[1];
+                        matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+                        historyClear(); // Clear history
+                        resizeCanvas();
+                        matrixData = JSON.parse($item.data);
+                        matrixData = matrixData.map(row => row.map(function (value) {
+                            switch (value) {
+                                case 0: return colorMap.black;
+                                case 0.3: return colorMap.forced;
+                                case 0.5: return colorMap.lightTranslucent;
+                                case 0.7: return colorMap.darkTranslucent;
+                                case 1: return colorMap.white;
+                            }
+                        }));
+                        setState(matrixData); // Save state
+                        $('#size-cols').val(COLS);
+                        $('#size-rows').val(ROWS);
+                        $('#community').offcanvas('hide');
+                        if (edit) {
+                            $('#editItem').css('display', 'block');
+                            $('#txtUpdateId').val(id);
+                            $('#txtUpdateName').val($item.name);
+                            $('#btnShare').prop('disabled', true);
+                        }
+                    }
+                },
+                error: function (err) {
+                    console.log(err);
+                    swalBS.fire({
+                        icon: "error",
+                        title: getCorrectTranslation('oops'),
+                        theme: "dark",
+                        text: err.statusText,
+                    });
+                }
+            });
+        }
 
 		function cancelEdit() {
 			$('#editItem').css('display', 'none');
@@ -1145,57 +1249,49 @@
 			fillAll('#000000');
 		}
 
-		$(document).keydown(function (e) {
-			// If any div has the class '.modal.show' or '.offcanvas.show', exit early
-			if ($('div.modal.show').length > 0 || $('div.offcanvas.show').length > 0) {
-				return
-			}
-
-			// Undo
-			if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+		$('#txt-search').on('keydown', function (e) {
+			if (e.keyCode === 13) {
+				$('#community-search').click();
 				e.preventDefault()
-				canvasHistory.undo()
-				return
 			}
-
-			// Redo
-			if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-				e.preventDefault()
-				canvasHistory.redo()
-				return
-			}
-		})
+		});
 
 		$('#community-load-more-btn').click(function (evt) {
-			getCommunityItems(parseInt($(this).attr('data-page')))
-		})
+			getCommunityItems(parseInt($(this).attr('data-page')));
+			$('#community-load-more-btn').prop('disabled', true);
+		});
 
 		$('#search-load-more-btn').click(function (evt) {
-			searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')))
-		})
+			searchCommunityItems($('#txt-search').val(), parseInt($(this).attr('data-page')));
+			$('#search-load-more-btn').prop('disabled', true);
+		});
 
 		$('#favorites-load-more-btn').click(function (evt) {
-			getFavoritesCommunityItems($(this.attr('data-page')))
+			getFavoritesCommunityItems($(this.attr('data-page')));
+			$('#favorites-load-more-btn').prop('disabled', true);
 		})
 
 		function addToFavorite(id) {
 			if (!favorites.includes(id)) {
-				favorites.push(id)
-				localStorage.setItem('favorites', JSON.stringify(favorites))
-				$(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-outline-danger').addClass('btn-danger')
+				favorites.push(id);
+				localStorage.setItem('favorites', JSON.stringify(favorites));
+				$(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-outline-danger').addClass('btn-danger');
 			} else {
-				favorites.splice($.inArray(id, favorites), 1)
-				localStorage.setItem('favorites', JSON.stringify(favorites))
-				$(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-danger').addClass('btn-outline-danger')
+				favorites.splice($.inArray(id, favorites), 1);
+				localStorage.setItem('favorites', JSON.stringify(favorites));
+				$(`button[onclick="addToFavorite(${id});"]`).removeClass('btn-danger').addClass('btn-outline-danger');
 			}
 		}
 
-		function removeItem(id) {
+		//Remove Item and remove div from container
+		$(document).on('click', '.remove-item', function (evt) {
+			var item = $(this).closest('div.generated-item');
+			var id = parseInt($(this).attr('data-id'));
 			var json = {
 				author: sessionStorage.getItem('username')
-			}
-			var jsonData = JSON.stringify(json)
-			var url = `${api}deleteitem/${id}`
+			};
+			var jsonData = JSON.stringify(json);
+			var url = `${api}deleteitem/${id}`;
 
 			$.ajax({
 				url: url,
@@ -1212,14 +1308,15 @@
 							title: getCorrectTranslation('removed'),
 							showConfirmButton: false,
 							timer: 1500
-						})
+						});
+						item.remove();
 					} else {
 						swalBS.fire({
 							icon: "error",
 							title: getCorrectTranslation('oops'),
 							theme: "dark",
 							text: getCorrectTranslation('removeFailed'),
-						})
+						});
 					}
 				},
 				error: function (err) {
@@ -1228,10 +1325,10 @@
 						title: getCorrectTranslation('oops'),
 						theme: "dark",
 						text: err.statusText,
-					})
+					});
 				}
-			})
-		}
+			});
+		});
 	</script>
 
 	<script>
@@ -1246,13 +1343,13 @@
 		let cellWidth, cellHeight;
 
 		// Matrix data - stores color for each cell
-		let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill(black));
+		matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
 
 		//Wrapped matrix to hold matrix info for nudging
-		let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill(black));
+		let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
 
-		let canvasHistory = new HistoryManager(matrixData);
-		canvasHistory.saveState(matrixData);
+		
+		
 
 		// Drawing state
 		let isDrawing = false;
@@ -1260,9 +1357,13 @@
 		let currentColor = parseFloat($('#input[name="draw-color"]:checked').val()) || 1;
 
 		// Resize the canvas to fill the screen while maintaining aspect ratio
-		function resizeCanvas() {
-			const maxWidth = window.innerWidth * 0.95;
-			const maxHeight = window.innerHeight * 0.7;
+		function resizeCanvas(manual = false, mwidth = 250, mheight = 250) {
+			var maxWidth = window.innerWidth * 0.95;
+			var maxHeight = window.innerHeight * 0.7;
+			if (manual === true) {
+				maxWidth = mwidth;
+				maxHeight = mheight;
+			}
 
 			// Calculate the cell size to fit the matrix in the available space
 			const cellWidthByWidth = maxWidth / COLS;
@@ -1281,7 +1382,7 @@
 
 			// Redraw the matrix with the current data
 			drawMatrix();
-		};
+		}
 
 		// Draw the entire matrix
 		function drawMatrix() {
@@ -1300,9 +1401,9 @@
 					// Draw the cell border
 					ctx.strokeStyle = '#333333';
 					ctx.strokeRect(x, y, cellWidth, cellHeight);
-				};
-			};
-		};
+				}
+			}
+		}
 
 		// Convert mouse position to matrix coordinates
 		function getMatrixCoords(event) {
@@ -1316,14 +1417,14 @@
 			// Make sure we're within bounds
 			if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
 				return { row, col };
-			};
+			}
 
 			return null;
-		};
+		}
 
 		// Update a cell's color
 		function updateCell(row, col, color) {
-			if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {;
+			if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
 				matrixData[row][col] = color;
 
 				// Redraw just this cell
@@ -1335,124 +1436,111 @@
 
 				ctx.strokeStyle = '#333333';
 				ctx.strokeRect(x, y, cellWidth, cellHeight);
-			};
-		};
+			}
+		}
 
 		// Fill all cells with a specific color
 		function clearAll(color) {
-			canvasHistory.saveState(matrixData);
-			for (let row = 0; row < ROWS; row++) {
-				for (let col = 0; col < COLS; col++) {;
-					matrixData[row][col] = color;
-				};
-			};
-			drawMatrix();
-		};
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    matrixData[row][col] = color;
+                }
+            }
+            setState(matrixData)
+        }
 
 		// Fill all contiguous cells with a specific color
-		function fillAll(row, col, color) {
-			canvasHistory.saveState(matrixData);
-			fillAllRecursive(row, col, color);
-		};
+		function fillAll(row, col, newColor) {
+            if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
+            const originalColor = matrixData[row][col];
+            if (originalColor === newColor) return;
 
-		function fillAllRecursive(row, col, color) {
-			originalColor = matrixData[row][col];
-			if (originalColor != color) {
-				updateCell(row, col, color);
-				if (row > 0 && matrixData[row - 1][col] == originalColor) {
-					fillAllRecursive(row - 1, col, color);
-				};
-				if (row < ROWS - 1 && matrixData[row + 1][col] == originalColor) {
-					fillAllRecursive(row + 1, col, color);
-				};
-				if (col > 0 && matrixData[row][col - 1] == originalColor) {
-					fillAllRecursive(row, col - 1, color);
-				};
-				if (col < COLS - 1 && matrixData[row][col + 1] == originalColor) {
-					fillAllRecursive(row, col + 1, color);
-				};
-			};
-		};
+            function floodFill(r, c) {
+                if (r < 0 || r >= ROWS || c < 0 || c >= COLS || matrixData[r][c] !== originalColor) return;
+                matrixData[r][c] = newColor;
+                updateCell(r, c, newColor);
+                floodFill(r - 1, c);
+                floodFill(r + 1, c);
+                floodFill(r, c - 1);
+                floodFill(r, c + 1);
+            }
+            floodFill(row, col);
+            setState(matrixData);
+        }
 
-		function undo() {
-			canvasHistory.undo();
-		};
-
-		function redo() {
-			canvasHistory.redo();
-		};
-
-	   //Invert all cells
+		//Invert all cells
 		function invertAll() {
-			canvasHistory.saveState(matrixData);
-			for (let row = 0; row < ROWS; row++) {
-				for (let col = 0; col < COLS; col++) {
-					switch (matrixData[row][col]) {
-						case white:
-							matrixData[row][col] = black;
-							break;
-						case black:
-							matrixData[row][col] = white;
-							break;
-					};
-				};
-			};
-			drawMatrix();
-		};
-		
-		function invertGreys() {
-			canvasHistory.saveState(matrixData)
-			for (let row = 0; row < ROWS; row++) {
-				for (let col = 0; col < COLS; col++) {
-					switch (matrixData[row][col]) {
-						case lightGrey:
-							matrixData[row][col] = darkGrey;
-							break;
-						case darkGrey:
-							matrixData[row][col] = lightGrey;
-							break;
-					};
-				};
-			};
-			drawMatrix();
-		};
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    switch (matrixData[row][col]) {
+                        case colorMap.white: matrixData[row][col] = colorMap.black; break;
+                        case colorMap.black: matrixData[row][col] = colorMap.white; break;
+                        case colorMap.lightTranslucent: matrixData[row][col] = colorMap.darkTranslucent; break;
+                        case colorMap.darkTranslucent: matrixData[row][col] = colorMap.lightTranslucent; break;
+                    }
+                }
+            }
+            setState(matrixData);
+        }
+
+		function invertBlackWhite() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    switch (matrixData[row][col]) {
+                        case colorMap.white: matrixData[row][col] = colorMap.black; break;
+                        case colorMap.black: matrixData[row][col] = colorMap.white; break;
+                    }
+                }
+            }
+            setState(matrixData);
+        }
+
+        function invertTranslucents() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    switch (matrixData[row][col]) {
+                        case colorMap.lightTranslucent: matrixData[row][col] = colorMap.darkTranslucent; break;
+                        case colorMap.darkTranslucent: matrixData[row][col] = colorMap.lightTranslucent; break;
+                    }
+                }
+            }
+            setState(matrixData);
+        }
 
 		function mirrorHorizontal() {
-			canvasHistory.saveState(matrixData)
-			for (let row = 0; row < ROWS; row++) {
-				for (let col = 0; col < COLS / 2; col++) {
-					matrixData[row][COLS - col - 1] = matrixData[row][col];
-				};
-			};
-			drawMatrix();
-		};
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS / 2; col++) {
+                    matrixData[row][COLS - col - 1] = matrixData[row][col];
+                }
+            }
+            setState(matrixData);
+        }
 
-		function mirrorVertical() {
-			canvasHistory.saveState(matrixData);
-			for (let row = 0; row < ROWS / 2; row++) {
-				for (let col = 0; col < COLS; col++) {
-					matrixData[ROWS - row - 1][col] = matrixData[row][col];
-				};
-			};
-			drawMatrix();
-		};
+        function mirrorVertical() {
+            for (let row = 0; row < ROWS / 2; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    matrixData[ROWS - row - 1][col] = matrixData[row][col];
+                }
+            }
+            setState(matrixData);
+        }
 
-		function flip(direction = 'horizontal') {
-			canvasHistory.saveState(matrixData);
-			if (direction === 'horizontal') {
-				matrixData = matrixData.map(row => row.slice().reverse());
-			} else if (direction === 'vertical') {
-				matrixData = matrixData.slice().reverse();
-			};
-			drawMatrix();
-		};
+        function flip(direction = 'horizontal') {
+            if (direction === 'horizontal') {
+                matrixData = matrixData.map(row => row.slice().reverse());
+            } else if (direction === 'vertical') {
+                matrixData = matrixData.slice().reverse();
+            }
+            setState(matrixData);
+        }
 
 		function copyToClipboard(text) {
+			console.log(text);
 			var $temp = $('<input>');
 			$('body').append($temp);
 			$temp.val(text).select();
 			document.execCommand('copy');
-			$temp.remove()
+			$temp.remove();
 
 			swalBS.fire({
 				position: "top-end",
@@ -1462,87 +1550,84 @@
 				showConfirmButton: false,
 				timer: 1500
 			});
-		};
+		}
 
 		function copyWrappedToMatrix() {
-			for (let row = 0; row < ROWS; row++) {
-				for (let col = 0; col < COLS; col++) {
-					matrixData[row][col] = wrappedMatrix[row][col];
-				};
-			};
-		};
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    matrixData[row][col] = wrappedMatrix[row][col];
+                }
+            }
+        }
+        
+        function moveUp() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const srcRow = (row + 1) % ROWS;
+                    wrappedMatrix[row][col] = matrixData[srcRow][col];
+                }
+            }
+            copyWrappedToMatrix();
+            setState(matrixData);
+            nudgeY();
+        }
 
-		function moveUp() {
-			canvasHistory.saveState(matrixData);
-			for (let row = 0; row < ROWS - 1; row++) {
-				for (let col = 0; col < COLS; col++) {
-					const srcRow = (row + 1) % ROWS;
-					wrappedMatrix[row][col] = matrixData[srcRow][col];
-				};
-			};
-			copyWrappedToMatrix();
-			drawMatrix();
-			nudgeY();
-		};
+        function moveDown() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const srcRow = (row - 1 + ROWS) % ROWS;
+                    wrappedMatrix[row][col] = matrixData[srcRow][col];
+                }
+            }
+            copyWrappedToMatrix();
+            setState(matrixData);
+            nudgeY();
+        }
 
-		function moveDown() {
-			canvasHistory.saveState(matrixData);
-			for (let row = ROWS - 1; row > 0; row--) {
-				for (let col = 0; col < COLS; col++) {
-					const srcRow = (row - 1 + ROWS) % ROWS;
-					wrappedMatrix[row][col] = matrixData[srcRow][col];
-				};
-			};
-			copyWrappedToMatrix();
-			drawMatrix();
-			nudgeY();
-		};
+        function moveLeft() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const srcCol = (col + 1) % COLS;
+                    wrappedMatrix[row][col] = matrixData[row][srcCol];
+                }
+            }
+            copyWrappedToMatrix();
+            setState(matrixData);
+            nudgeX();
+        }
 
-		function moveLeft() {
-			canvasHistory.saveState(matrixData);
-			for (let row = 0; row < ROWS; row++) {
-				for (let col = 0; col < COLS - 1; col++) {
-					const srcCol = (col + 1) % COLS;
-					wrappedMatrix[row][col] = matrixData[row][srcCol];
-				};
-			};
-			copyWrappedToMatrix();
-			drawMatrix();
-			nudgeX();
-		}
-
-		function moveRight() {
-			canvasHistory.saveState(matrixData)
-			for (let row = 0; row < ROWS; row++) {
-				for (let col = COLS - 1; col > 0; col--) {
-					const srcCol = (col - 1 + COLS) % COLS;
-					wrappedMatrix[row][col] = matrixData[row][srcCol];
-				}
-			}
-			copyWrappedToMatrix();
-			drawMatrix();
-			nudgeX();
-		}
+        function moveRight() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const srcCol = (col - 1 + COLS) % COLS;
+                    wrappedMatrix[row][col] = matrixData[row][srcCol];
+                }
+            }
+            copyWrappedToMatrix();
+            setState(matrixData);
+            nudgeX();
+        }
 
 		function nudgeX() {
 			$('#canvas-container').addClass('nudgeX');
 
 			setTimeout(() => {
-				$('#canvas-container').removeClass('nudgeX')
+				$('#canvas-container').removeClass('nudgeX');
 			}, 700);
-		};
+		}
 
 		function nudgeY() {
 			$('#canvas-container').addClass('nudgeY');
 
 			setTimeout(() => {
-				$('#canvas-container').removeClass('nudgeY')
+				$('#canvas-container').removeClass('nudgeY');
 			}, 700);
-		};
+		}
 
 		// Export matrix data as JSON
 		function exportData() {
-			const dataStr = JSON.stringify(matrixData.map(row =>row.map(color => colorMap[color] ?? color)))
+			const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
+
 			swalBS.fire({
 				title: getCorrectTranslation('copycode'),
 				icon: "success",
@@ -1556,244 +1641,151 @@
 				cancelButtonText: 'Cancel',
 				cancelButtonAriaLabel: "Thumbs down"
 			});
-		};
+		}
+        
+        function getPixelMatrix() {
+            return JSON.parse(JSON.stringify(matrix)) // o canvasData
+        }
+
+        function setPixelMatrix(newMatrix) {
+            matrixData = JSON.parse(JSON.stringify(newMatrix))
+            drawMatrix()
+        }
 
 		// Event listeners
-		
-		window.addEventListener('DOMContentLoaded', () => {
-			document.getElementById('draw-white').value = whiteValue;
-			document.getElementById('draw-lightGrey').value = lightGreyValue;
-			document.getElementById('draw-darkGrey').value = darkGreyValue;
-			document.getElementById('draw-black').value = blackValue;
-		});
-		
-		//Lazy loading of community items
-		const communityDiv = document.querySelector('#community .offcanvas-body');
-		const loadMoreBtn = document.getElementById('community-load-more-btn');
-	   
-		communityDiv.addEventListener('scroll', () => {
-			const isAtBottom = communityDiv.scrollTop + communityDiv.clientHeight >= communityDiv.scrollHeight;
-			if (isAtBottom) {
-				loadMoreBtn.click();
-			};
-		});
-		
-		canvas.addEventListener('mousedown', (e) => {
-			isDrawing = true;
-			canvasHistory.saveState(matrixData);
-			const coords = getMatrixCoords(e);
-			if (coords) {
-				switch (currentMode) {
-					case 'draw':
-						switch (currentColor) {
-							case 1:
-								updateCell(coords.row, coords.col, white);
-								break;
-							case 0.5:
-								updateCell(coords.row, coords.col, darkGrey);
-								break;
-							case 0.7:
-								updateCell(coords.row, coords.col, lightGrey);
-								break;
-							case 0:
-								updateCell(coords.row, coords.col, black);
-								break;
-						};
-						break;
-					case 'fill':
-						switch (currentColor) {
-							case 1:
-								fillAll(coords.row, coords.col, white);
-								break;
-							case 0.5:
-								fillAll(coords.row, coords.col, darkGrey);
-								break;
-							case 0.7:
-								fillAll(coords.row, coords.col, lightGrey);
-								break;
-							case 0:
-								fillAll(coords.row, coords.col, black);
-								break;
-						};
-						break;
-				};
-			};
-		});
+        
+        document.getElementById('btnUndo').addEventListener('click', () => {
+            console.log("Undo clicked");
+            undo();
+        })
+
+        document.getElementById('btnRedo').addEventListener('click', () => {
+            console.log("Redo clicked");
+            redo();
+        })
+        
+		// Canvas event listeners
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            
+            const coords = getMatrixCoords(e);
+            if (coords) {
+                switch (currentMode) {
+                    case 'draw':
+                        switch (currentColor) {
+                            case 1:
+                                updateCell(coords.row, coords.col, colorMap.white);
+                                break;
+                            case 0.7:
+                                updateCell(coords.row, coords.col, colorMap.darkTranslucent);
+                                break;
+                            case 0.5:
+                                updateCell(coords.row, coords.col, colorMap.lightTranslucent);
+                                break;
+                            case 0.3:
+                                updateCell(coords.row, coords.col, colorMap.forced);
+                                break;
+                            case 0:
+                                updateCell(coords.row, coords.col, colorMap.black);
+                                break;
+                        }
+                        break;
+                    case 'fill':
+                        switch (currentColor) {
+                            case 1:
+                                fillAll(coords.row, coords.col, colorMap.white);
+                                break;
+                            case 0.7:
+                                fillAll(coords.row, coords.col, colorMap.darkTranslucent);
+                                break;
+                            case 0.5:
+                                fillAll(coords.row, coords.col, colorMap.lightTranslucent);
+                                break;
+                            case 0.3:
+                                fillAll(coords.row, coords.col, colorMap.forced);
+                                break;
+                            case 0:
+                                fillAll(coords.row, coords.col, colorMap.black);
+                                break;
+                        }
+                        break;
+                }
+            }
+        });
 
 		canvas.addEventListener('mousemove', (e) => {
-			const coords = getMatrixCoords(e);
-			if (coords) {
+            const coords = getMatrixCoords(e);
+            if (coords) {
+                mousePosDisplay.textContent = `${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`;
 
-				mousePosDisplay.textContent = `${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`;
-
-				if (isDrawing) {
-					switch (currentMode) {
-						case 'draw':
-							switch (currentColor) {
-								case 1:
-									updateCell(coords.row, coords.col, white);
-									break;
-								case 0.5:
-									updateCell(coords.row, coords.col, darkGrey);
-									break;
-								case 0.7:
-									updateCell(coords.row, coords.col, lightGrey);
-									break;
-								case 0:
-									updateCell(coords.row, coords.col, black);
-									break;
-							};
-							break;
-					};
-				};
-			} else {
-				mousePosDisplay.textContent = getCorrectTranslation('position1');
-			};
-		});
+                if (isDrawing && currentMode === 'draw') {
+                    switch (currentColor) {
+                        case 1:
+                            updateCell(coords.row, coords.col, colorMap.white);
+                            break;
+                        case 0.7:
+                            updateCell(coords.row, coords.col, colorMap.darkTranslucent);
+                            break;
+                        case 0.5:
+                            updateCell(coords.row, coords.col, colorMap.lightTranslucent);
+                            break;
+                        case 0.3:
+                            updateCell(coords.row, coords.col, colorMap.forced);
+                            break;
+                        case 0:
+                            updateCell(coords.row, coords.col, colorMap.black);
+                            break;
+                    }
+                }
+            } else {
+                mousePosDisplay.textContent = getCorrectTranslation('position1');
+            }
+        });
 
 		canvas.addEventListener('mouseout', () => {
 			mousePosDisplay.textContent = getCorrectTranslation('position1');
-			canvasHistory.saveState(matrixData);
 		});
 
 		window.addEventListener('mouseup', () => {
-			isDrawing = false;
-			canvasHistory.saveState(matrixData);
-		});
+            if (isDrawing && currentMode === 'draw') {
+                setState(matrixData); // Save state at the end of drawing operation only
+            }
+            isDrawing = false;
+        });
 
 		window.addEventListener('resize', resizeCanvas);
 
 		// Initial setup
 		resizeCanvas();
+        setState(matrixData)
 
 		$(document).keydown(function (e) {
-            // If any div has the class '.modal.show' or '.offcanvas.show', exit early
-            if ($('div.modal.show').length > 0 || $('div.offcanvas.show').length > 0) {
-                return;
-            }
-
-            // Undo
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 e.preventDefault();
-                canvasHistory.undo();
-                return;
-            }
-
-            // Redo
-            if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
                 e.preventDefault();
-                canvasHistory.redo();
-                return;
-            }
-            
-            // Copy
-            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                redoAction();
+            } else {
+                switch (e.which) {
+                    case 37: // left arrow key
+                        moveLeft();
+                        break;
+                    case 38: // up arrow key
+                        moveUp();
+                        break;
+                    case 39: // right arrow key
+                        moveRight();
+                        break;
+                    case 40: // down arrow key
+                        moveDown();
+                        break;
+                    default: return;
+                }
                 e.preventDefault();
-                const dataStr = JSON.stringify(matrixData.map(row =>row.map(color => colorMap[color] ?? color)))
-                copyToClipboard(dataStr)
-                return;
             }
-            
-            // Paste
-            if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-                e.preventDefault();
-                importData();
-                return;
-            }
-            
-            // Export
-            if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-                $('#export-btn').click();
-                return;
-            }
-            
-            // Draw
-            if (e.key === 'd') {
-                $('#draw').click();
-                return;
-            }
-            
-            // Fill
-            if (e.key === 'f') {
-                $('#fill').click();
-                return;
-            }
-            
-            // Clear
-            if (e.key === 'c') {
-                clearAll()
-                return;
-            }
-            
-            // Invert
-            if (e.key === 'i') {
-                invertAll()
-                return;
-            }
-            
-            // Invert Grey
-            if (e.key === 'r') {
-                invertGreys()
-                return;
-            }
-            
-            // White
-            if (e.key === 'w') {
-                $('#draw-white').click();
-                return;
-            }
-            
-            // Light Grey
-            if (e.key === 'l') {
-                $('#draw-lightGrey').click();
-                return;
-            }
-            
-            // Dark Grey
-            if (e.key === 'g') {
-                $('#draw-darkGrey').click();
-                return;
-            }
-            
-            // Black
-            if (e.key === 'b') {
-                $('#draw-black').click();
-                return;
-            }
-
-            // Arrows
-            switch (e.which) {
-                case 37: // left
-                    canvasHistory.saveState(matrixData);
-                    moveLeft();
-                    break;
-                case 38: // up
-                    canvasHistory.saveState(matrixData);
-                    moveUp();
-                    break;
-                case 39: // right
-                    canvasHistory.saveState(matrixData);
-                    moveRight();
-                    break;
-                case 40: // down
-                    canvasHistory.saveState(matrixData);
-                    moveDown();
-                    break;
-                default:
-                    return;
-            }
-
-            e.preventDefault();
         });
-        
-        document.getElementById('btnUndo').addEventListener('click', () => {
-            canvasHistory.undo();
-        });
-        
-        document.getElementById('btnRedo').addEventListener('click', () => {
-            canvasHistory.redo();
-        });
-    </script>
+	</script>
 
 	<!-- User functions -->
 	<script>
@@ -1804,7 +1796,7 @@
 			$('#ddLogin, #btnSignup').css('display', 'none');
 			$('#member, #btnShare').css('display', 'block');
 			$('#member button.dropdown-toggle').text(username);
-		};
+		}
 
 		$('#btnLoginConfirm').click(function (evt) {
 			if (!$('#txtLoginUsername').val()) {
@@ -1836,13 +1828,13 @@
 								localStorage.setItem('username', $('#txtLoginUsername').val());
 								localStorage.setItem('password', $('#txtLoginPassword').val());
 								localStorage.setItem('remember', true);
-							};
+							}
 
 							$('#txtLoginUsername, #txtLoginPassword').val('');
 							if ($('#txtLoginUsername').hasClass('is-invalid')) $('#txtLoginUsername').removeClass('is-invalid');
 							if ($('#txtLoginPassword').hasClass('is-invalid')) $('#txtLoginPassword').removeClass('is-invalid');
 
-							//if ($('#frmLogin').hasClass('show')) $('#frmLogin').removeClass('show')
+							//if ($('#frmLogin').hasClass('show')) $('#frmLogin').removeClass('show');
 							$('#frmLogin').dropdown('hide');
 						} else {
 							swalBS.fire({
@@ -1851,7 +1843,7 @@
 								theme: "dark",
 								text: getCorrectTranslation(response.data.code),
 							});
-						};
+						}
 					},
 					error: function (err) {
 						swalBS.fire({
@@ -1861,8 +1853,8 @@
 							text: err.statusText,
 						});
 					}
-				});
-			};
+				})
+			}
 		});
 
 		$('#btnSignupConfirm').click(function (evt) {
@@ -1920,9 +1912,9 @@
 								title: getCorrectTranslation('signedUp'),
 								showConfirmButton: false,
 								timer: 1500
-							})
+							});
 
-							loginUser(response.id, $('#txtSignupUsername').val())
+							loginUser(response.id, $('#txtSignupUsername').val());
 
 							$('#txtSignupEmail, #txtSignupUsername, #txtSignupConfirmPassword, #txtSignupPassword').val('');
 							if ($('#txtSignupEmail').hasClass('is-invalid')) $('#txtSignupEmail').removeClass('is-invalid');
@@ -1938,7 +1930,7 @@
 								theme: "dark",
 								text: getCorrectTranslation(response.data.code),
 							});
-						};
+						}
 					},
 					error: function (err) {
 						swalBS.fire({
@@ -1949,7 +1941,7 @@
 						});
 					}
 				});
-			};
+			}
 		});
 
 		$('#btnChangePasswordConfirm').click(function (evt) {
@@ -2012,7 +2004,7 @@
 								theme: "dark",
 								text: getCorrectTranslation(response.data.code),
 							});
-						};
+						}
 					},
 					error: function (err) {
 						swalBS.fire({
@@ -2023,7 +2015,7 @@
 						});
 					}
 				});
-			};
+			}
 		});
 
 		$('#aLogout').click(function (evt) {
@@ -2040,8 +2032,11 @@
 				$('#modal-share').modal('show');
 			} else {
 				$('#frmLogin').dropdown('show');
-			};
+			}
 		});
 	</script>
+
+
 </body>
+
 </html>
