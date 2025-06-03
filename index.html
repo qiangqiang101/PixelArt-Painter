@@ -1466,7 +1466,7 @@
         let cellWidth, cellHeight;
 
         // Matrix data - stores color for each cell
-        let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+        matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
 
         //Wrapped matrix to hold matrix info for nudging
         let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
@@ -1561,7 +1561,6 @@
 
         // Fill all cells with a specific color
         function clearAll(color) {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     matrixData[row][col] = color;
@@ -1591,7 +1590,6 @@
 
         //Invert all cells
         function invertAll() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
@@ -1614,7 +1612,6 @@
         }
 
         function invertBlackWhite() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
@@ -1631,7 +1628,6 @@
         }
 
         function invertTranslucents() {
-            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
@@ -1648,7 +1644,6 @@
         }
 
         function mirrorHorizontal() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS / 2; col++) {
                     matrixData[row][COLS - col - 1] = matrixData[row][col];
@@ -1658,7 +1653,6 @@
         }
 
         function mirrorVertical() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS / 2; row++) {
                 for (let col = 0; col < COLS; col++) {
                     matrixData[ROWS - row - 1][col] = matrixData[row][col];
@@ -1668,7 +1662,6 @@
         }
 
         function flip(direction = 'horizontal') {
-            canvasHistory.saveState(matrixData);
             if (direction === 'horizontal') {
                 console.log("flip horizontal");
                 matrixData = matrixData.map(row => row.slice().reverse());
@@ -1910,11 +1903,57 @@
 
        $(document).keydown(function (e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                // Undo
                 e.preventDefault();
                 undo();
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                // Redo
                 e.preventDefault();
                 redo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                //Export
+                e.preventDefault();
+                $('#export-btn').click();
+            } else if (e.key === 'd') {
+                // Draw
+                $('#draw').click();
+                return;
+            } else  if (e.key === 'f') {
+                // Fill
+                $('#fill').click();
+                return;
+            } else if (e.key === 'c') {
+                // Clear
+                clearAll()
+                return;
+            } else if (e.key === 'i') {
+                // Invert Black and White
+                invertBlackWhite()
+                return;
+             } else if ((e.ctrlKey) && e.key === 'i') {
+                // Invert Translucents
+                invertTranslucents()
+                return;
+            } else if (e.key === '1') {
+                // Opaque
+                $('#draw-full').click();
+                return;
+            } else if (e.key === '2') {
+                // Forced
+                $('#draw-forced').click();
+                return;
+            } else if (e.key === '3') {
+                // Translucent
+                $('#draw-translucent').click();
+                return;
+            } else if (e.key === '4') {
+                // Semi-Translucent
+                $('#draw-semi-translucent').click();
+                return;
+            } else if (e.key === '5') {
+                // Off
+                $('#draw-clear').click();
+                return;
             } else {
                 switch (e.which) {
                     case 37: // left arrow key
