@@ -15,6 +15,121 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
         crossorigin="anonymous"></script>
+    <script>
+        // Undo/Redo Manager
+        function createUndoRedoManager(initialState = [], initialCols = 16, initialRows = 16) {
+            let undoStack = [];
+            let redoStack = [];
+            let currentState = {
+                matrix: JSON.parse(JSON.stringify(initialState)), // Deep copy matrix
+                cols: initialCols,
+                rows: initialRows
+            };
+
+            return {
+                getState: () => JSON.parse(JSON.stringify(currentState)), // Return deep copy of current state
+                setState: (newState, cols, rows) => {
+                    console.log("Saving state to undo stack");
+                    undoStack.push(JSON.parse(JSON.stringify(currentState))); // Deep copy current state to undo stack
+                    currentState = {
+                        matrix: JSON.parse(JSON.stringify(newState)), // Deep copy new matrix
+                        cols: cols,
+                        rows: rows
+                    };
+                    redoStack = []; // Clear redo stack on new action
+                },
+                undo: () => {
+                    if (undoStack.length > 0) {
+                        console.log("Undoing action");
+                        redoStack.push(JSON.parse(JSON.stringify(currentState))); // Save current state to redo
+                        currentState = undoStack.pop();
+                        return JSON.parse(JSON.stringify(currentState)); // Return deep copy
+                    }
+                    console.log("Nothing to undo");
+                    return null;
+                },
+                redo: () => {
+                    if (redoStack.length > 0) {
+                        console.log("Redoing action");
+                        undoStack.push(JSON.parse(JSON.stringify(currentState))); // Save current state to undo
+                        currentState = redoStack.pop();
+                        return JSON.parse(JSON.stringify(currentState)); // Return deep copy
+                    }
+                    console.log("Nothing to redo");
+                    return null;
+                },
+                clear: () => {
+                    undoStack = [];
+                    redoStack = [];
+                    currentState = {
+                        matrix: JSON.parse(JSON.stringify(initialState)),
+                        cols: initialCols,
+                        rows: initialRows
+                    };
+                    return JSON.parse(JSON.stringify(currentState));
+                }
+            };
+        }
+
+        // Global variables
+        let matrixData = Array(16).fill().map(() => Array(16).fill('#000000'));
+        const history = createUndoRedoManager(matrixData, 16, 16);
+
+        // Set new state
+        function setState(newState, cols = COLS, rows = ROWS) {
+            history.setState(JSON.parse(JSON.stringify(newState)), cols, rows); // Deep copy with dimensions
+            matrixData = JSON.parse(JSON.stringify(newState));
+            COLS = cols;
+            ROWS = rows;
+            resizeCanvas();
+            $('#size-cols').val(COLS); // Update input fields
+            $('#size-rows').val(ROWS);
+            drawMatrix(); // Ensure canvas is redrawn
+        }
+
+        // Modified undo to handle dimensions
+        function undo() {
+            const previous = history.undo();
+            if (previous) {
+                matrixData = JSON.parse(JSON.stringify(previous.matrix));
+                COLS = previous.cols;
+                ROWS = previous.rows;
+                $('#size-cols').val(COLS); // Update input fields
+                $('#size-rows').val(ROWS);
+                resizeCanvas();
+                drawMatrix();
+            }
+        }
+
+        // Modified redo to handle dimensions
+        function redo() {
+            const next = history.redo();
+            if (next) {
+                matrixData = JSON.parse(JSON.stringify(next.matrix));
+                COLS = next.cols;
+                ROWS = next.rows;
+                $('#size-cols').val(COLS); // Update input fields
+                $('#size-rows').val(ROWS);
+                resizeCanvas();
+                drawMatrix();
+            }
+        }
+
+        function historyClear() {
+            const clearedState = history.clear();
+            matrixData = JSON.parse(JSON.stringify(clearedState.matrix));
+            COLS = clearedState.cols;
+            ROWS = clearedState.rows;
+            $('#size-cols').val(COLS);
+            $('#size-rows').val(ROWS);
+            resizeCanvas();
+            if (matrixData && Array.isArray(matrixData) && matrixData.length > 0) {
+                drawMatrix(); // Only draw if matrixData is valid
+            } else {
+                console.warn('matrixData is invalid in historyClear, skipping drawMatrix');
+            }
+        }
+    </script>
 </head>
 
 <body>
@@ -165,14 +280,12 @@
             </div>
 
             <div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
-                <!-- <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-primary" id="btnUndo" onclick="canvasHistory.undo();">
-                            <span class="mdi mdi-undo"></span> Undo</button>
-                        <button type="button" class="btn btn-primary" id="btnRedo" onclick="canvasHistory.redo();">
-                            <span class="mdi mdi-redo"></span> Redo</button>
-                    </div>
-                </div> -->
+                <div class="col-auto">
+					<div class="btn-group btn-group-sm">
+						<button type="button" class="btn btn-primary" id="btnUndo"><span class="mdi mdi-undo"></span> Undo</button>
+						<button type="button" class="btn btn-primary" id="btnRedo"><span class="mdi mdi-redo"></span> Redo</button>
+					</div>
+				</div>
 
                 <div class="col-auto">
                     <div class="btn-group btn-group-sm">
@@ -528,74 +641,6 @@
 
     <script src="script.js?ver=01062025"></script>
 
-    <!-- History Manager -->
-    <script>
-        const MAX_HISTORY = 100;
-
-        class HistoryManager {
-            isEqual(a, b) {
-                return JSON.stringify(a) === JSON.stringify(b);
-            }
-
-            constructor(initialState) {
-                this.undoStack = [];
-                this.redoStack = [];
-                this.currentState = initialState;
-            }
-
-            saveState(newState) {
-                const clonedNewState = this.clone(newState);
-                const lastUndoState = this.undoStack[this.undoStack.length - 1];
-
-                if (lastUndoState && this.isEqual(clonedNewState, lastUndoState)) {
-                    return;
-                }
-
-                this.undoStack.push(this.clone(this.currentState));
-                if (this.undoStack.length > MAX_HISTORY) this.undoStack.shift();
-
-                this.currentState = clonedNewState;
-                this.redoStack = [];
-            }
-
-            clear(initialState) {
-                this.undoStack = [];
-                this.redoStack = [];
-                this.currentState = initialState;
-            }
-
-            undo() {
-                if (this.undoStack.length === 0) {
-                    console.log("Nothing to undo");
-                } else {
-                    this.redoStack.push(this.clone(this.currentState));
-                    this.currentState = this.undoStack.pop();
-                }
-                matrixData = this.clone(this.currentState);
-                drawMatrix();
-            }
-
-            redo() {
-                if (this.redoStack.length === 0) {
-                    console.log("Nothing to redo");
-                } else {
-                    this.undoStack.push(this.clone(this.currentState));
-                    this.currentState = this.redoStack.pop();
-                }
-                matrixData = this.clone(this.currentState);
-                drawMatrix();
-            }
-
-            clone(state) {
-                return JSON.parse(JSON.stringify(state));
-            }
-
-            getCurrentState() {
-                return this.clone(this.currentState);
-            }
-        }
-    </script>
-
     <script>
         //const api = 'http://localhost:3001/api/';
         const api = 'https://pixelart.nolliergb.com/api/';
@@ -626,18 +671,35 @@
                 $('#chkLoginRemember').prop('checked', true);
             }
             changeLanguage(language);
+            
+            // Initialize matrix and history
+            COLS = parseInt($('#size-cols').val());
+            ROWS = parseInt($('#size-rows').val());
+            matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+            history.clear(); // Reset history
+            setState(matrixData); // Save initial state
+            resizeCanvas();
         });
 
         const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
             'dick', 'dumb', 'fag', 'nigga', 'piss', 'slut', 'wanker', 'ccp', '共产党', '傻逼', '维尼', 'pooh', '西藏', '防火墙', '天安门'];
 
-        $('#size-cols, #size-rows').on('input', function (e) {
-            COLS = parseInt($('#size-cols').val());
-            ROWS = parseInt($('#size-rows').val());
-
-            matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-            canvasHistory.clear(matrixData);
-            resizeCanvas();
+        let resizeTimeout;
+        $('#size-cols, #size-rows').on('input', function () {
+            clearTimeout(resizeTimeout); // Clear previous timeout
+            resizeTimeout = setTimeout(() => {
+                const newCols = parseInt($('#size-cols').val()) || 16; // Fallback to 16 if invalid
+                const newRows = parseInt($('#size-rows').val()) || 16;
+                
+                // Create new matrix, preserving old data where possible
+                const newMatrix = Array(newRows).fill().map((_, row) =>
+                    Array(newCols).fill('#000000').map((_, col) =>
+                        row < ROWS && col < COLS ? matrixData[row][col] : '#000000'
+                    )
+                );
+                
+                setState(newMatrix, newCols, newRows); // Save state with new dimensions
+            }, 250); // 250ms debounce
         });
 
         $('input[name="draw-mode"]').change(function () {
@@ -687,8 +749,7 @@
                             break;
                     }
                 }));
-                canvasHistory.saveState(matrixData);
-                drawMatrix();
+                setState(matrixData); // Save state
             } catch (e) {
                 console.log(e);
                 swalBS.fire({
@@ -697,6 +758,7 @@
                     theme: "dark",
                     text: getCorrectTranslation('errorParsingJson'),
                 });
+                undo(); // Revert on error
             }
         }
 
@@ -718,13 +780,13 @@
                 $('#select-load').addClass('is-invalid');
             } else {
                 try {
-                    canvasHistory.saveState(matrixData);
                     var $select = $('#select-load option:selected');
 
                     COLS = parseInt($select.data('size')[0]);
                     ROWS = parseInt($select.data('size')[1]);
 
                     matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+                    historyClear(); // Clear history
                     resizeCanvas();
 
                     matrixData = JSON.parse($select.val());
@@ -747,8 +809,7 @@
                                 break;
                         }
                     }));
-                    canvasHistory.saveState(matrixData);
-                    drawMatrix();
+                    setState(matrixData); // Save state
 
                     $('#size-cols').val(COLS);
                     $('#size-rows').val(ROWS);
@@ -763,6 +824,7 @@
                         theme: "dark",
                         text: getCorrectTranslation('errorParsingJson'),
                     });
+                    undo(); // Revert on error
                 }
             }
 
@@ -1210,49 +1272,67 @@
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
                 success: function (response) {
-                    if (response.success === true) {
-                        let $item = response.data;
-
-                        COLS = $item.size[0];
-                        ROWS = $item.size[1];
-
-                        matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-                        resizeCanvas();
-
-                        matrixData = JSON.parse($item.data);
-                        matrixData = matrixData.map(row => row.map(function (value) {
+                    try {
+                        if (!response.success || !response.data) {
+                            throw new Error('Invalid response: success false or no data');
+                        }
+                        const $item = response.data;
+                        
+                        // Validate size
+                        if (!$item.size || !Array.isArray($item.size) || $item.size.length !== 2) {
+                            throw new Error('Invalid size format');
+                        }
+                        const newCols = parseInt($item.size[0]);
+                        const newRows = parseInt($item.size[1]);
+                        if (isNaN(newCols) || isNaN(newRows) || newCols <= 0 || newRows <= 0) {
+                            throw new Error('Invalid dimensions: cols or rows invalid');
+                        }
+                        
+                        // Parse data
+                        let newMatrix;
+                        try {
+                            newMatrix = JSON.parse($item.data);
+                        } catch (e) {
+                            throw new Error(`Failed to parse data: ${e.message}`);
+                        }
+                        if (!Array.isArray(newMatrix) || newMatrix.length !== newRows || !newMatrix.every(row => Array.isArray(row) && row.length === newCols)) {
+                            throw new Error('Matrix data dimensions mismatch');
+                        }
+                        
+                         // Map values to colors
+                        newMatrix = newMatrix.map(row => row.map(value => {
                             switch (value) {
-                                case 0:
-                                    return colorMap.black;
-                                    break;
-                                case 0.3:
-                                    return colorMap.forced;
-                                    break;
-                                case 0.5:
-                                    return colorMap.lightTranslucent;
-                                    break;
-                                case 0.7:
-                                    return colorMap.darkTranslucent;
-                                    break;
-                                case 1:
-                                    return colorMap.white;
-                                    break;
+                                case 0: return colorMap.black;
+                                case 0.3: return colorMap.forced;
+                                case 0.5: return colorMap.lightTranslucent;
+                                case 0.7: return colorMap.darkTranslucent;
+                                case 1: return colorMap.white;
+                                default: return colorMap.black; // Fallback for invalid values
                             }
                         }));
-                        canvasHistory.saveState(matrixData);
-                        drawMatrix();
-
-                        $('#size-cols').val(COLS);
-                        $('#size-rows').val(ROWS);
-
+                        
+                         // Update state
+                        setState(newMatrix, newCols, newRows);
+                        $('#size-cols').val(newCols);
+                        $('#size-rows').val(newRows);
                         $('#community').offcanvas('hide');
-
+                        
                         if (edit) {
                             $('#editItem').css('display', 'block');
                             $('#txtUpdateId').val(id);
                             $('#txtUpdateName').val($item.name);
                             $('#btnShare').prop('disabled', true);
                         }
+                        
+                        console.log(`Successfully loaded community drawing ${id}: ${newCols}x${newRows}`);
+                    } catch (error) {
+                        console.error('Error loading community drawing:', error);
+                        swalBS.fire({
+                            icon: 'error',
+                            title: getCorrectTranslation('oops'),
+                            theme: 'dark',
+                            text: 'Failed to load community drawing: ' + error.message
+                        });
                     }
                 },
                 error: function (err) {
@@ -1278,20 +1358,6 @@
             if (e.keyCode === 13) {
                 $('#community-search').click();
                 e.preventDefault()
-            }
-        });
-
-        $(document).keydown(function (e) {
-            // Undo
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                canvasHistory.undo();
-                e.preventDefault();
-            }
-
-            // Redo
-            if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-                canvasHistory.redo();
-                e.preventDefault();
             }
         });
 
@@ -1400,13 +1466,10 @@
         let cellWidth, cellHeight;
 
         // Matrix data - stores color for each cell
-        let matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+        matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
 
         //Wrapped matrix to hold matrix info for nudging
         let wrappedMatrix = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-
-        let canvasHistory = new HistoryManager(matrixData);
-        canvasHistory.saveState(matrixData);
 
         // Drawing state
         let isDrawing = false;
@@ -1498,43 +1561,35 @@
 
         // Fill all cells with a specific color
         function clearAll(color) {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     matrixData[row][col] = color;
                 }
             }
-            drawMatrix();
+            setState(matrixData)
         }
 
         // Fill all contiguous cells with a specific color
-        function fillAll(row, col, color) {
-            canvasHistory.saveState(matrixData);
-            fillAllRecursive(row, col, color);
-        }
+		function fillAll(row, col, newColor) {
+            if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
+            const originalColor = matrixData[row][col];
+            if (originalColor === newColor) return;
 
-        function fillAllRecursive(row, col, color) {
-            originalColor = matrixData[row][col];
-            if (originalColor != color) {
-                updateCell(row, col, color);
-                if (row > 0 && matrixData[row - 1][col] == originalColor) {
-                    fillAllRecursive(row - 1, col, color);
-                }
-                if (row < ROWS - 1 && matrixData[row + 1][col] == originalColor) {
-                    fillAllRecursive(row + 1, col, color);
-                }
-                if (col > 0 && matrixData[row][col - 1] == originalColor) {
-                    fillAllRecursive(row, col - 1, color);
-                }
-                if (col < COLS - 1 && matrixData[row][col + 1] == originalColor) {
-                    fillAllRecursive(row, col + 1, color);
-                }
+            function floodFill(r, c) {
+                if (r < 0 || r >= ROWS || c < 0 || c >= COLS || matrixData[r][c] !== originalColor) return;
+                matrixData[r][c] = newColor;
+                updateCell(r, c, newColor);
+                floodFill(r - 1, c);
+                floodFill(r + 1, c);
+                floodFill(r, c - 1);
+                floodFill(r, c + 1);
             }
+            floodFill(row, col);
+            setState(matrixData);
         }
 
         //Invert all cells
         function invertAll() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
@@ -1553,11 +1608,10 @@
                     }
                 }
             }
-            drawMatrix();
+            setState(matrixData);
         }
 
         function invertBlackWhite() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
@@ -1570,11 +1624,10 @@
                     }
                 }
             }
-            drawMatrix();
+            setState(matrixData);
         }
 
         function invertTranslucents() {
-            canvasHistory.saveState(matrixData)
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     switch (matrixData[row][col]) {
@@ -1587,31 +1640,28 @@
                     }
                 }
             }
-            drawMatrix();
+            setState(matrixData);
         }
 
         function mirrorHorizontal() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS / 2; col++) {
                     matrixData[row][COLS - col - 1] = matrixData[row][col];
                 }
             }
-            drawMatrix();
+            setState(matrixData);
         }
 
         function mirrorVertical() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS / 2; row++) {
                 for (let col = 0; col < COLS; col++) {
                     matrixData[ROWS - row - 1][col] = matrixData[row][col];
                 }
             }
-            drawMatrix();
+            setState(matrixData);
         }
 
         function flip(direction = 'horizontal') {
-            canvasHistory.saveState(matrixData);
             if (direction === 'horizontal') {
                 console.log("flip horizontal");
                 matrixData = matrixData.map(row => row.slice().reverse());
@@ -1619,7 +1669,7 @@
                 console.log("flip vertical");
                 matrixData = matrixData.slice().reverse();
             }
-            drawMatrix();
+            setState(matrixData);
         }
 
         function copyToClipboard(text) {
@@ -1649,62 +1699,50 @@
         }
 
         function moveUp() {
-            canvasHistory.saveState(matrixData);
-            for (let row = 0; row < ROWS - 1; row++) {
+            for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    // matrixData[row][col] = matrixData[row + 1][col];
-                    // matrixData[row + 1][col] = '#000000';
                     const srcRow = (row + 1) % ROWS;
                     wrappedMatrix[row][col] = matrixData[srcRow][col];
                 }
             }
             copyWrappedToMatrix();
-            drawMatrix();
+            setState(matrixData);
             nudgeY();
         }
 
         function moveDown() {
-            canvasHistory.saveState(matrixData);
-            for (let row = ROWS - 1; row > 0; row--) {
+            for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
-                    // matrixData[row][col] = matrixData[row - 1][col];
-                    // matrixData[row - 1][col] = '#000000';
                     const srcRow = (row - 1 + ROWS) % ROWS;
                     wrappedMatrix[row][col] = matrixData[srcRow][col];
                 }
             }
             copyWrappedToMatrix();
-            drawMatrix();
+            setState(matrixData);
             nudgeY();
         }
 
         function moveLeft() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS - 1; col++) {
-                    // matrixData[row][col] = matrixData[row][col + 1];
-                    // matrixData[row][col + 1] = '#000000';
+                for (let col = 0; col < COLS; col++) {
                     const srcCol = (col + 1) % COLS;
                     wrappedMatrix[row][col] = matrixData[row][srcCol];
                 }
             }
             copyWrappedToMatrix();
-            drawMatrix();
+            setState(matrixData);
             nudgeX();
         }
 
         function moveRight() {
-            canvasHistory.saveState(matrixData);
             for (let row = 0; row < ROWS; row++) {
-                for (let col = COLS - 1; col > 0; col--) {
-                    // matrixData[row][col] = matrixData[row][col - 1];
-                    // matrixData[row][col - 1] = '#000000';
+                for (let col = 0; col < COLS; col++) {
                     const srcCol = (col - 1 + COLS) % COLS;
                     wrappedMatrix[row][col] = matrixData[row][srcCol];
                 }
             }
             copyWrappedToMatrix();
-            drawMatrix();
+            setState(matrixData);
             nudgeX();
         }
 
@@ -1742,8 +1780,28 @@
                 cancelButtonAriaLabel: "Thumbs down"
             });
         }
+        
+        function getPixelMatrix() {
+            return JSON.parse(JSON.stringify(matrix))
+        }
+
+        function setPixelMatrix(newMatrix) {
+            matrixData = JSON.parse(JSON.stringify(newMatrix))
+            drawMatrix()
+        }
 
         // Event listeners
+        document.getElementById('btnUndo').addEventListener('click', () => {
+            console.log("Undo clicked");
+            undo();
+        })
+
+        document.getElementById('btnRedo').addEventListener('click', () => {
+            console.log("Redo clicked");
+            redo();
+        })
+        
+        // Canvas event listeners
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
 
@@ -1831,33 +1889,89 @@
         });
 
         window.addEventListener('mouseup', () => {
+            if (isDrawing && currentMode === 'draw') {
+                setState(matrixData); // Save state at the end of drawing operation only
+            }
             isDrawing = false;
-            canvasHistory.saveState(matrixData);
         });
 
         window.addEventListener('resize', resizeCanvas);
 
         // Initial setup
         resizeCanvas();
+        setState(matrixData);
 
-        $(document).keydown(function (e) {
-            switch (e.which) {
-                case 37: // left arrow key
-                    moveLeft();
-                    break;
-                case 38: // up arrow key
-                    moveUp();
-                    break;
-                case 39: // right arrow key
-                    moveRight();
-                    break;
-                case 40: // down arrow key
-                    moveDown();
-                    break;
-                default: return; // exit this handler for other keys
+       $(document).keydown(function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                // Undo
+                e.preventDefault();
+                undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                // Redo
+                e.preventDefault();
+                redo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                //Export
+                e.preventDefault();
+                $('#export-btn').click();
+            } else if (e.key === 'd') {
+                // Draw
+                $('#draw').click();
+                return;
+            } else  if (e.key === 'f') {
+                // Fill
+                $('#fill').click();
+                return;
+            } else if (e.key === 'c') {
+                // Clear
+                clearAll()
+                return;
+            } else if (e.key === 'i') {
+                // Invert Black and White
+                invertBlackWhite()
+                return;
+             } else if ((e.ctrlKey) && e.key === 'i') {
+                // Invert Translucents
+                invertTranslucents()
+                return;
+            } else if (e.key === '1') {
+                // Opaque
+                $('#draw-full').click();
+                return;
+            } else if (e.key === '2') {
+                // Forced
+                $('#draw-forced').click();
+                return;
+            } else if (e.key === '3') {
+                // Translucent
+                $('#draw-translucent').click();
+                return;
+            } else if (e.key === '4') {
+                // Semi-Translucent
+                $('#draw-semi-translucent').click();
+                return;
+            } else if (e.key === '5') {
+                // Off
+                $('#draw-clear').click();
+                return;
+            } else {
+                switch (e.which) {
+                    case 37: // left arrow key
+                        moveLeft();
+                        break;
+                    case 38: // up arrow key
+                        moveUp();
+                        break;
+                    case 39: // right arrow key
+                        moveRight();
+                        break;
+                    case 40: // down arrow key
+                        moveDown();
+                        break;
+                    default: return;
+                }
+                e.preventDefault();
             }
-
-            e.preventDefault(); // prevent the default action (scroll / move caret)
         });
     </script>
 
