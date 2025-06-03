@@ -281,11 +281,13 @@
 
             <div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
                 <div class="col-auto">
-					<div class="btn-group btn-group-sm">
-						<button type="button" class="btn btn-primary" id="btnUndo"><span class="mdi mdi-undo"></span> Undo</button>
-						<button type="button" class="btn btn-primary" id="btnRedo"><span class="mdi mdi-redo"></span> Redo</button>
-					</div>
-				</div>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-primary" id="btnUndo"><span class="mdi mdi-undo"></span>
+                            Undo</button>
+                        <button type="button" class="btn btn-primary" id="btnRedo"><span class="mdi mdi-redo"></span>
+                            Redo</button>
+                    </div>
+                </div>
 
                 <div class="col-auto">
                     <div class="btn-group btn-group-sm">
@@ -639,7 +641,7 @@
         </div>
     </div>
 
-    <script src="script.js?ver=01062025"></script>
+    <script src="script.js?ver=030620251234"></script>
 
     <script>
         //const api = 'http://localhost:3001/api/';
@@ -671,7 +673,7 @@
                 $('#chkLoginRemember').prop('checked', true);
             }
             changeLanguage(language);
-            
+
             // Initialize matrix and history
             COLS = parseInt($('#size-cols').val());
             ROWS = parseInt($('#size-rows').val());
@@ -679,6 +681,9 @@
             history.clear(); // Reset history
             setState(matrixData); // Save initial state
             resizeCanvas();
+
+            let shareId = getUrlParam('id'); //getUrlVars()['id'];
+            if (shareId != undefined && $.isNumeric(shareId)) downloadItem(shareId);
         });
 
         const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
@@ -690,14 +695,14 @@
             resizeTimeout = setTimeout(() => {
                 const newCols = parseInt($('#size-cols').val()) || 16; // Fallback to 16 if invalid
                 const newRows = parseInt($('#size-rows').val()) || 16;
-                
+
                 // Create new matrix, preserving old data where possible
                 const newMatrix = Array(newRows).fill().map((_, row) =>
                     Array(newCols).fill('#000000').map((_, col) =>
                         row < ROWS && col < COLS ? matrixData[row][col] : '#000000'
                     )
                 );
-                
+
                 setState(newMatrix, newCols, newRows); // Save state with new dimensions
             }, 250); // 250ms debounce
         });
@@ -944,7 +949,7 @@
                             <div class="card shadow-sm">
                                 <img src="${preview}" class="image-fluid card-img-top" />
                                 <div class="card-body">
-                                    <p class="card-text">${name}</p>
+                                    <p class="card-text">${name}<span>— ${author}</span></p>
                                     <div class="d-flex justify-content-between align-items-center mt-auto">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <button type="button" class="btn btn-sm btn-outline-primary" onclick="downloadItem(${id});">
@@ -953,9 +958,12 @@
                                             <button type="button" class="btn btn-sm ${isFavorite ? 'btn-danger' : 'btn-outline-danger'}" onclick="addToFavorite(${id});">
                                                 <span class="mdi mdi-heart"></span>
                                             </button>
+                                            <button type="button" class="btn btn-sm btn-outline-success" onclick="popShareModal(${id});">
+                                                <span class="mdi mdi-share"></span>
+                                            </button>
                                             ${dropdown}
                                         </div>
-                                        <small class="text-muted">${author}</small>
+                                        <small class="text-muted"></small>
                                     </div>
                                 </div>
                             </div>
@@ -1277,7 +1285,7 @@
                             throw new Error('Invalid response: success false or no data');
                         }
                         const $item = response.data;
-                        
+
                         // Validate size
                         if (!$item.size || !Array.isArray($item.size) || $item.size.length !== 2) {
                             throw new Error('Invalid size format');
@@ -1287,7 +1295,7 @@
                         if (isNaN(newCols) || isNaN(newRows) || newCols <= 0 || newRows <= 0) {
                             throw new Error('Invalid dimensions: cols or rows invalid');
                         }
-                        
+
                         // Parse data
                         let newMatrix;
                         try {
@@ -1298,8 +1306,8 @@
                         if (!Array.isArray(newMatrix) || newMatrix.length !== newRows || !newMatrix.every(row => Array.isArray(row) && row.length === newCols)) {
                             throw new Error('Matrix data dimensions mismatch');
                         }
-                        
-                         // Map values to colors
+
+                        // Map values to colors
                         newMatrix = newMatrix.map(row => row.map(value => {
                             switch (value) {
                                 case 0: return colorMap.black;
@@ -1310,20 +1318,20 @@
                                 default: return colorMap.black; // Fallback for invalid values
                             }
                         }));
-                        
-                         // Update state
+
+                        // Update state
                         setState(newMatrix, newCols, newRows);
                         $('#size-cols').val(newCols);
                         $('#size-rows').val(newRows);
                         $('#community').offcanvas('hide');
-                        
+
                         if (edit) {
                             $('#editItem').css('display', 'block');
                             $('#txtUpdateId').val(id);
                             $('#txtUpdateName').val($item.name);
                             $('#btnShare').prop('disabled', true);
                         }
-                        
+
                         console.log(`Successfully loaded community drawing ${id}: ${newCols}x${newRows}`);
                     } catch (error) {
                         console.error('Error loading community drawing:', error);
@@ -1570,7 +1578,7 @@
         }
 
         // Fill all contiguous cells with a specific color
-		function fillAll(row, col, newColor) {
+        function fillAll(row, col, newColor) {
             if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
             const originalColor = matrixData[row][col];
             if (originalColor === newColor) return;
@@ -1673,6 +1681,25 @@
         }
 
         function copyToClipboard(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text);
+
+                swalBS.fire({
+                    position: "top-end",
+                    icon: "success",
+                    theme: "dark",
+                    title: getCorrectTranslation('copied'),
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+                return true;
+            } else {
+                console.log('fallback to old copyToClipboard function.')
+                copyToClipboardOld(text);
+            }
+        }
+
+        function copyToClipboardOld(text) {
             console.log(text);
             var $temp = $('<input>');
             $('body').append($temp);
@@ -1762,6 +1789,22 @@
             }, 700);
         }
 
+        function popShareModal(id) {
+            const path = `${document.location.origin}/${id}`;
+            swalBS.fire({
+                title: getCorrectTranslation('shareTitle'),
+                icon: "success",
+                theme: "dark",
+                html: `<div class="code-container"><code>${path}</code><button class="btn btn-outline-primary copy-code" onclick="copyToClipboard('${path}');">${getCorrectTranslation('copy')}</button></div>`,
+                showCloseButton: false,
+                showCancelButton: false,
+                focusConfirm: false,
+                confirmButtonText: getCorrectTranslation('ok'),
+                confirmButtonAriaLabel: 'OK'
+            });
+
+        }
+
         // Export matrix data as JSON
         function exportData() {
             const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
@@ -1780,7 +1823,7 @@
                 cancelButtonAriaLabel: "Thumbs down"
             });
         }
-        
+
         function getPixelMatrix() {
             return JSON.parse(JSON.stringify(matrix))
         }
@@ -1800,7 +1843,7 @@
             console.log("Redo clicked");
             redo();
         })
-        
+
         // Canvas event listeners
         canvas.addEventListener('mousedown', (e) => {
             isDrawing = true;
@@ -1901,7 +1944,7 @@
         resizeCanvas();
         setState(matrixData);
 
-       $(document).keydown(function (e) {
+        $(document).keydown(function (e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 // Undo
                 undo();
@@ -1924,21 +1967,21 @@
                 // Draw
                 $('#draw').click();
                 return;
-            } else  if (e.key === 'f') {
+            } else if (e.key === 'f') {
                 // Fill
                 $('#fill').click();
                 return;
             } else if (e.key === 'c') {
                 // Clear
-                clearAll()
+                clearAll();
                 return;
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
                 // Invert Black White
-                invertBlackWhite()()
+                invertBlackWhite();
                 return;
             } else if ((e.altKey) && e.key === 'i') {
                 // Invert Translucents
-                invertTranslucents()
+                invertTranslucents();
                 return;
             } else if (e.key === 'i') {
                 // Invert All

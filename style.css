@@ -102,3 +102,11 @@ canvas {
 form.dropdown-menu {
     width: 18rem;
 }
+
+.generated-item p.card-text span {
+    display: block;
+    white-space: pre;
+    text-align: right;
+    font-style: italic;
+    font-size: small;
+}
