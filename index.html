@@ -331,11 +331,11 @@
                                     </a></li>
                                 <li><a class="dropdown-item" id="btnInvertBlackWhite" href="#"
                                         onclick="invertBlackWhite();">
-                                        <span class="mdi mdi-flip-vertical"></span> Invert Black & White
+                                        <span class="mdi mdi-invert-colors"></span> Invert Black & White
                                     </a></li>
                                 <li><a class="dropdown-item" id="btnInvertTranslucents" href="#"
                                         onclick="invertTranslucents();">
-                                        <span class="mdi mdi-flip-vertical"></span> Invert Translucents
+                                        <span class="mdi mdi-invert-colors"></span> Invert Translucents
                                     </a></li>
                             </ul>
                         </div>
@@ -1916,56 +1916,72 @@
                 $('#export-btn').click();
             } else if (e.key === 'd') {
                 // Draw
+                e.preventDefault();
                 $('#draw').click();
                 return;
             } else  if (e.key === 'f') {
                 // Fill
+                e.preventDefault();
                 $('#fill').click();
                 return;
             } else if (e.key === 'c') {
                 // Clear
+                e.preventDefault();
                 clearAll()
+                return;
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                // Invert Translucents
+                e.preventDefault();
+                console.log("ctrl i")
+                invertTranslucents()
                 return;
             } else if (e.key === 'i') {
                 // Invert Black and White
+                e.preventDefault();
+                console.log("i")
                 invertBlackWhite()
-                return;
-             } else if ((e.ctrlKey) && e.key === 'i') {
-                // Invert Translucents
-                invertTranslucents()
                 return;
             } else if (e.key === '1') {
                 // Opaque
+                e.preventDefault();
                 $('#draw-full').click();
                 return;
             } else if (e.key === '2') {
                 // Forced
+                e.preventDefault();
                 $('#draw-forced').click();
                 return;
             } else if (e.key === '3') {
                 // Translucent
+                e.preventDefault();
                 $('#draw-translucent').click();
                 return;
             } else if (e.key === '4') {
                 // Semi-Translucent
+                e.preventDefault();
                 $('#draw-semi-translucent').click();
                 return;
             } else if (e.key === '5') {
                 // Off
+                e.preventDefault();
                 $('#draw-clear').click();
                 return;
             } else {
                 switch (e.which) {
                     case 37: // left arrow key
+                        e.preventDefault();
                         moveLeft();
                         break;
                     case 38: // up arrow key
+                        e.preventDefault();
                         moveUp();
                         break;
                     case 39: // right arrow key
+                        e.preventDefault();
                         moveRight();
                         break;
                     case 40: // down arrow key
+                        e.preventDefault();
                         moveDown();
                         break;
                     default: return;
