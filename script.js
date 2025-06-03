@@ -17,7 +17,7 @@ const langDB = {
     mirrorHorizontal: { en: '<span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal', zh: '<span class="mdi mdi-flip-horizontal"></span> 水平镜像' },
     mirrorVertical: { en: '<span class="mdi mdi-flip-vertical"></span> Mirror Vertical', zh: '<span class="mdi mdi-flip-vertical"></span> 垂直镜像' },
     flipHorizontal: { en: '<span class="mdi mdi-horizontal-rotate-clockwise"></span> Flip Horizontal', zh: '<span class="mdi mdi-horizontal-rotate-clockwise"></span> 水平翻转' },
-    flipVertical: { en: '<span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical' , zh: '<span class="mdi mdi-axis-z-rotate-clockwise"></span> 垂直翻转' },
+    flipVertical: { en: '<span class="mdi mdi-axis-z-rotate-clockwise"></span> Flip Vertical', zh: '<span class="mdi mdi-axis-z-rotate-clockwise"></span> 垂直翻转' },
     position1: { en: 'Position: (-1, -1)', zh: '位置: (-1, -1)' },
     cellsize1: { en: 'Cell Size: 0x0', zh: '像元大小: 34x34' },
     position2: { en: 'Position:', zh: '位置:' },
@@ -61,7 +61,7 @@ const langDB = {
     colorFull: { en: '<span class="mdi mdi-water"></span> Opaque', zh: '<span class="mdi mdi-water"></span> 全色' },
     colorTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明' },
     colorSemiTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Semi Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明+' },
-    colorOff: {en: '<span class="mdi mdi-water-outline"></span> Black', zh: '<span class="mdi mdi-water-outline"></span> 黑色' },
+    colorOff: { en: '<span class="mdi mdi-water-outline"></span> Black', zh: '<span class="mdi mdi-water-outline"></span> 黑色' },
     inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' },
     navLogin: { en: '<span class="mdi mdi-login"></span> Login', zh: '<span class="mdi mdi-login"></span> 登入' },
     navSignUp: { en: '<span class="mdi mdi-account-plus-outline"></span> Sign Up', zh: '<span class="mdi mdi-account-plus-outline"></span> 注册' },
@@ -96,7 +96,7 @@ const langDB = {
     updated: { en: 'The pixel artwork has been updated successfully.', zh: '像素作品已成功更新。' },
     undo: { en: '<span class="mdi mdi-undo"></span> Undo', zh: '<span class="mdi mdi-undo"></span> 撤消' },
     redo: { en: '<span class="mdi mdi-redo"></span> Redo', zh: '<span class="mdi mdi-redo"></span> 重做' },
-    flip: { en: '<span class="mdi mdi-rotate-orbit"></span> Flip', zh: '<span class="mdi mdi-rotate-orbit"></span> 翻转'},
+    flip: { en: '<span class="mdi mdi-rotate-orbit"></span> Flip', zh: '<span class="mdi mdi-rotate-orbit"></span> 翻转' },
     mirror: { en: '<span class="mdi mdi-flip-to-front"></span> Mirror', zh: '<span class="mdi mdi-flip-to-front"></span> 镜像' }
 };
 
@@ -268,4 +268,9 @@ function getCorrectTranslation(lang) {
             return langDB[lang].en
     }
     return null;
+}
+
+function getUrlParam(name) {
+    var ref = window.location.pathname.split('/').pop();
+    return ref;
 }
