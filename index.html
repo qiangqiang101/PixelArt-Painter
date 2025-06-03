@@ -333,11 +333,11 @@
                                     </a></li>
                                 <li><a class="dropdown-item" id="btnInvertBlackWhite" href="#"
                                         onclick="invertBlackWhite();">
-                                        <span class="mdi mdi-flip-vertical"></span> Invert Black & White
+                                        <span class="mdi mdi-invert-colors"></span> Invert Black & White
                                     </a></li>
                                 <li><a class="dropdown-item" id="btnInvertTranslucents" href="#"
                                         onclick="invertTranslucents();">
-                                        <span class="mdi mdi-flip-vertical"></span> Invert Translucents
+                                        <span class="mdi mdi-invert-colors"></span> Invert Translucents
                                     </a></li>
                             </ul>
                         </div>
@@ -1947,16 +1947,22 @@
         $(document).keydown(function (e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 // Undo
-                e.preventDefault();
                 undo();
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
                 // Redo
-                e.preventDefault();
                 redo();
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
                 //Export
-                e.preventDefault();
                 $('#export-btn').click();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                // Copy
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');;
+                copyToClipboard(dataStr);
+                return;
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                // Paste
+                importData();
+                return;
             } else if (e.key === 'd') {
                 // Draw
                 $('#draw').click();
@@ -1967,15 +1973,19 @@
                 return;
             } else if (e.key === 'c') {
                 // Clear
-                clearAll()
+                clearAll();
+                return;
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                // Invert Black White
+                invertBlackWhite();
+                return;
+            } else if ((e.altKey) && e.key === 'i') {
+                // Invert Translucents
+                invertTranslucents();
                 return;
             } else if (e.key === 'i') {
-                // Invert Black and White
-                invertBlackWhite()
-                return;
-            } else if ((e.ctrlKey) && e.key === 'i') {
-                // Invert Translucents
-                invertTranslucents()
+                // Invert All
+                invertAll();
                 return;
             } else if (e.key === '1') {
                 // Opaque
@@ -2013,7 +2023,6 @@
                         break;
                     default: return;
                 }
-                e.preventDefault();
             }
         });
     </script>
