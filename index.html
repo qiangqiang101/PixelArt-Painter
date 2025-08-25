@@ -384,7 +384,8 @@
             </div>
 
             <div id="matrix-info" class="d-flex justify-content-center">
-                <span id="mouse-pos">Position: (-1, -1)</span> |
+                <span id="mouse-pos">Position: (-1, -1)</span>
+                <span id="mi-seperator" style="margin: 0 10px;"> | </span>
                 <span id="cell-size">Cell Size: 0x0</span>
             </div>
         </div>
@@ -1506,7 +1507,7 @@
             canvas.width = COLS * cellWidth;
             canvas.height = ROWS * cellHeight;
 
-            cellSizeDisplay.textContent = `${getCorrectTranslation('cellsize2')} ${cellWidth}x${cellHeight}`;
+            cellSizeDisplay.text(`${getCorrectTranslation('cellsize2')} ${cellWidth}x${cellHeight}`);
 
             // Redraw the matrix with the current data
             drawMatrix();
@@ -1897,7 +1898,7 @@
             const coords = getMatrixCoords(e);
             if (coords) {
 
-                mousePosDisplay.textContent = `${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`;
+                mousePosDisplay.text(`${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`);
 
                 if (isDrawing) {
                     switch (currentMode) {
@@ -1923,12 +1924,12 @@
                     }
                 }
             } else {
-                mousePosDisplay.textContent = getCorrectTranslation('position1');
+                mousePosDisplay.text(getCorrectTranslation('position1'));
             }
         });
 
         canvas.addEventListener('mouseout', () => {
-            mousePosDisplay.textContent = getCorrectTranslation('position1');
+            mousePosDisplay.text(getCorrectTranslation('position1'));
         });
 
         window.addEventListener('mouseup', () => {
