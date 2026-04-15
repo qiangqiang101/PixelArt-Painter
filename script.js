@@ -97,7 +97,9 @@ const langDB = {
     undo: { en: '<span class="mdi mdi-undo"></span> Undo', zh: '<span class="mdi mdi-undo"></span> 撤消' },
     redo: { en: '<span class="mdi mdi-redo"></span> Redo', zh: '<span class="mdi mdi-redo"></span> 重做' },
     flip: { en: '<span class="mdi mdi-rotate-orbit"></span> Flip', zh: '<span class="mdi mdi-rotate-orbit"></span> 翻转' },
-    mirror: { en: '<span class="mdi mdi-flip-to-front"></span> Mirror', zh: '<span class="mdi mdi-flip-to-front"></span> 镜像' }
+    mirror: { en: '<span class="mdi mdi-flip-to-front"></span> Mirror', zh: '<span class="mdi mdi-flip-to-front"></span> 镜像' },
+    customColor: { en: '<span class="mdi mdi-palette"></span> Custom Color', zh: '<span class="mdi mdi-palette"></span> 自定义颜色' },
+    custom: { en: '<span class="mdi mdi-water-plus"></span> Custom', zh: '<span class="mdi mdi-water-plus"></span> 自定义' },
 };
 
 function changeLanguage(lang) {
@@ -178,6 +180,8 @@ function changeLanguage(lang) {
             $('#btnRedo').html(langDB.redo.zh);
             $('#ddFlip').html(langDB.flip.zh);
             $('#ddMirror').html(langDB.mirror.zh);
+            $('#cuscol-label').html(langDB.customColor.zh);
+            $('label[for="draw-custom"]').html(langDB.custom.zh);
             break;
         default:
             $('#ddLanguage').html(langDB.language.en);
@@ -253,6 +257,8 @@ function changeLanguage(lang) {
             $('#btnRedo').html(langDB.redo.en);
             $('#ddFlip').html(langDB.flip.en);
             $('#ddMirror').html(langDB.mirror.en);
+            $('#cuscol-label').html(langDB.customColor.en);
+            $('label[for="draw-custom"]').html(langDB.custom.en);
     }
 
     $('body').attr('data-language', lang);
@@ -274,3 +280,23 @@ function getUrlParam(name) {
     var ref = window.location.pathname.split('/').pop();
     return ref;
 }
+
+function b64EncodeUnicode(str) {
+    try {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+            return String.fromCharCode('0x' + p1);
+        }));
+    } catch (err) {
+        return str;
+    }
+};
+
+function b64DecodeUnicode(str) {
+    try {
+        return decodeURIComponent(Array.prototype.map.call(atob(str), function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+    } catch (err) {
+        return str;
+    }
+};

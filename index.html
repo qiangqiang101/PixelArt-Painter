@@ -130,6 +130,8 @@
             }
         }
     </script>
+
+    <script src="./script.js?ver=16042026"></script>
 </head>
 
 <body>
@@ -249,19 +251,27 @@
                     </div>
                 </div>
                 <div class="col-auto">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text" id="cuscol-label"><span class="mdi mdi-palette"></span> Custom
+                            Color</span>
+                        <input type="color" class="form-control form-control-color form-control-sm" id="custom-color-picker"
+                            placeholder="#FF0000" value="#FF0000" title="Choose your color" style="width: 3rem;">
+                    </div>
+                </div>
+                <div class="col-auto">
                     <button type="button" class="btn btn-primary btn-sm" id="import-btn" onclick="importData();"><span
                             class="mdi mdi-import"></span> Import Data</button>
                     <button type="button" class="btn btn-primary btn-sm" id="export-btn" onclick="exportData();"><span
                             class="mdi mdi-export"></span> Export Data</button>
                     <input type="hidden" id="clipboard" />
-                    <button type="button" class="btn btn-primary btn-sm" id="load-btn" data-bs-toggle="modal"
+                    <!-- <button type="button" class="btn btn-primary btn-sm" id="load-btn" data-bs-toggle="modal"
                         data-bs-target="#modal-load" onclick="reloadSavedPixelArt();">
                         <span class="mdi mdi-cloud-outline"></span> Load
                     </button>
                     <button type="button" class="btn btn-primary btn-sm" id="save-btn" data-bs-toggle="modal"
                         data-bs-target="#modal-save">
                         <span class="mdi mdi-content-save-outline"></span> Save
-                    </button>
+                    </button> -->
                 </div>
                 <div class="col-auto" id="editItem" style="display: none;">
                     <div class="btn-group btn-group-sm">
@@ -306,18 +316,26 @@
                     <div class="btn-group btn-group-sm">
                         <input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
                         <label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> Full</label>
+
                         <input type="radio" class="btn-check" id="draw-forced" name="draw-color" value="0.3">
                         <label for="draw-forced" class="btn btn-primary"><span class="mdi mdi-water"></span>
                             Forced</label>
+
                         <input type="radio" class="btn-check" id="draw-translucent" name="draw-color" value="0.5">
                         <label for="draw-translucent" class="btn btn-primary"><span
                                 class="mdi mdi-water-opacity"></span> Translucent</label>
+
                         <input type="radio" class="btn-check" id="draw-semi-translucent" name="draw-color" value="0.7">
                         <label for="draw-semi-translucent" class="btn btn-primary"><span
                                 class="mdi mdi-water-opacity"></span> Semi Translucent</label>
+
                         <input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
                         <label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span>
                             Black</label>
+
+                        <input type="radio" class="btn-check" id="draw-custom" name="draw-color" value="2">
+                        <label for="draw-custom" class="btn btn-primary"><span class="mdi mdi-water-plus"></span>
+                            Custom</label>
                     </div>
                 </div>
                 <div class="col-auto">
@@ -391,7 +409,7 @@
         </div>
     </main>
 
-    <div class="modal fade" id="modal-save" tabindex="-1" aria-labelledby="modal-save-label" aria-hidden="true">
+    <!-- <div class="modal fade" id="modal-save" tabindex="-1" aria-labelledby="modal-save-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -412,9 +430,9 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
-    <div class="modal fade" id="modal-load" tabindex="-1" aria-labelledby="modal-load-label" aria-hidden="true">
+    <!-- <div class="modal fade" id="modal-load" tabindex="-1" aria-labelledby="modal-load-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -437,7 +455,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <div class="modal fade" id="modal-share" tabindex="-1" aria-labelledby="modal-share-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -642,7 +660,7 @@
         </div>
     </div>
 
-    <script src="script.js?ver=030620251234"></script>
+
 
     <script>
         //const api = 'http://localhost:3001/api/';
@@ -657,7 +675,7 @@
 
         var favorites = [];
 
-        const colorMap = { white: '#FFFFFF', lightTranslucent: '#808080', darkTranslucent: '#262626', black: '#000000', forced: '#2FACED' };
+        const colorMap = { white: '#FFFFFFFF', lightTranslucent: '#FFFFFFCD', darkTranslucent: '#FFFFFF9B', black: '#000000', forced: '#FFFFFF69' };
 
         $(document).ready(function () {
             let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
@@ -736,6 +754,13 @@
             }
             try {
                 matrixData = JSON.parse($('#clipboard').val());
+
+                const msize = { cols: matrixData[0].length, rows: matrixData.length };
+                console.log(msize);
+
+                $('#size-cols').val(msize.cols);
+                $('#size-rows').val(msize.rows);
+
                 matrixData = matrixData.map(row => row.map(function (value) {
                     switch (value) {
                         case 0:
@@ -753,9 +778,12 @@
                         case 1:
                             return colorMap.white;
                             break;
+                        default:
+                            return value;
                     }
                 }));
-                setState(matrixData); // Save state
+
+                setState(matrixData, msize.cols, msize.rows); // Save state
             } catch (e) {
                 console.log(e);
                 swalBS.fire({
@@ -768,141 +796,158 @@
             }
         }
 
-        $('#remove-confirm-btn').click(function (evt) {
-            if ($('#select-load').val() === 'null') {
-                $('#select-load').addClass('is-invalid');
-            } else {
-                let name = $('#select-load option:selected').text();
-                console.log(name);
-                localStorage.removeItem(`item-${name}`);
+        // $('#remove-confirm-btn').click(function (evt) {
+        //     if ($('#select-load').val() === 'null') {
+        //         $('#select-load').addClass('is-invalid');
+        //     } else {
+        //         let name = $('#select-load option:selected').text();
+        //         console.log(name);
+        //         localStorage.removeItem(`item-${name}`);
 
-                if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
-                $('#modal-load').modal('hide');
-            }
-        });
+        //         if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
+        //         $('#modal-load').modal('hide');
+        //     }
+        // });
 
-        $('#load-confirm-btn').click(function (evt) {
-            if ($('#select-load').val() === 'null') {
-                $('#select-load').addClass('is-invalid');
-            } else {
-                try {
-                    var $select = $('#select-load option:selected');
+        // $('#load-confirm-btn').click(function (evt) {
+        //     if ($('#select-load').val() === 'null') {
+        //         $('#select-load').addClass('is-invalid');
+        //     } else {
+        //         try {
+        //             var $select = $('#select-load option:selected');
+        //             let size = JSON.parse($select.attr('data-size')); // always array
+        //             COLS = size[0];
+        //             ROWS = size[1];
 
-                    COLS = parseInt($select.data('size')[0]);
-                    ROWS = parseInt($select.data('size')[1]);
+        //             // Parse the actual matrix first
+        //             let raw = $select.val();
+        //             matrixData = typeof raw === "string" ? JSON.parse(raw) : raw;
 
-                    matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-                    historyClear(); // Clear history
-                    resizeCanvas();
 
-                    matrixData = JSON.parse($select.val());
-                    matrixData = matrixData.map(row => row.map(function (value) {
-                        switch (value) {
-                            case 0:
-                                return colorMap.black;
-                                break;
-                            case 0.3:
-                                return colorMap.forced;
-                                break;
-                            case 0.5:
-                                return colorMap.lightTranslucent;
-                                break;
-                            case 0.7:
-                                return colorMap.darkTranslucent;
-                                break;
-                            case 1:
-                                return colorMap.white;
-                                break;
-                        }
-                    }));
-                    setState(matrixData); // Save state
 
-                    $('#size-cols').val(COLS);
-                    $('#size-rows').val(ROWS);
+        //             matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
+        //             historyClear(); // Clear history
+        //             resizeCanvas();
 
-                    if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
-                    $('#modal-load').modal('hide');
-                } catch (e) {
-                    console.log(e);
-                    swalBS.fire({
-                        icon: "error",
-                        title: getCorrectTranslation('oops'),
-                        theme: "dark",
-                        text: getCorrectTranslation('errorParsingJson'),
-                    });
-                    undo(); // Revert on error
-                }
-            }
+        //             matrixData = typeof $select.val() === "string" ? JSON.parse($select.val()) : $select.val();
+        //             matrixData = matrixData.map(row => row.map(function (value) {
+        //                 switch (value) {
+        //                     case 0:
+        //                         return colorMap.black;
+        //                         break;
+        //                     case 0.3:
+        //                         return colorMap.forced;
+        //                         break;
+        //                     case 0.5:
+        //                         return colorMap.lightTranslucent;
+        //                         break;
+        //                     case 0.7:
+        //                         return colorMap.darkTranslucent;
+        //                         break;
+        //                     case 1:
+        //                         return colorMap.white;
+        //                         break;
+        //                     default:
+        //                         return value;
+        //                 }
+        //             }));
 
-        });
+        //             $('#size-cols').val(COLS);
+        //             $('#size-rows').val(ROWS);
 
-        $('#save-confirm-btn').click(function (evt) {
-            if (!$('#txt-save').val()) {
-                $('#txt-save').addClass('is-invalid');
-                $('#txt-save').focus();
-            } else if (naughtyWords.includes($('#txt-save').val())) {
-                $('#txt-save').addClass('is-invalid');
-                $('#txt-save').focus();
-                swalBS.fire({
-                    icon: "error",
-                    title: getCorrectTranslation('oops'),
-                    theme: "dark",
-                    text: getCorrectTranslation('inappropriateTextWarning'),
-                });
-            } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
-                const name = $('#txt-save').val();
-                const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
-                localStorage.setItem(`item-${name}`, JSON.stringify(obj));
+        //             setState(matrixData, COLS, ROWS); // Save state
 
-                swalBS.fire({
-                    position: "top-end",
-                    icon: "success",
-                    theme: "dark",
-                    title: getCorrectTranslation('saved'),
-                    showConfirmButton: false,
-                    timer: 1500
-                });
+        //             if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
+        //             $('#modal-load').modal('hide');
+        //         } catch (e) {
+        //             console.log(e);
+        //             swalBS.fire({
+        //                 icon: "error",
+        //                 title: getCorrectTranslation('oops'),
+        //                 theme: "dark",
+        //                 text: getCorrectTranslation('errorParsingJson'),
+        //             });
+        //             undo(); // Revert on error
+        //         }
+        //     }
 
-                $('#txt-save').val('');
-                if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
-                $('#modal-save').modal('hide');
-            }
-        });
+        // });
 
-        function reloadSavedPixelArt() {
-            $('#select-load').find('optgroup').remove();
-            $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')));
-            var values = stringifyLocalStorageExcept(['language', 'username', 'password', 'remember', 'favorites']);
-            $.each(values, function (key, item) {
-                $('#select-load').append($(`<option data-size="[${item.size}]" data-group="${item.size[0]}x${item.size[1]}" value="${item.data}">${item.name}</option>`).val(item.data).html(item.name));
-            });
+        // $('#save-confirm-btn').click(function (evt) {
+        //     if (!$('#txt-save').val()) {
+        //         $('#txt-save').addClass('is-invalid');
+        //         $('#txt-save').focus();
+        //     } else if (naughtyWords.includes($('#txt-save').val())) {
+        //         $('#txt-save').addClass('is-invalid');
+        //         $('#txt-save').focus();
+        //         swalBS.fire({
+        //             icon: "error",
+        //             title: getCorrectTranslation('oops'),
+        //             theme: "dark",
+        //             text: getCorrectTranslation('inappropriateTextWarning'),
+        //         });
+        //     } else {
+        //         const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+        //         const name = $('#txt-save').val();
+        //         const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
+        //         localStorage.setItem(`item-${name}`, JSON.stringify(obj));
 
-            var optiongroups = {};
-            $("#select-load option[data-group]").each(function () {
-                optiongroups[$.trim($(this).attr("data-group"))] = true;
-            });
-            $.each(optiongroups, function (c) {
-                $("select option[data-group='" + c + "']").wrapAll('<optgroup label="' + c + '">');
-            });
-        };
+        //         swalBS.fire({
+        //             position: "top-end",
+        //             icon: "success",
+        //             theme: "dark",
+        //             title: getCorrectTranslation('saved'),
+        //             showConfirmButton: false,
+        //             timer: 1500
+        //         });
 
-        function stringifyLocalStorageExcept(keysToSkip) {
-            if (!Array.isArray(keysToSkip)) keysToSkip = [keysToSkip];
+        //         $('#txt-save').val('');
+        //         if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
+        //         $('#modal-save').modal('hide');
+        //     }
+        // });
 
-            const filtered = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (!keysToSkip.includes(key)) {
-                    try {
-                        filtered[key] = JSON.parse(localStorage.getItem(key));
-                    } catch (e) {
-                        filtered[key] = localStorage.getItem(key);
-                    }
-                }
-            }
-            return filtered;
-        }
+        // function reloadSavedPixelArt() {
+        //     $('#select-load').find('optgroup').remove();
+        //     $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')));
+        //     var values = stringifyLocalStorageExcept(['language', 'username', 'password', 'remember', 'favorites']);
+        //     $.each(values, function (key, item) {
+        //         if (Array.isArray(item.size)) {
+        //             $('#select-load').append($(
+        //                 `<option data-size="[${item.size}]" 
+        //              data-group="${item.size[0]}x${item.size[1]}" 
+        //              value="${item.data}">${item.name}</option>`
+        //             ));
+        //         } else {
+        //             console.warn("Item missing size:", item);
+        //         }
+        //     });
+
+        //     var optiongroups = {};
+        //     $("#select-load option[data-group]").each(function () {
+        //         optiongroups[$.trim($(this).attr("data-group"))] = true;
+        //     });
+        //     $.each(optiongroups, function (c) {
+        //         $("select option[data-group='" + c + "']").wrapAll('<optgroup label="' + c + '">');
+        //     });
+        // };
+
+        // function stringifyLocalStorageExcept(keysToSkip) {
+        //     if (!Array.isArray(keysToSkip)) keysToSkip = [keysToSkip];
+
+        //     const filtered = {};
+        //     for (let i = 0; i < localStorage.length; i++) {
+        //         const key = localStorage.key(i);
+        //         if (!keysToSkip.includes(key)) {
+        //             try {
+        //                 filtered[key] = JSON.parse(localStorage.getItem(key));
+        //             } catch (e) {
+        //                 filtered[key] = localStorage.getItem(key);
+        //             }
+        //         }
+        //     }
+        //     return filtered;
+        // }
 
         function appendPlaceholders(count) {
             var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex placeholder-item">
@@ -1149,7 +1194,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtUpdateName').val(),
@@ -1221,7 +1266,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
+                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtShareName').val(),
@@ -1552,7 +1597,7 @@
         }
 
         // Update a cell's color
-        function updateCell(row, col, color) {
+        function updateCell(row, col, color, isCustom = false) {
             if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
                 matrixData[row][col] = color;
 
@@ -1563,7 +1608,7 @@
                 ctx.fillStyle = color;
                 ctx.fillRect(x, y, cellWidth, cellHeight);
 
-                ctx.strokeStyle = '#333333';
+                ctx.strokeStyle = isCustom ? '#EFFEC7' : '#333333';
                 ctx.strokeRect(x, y, cellWidth, cellHeight);
             }
         }
@@ -1681,7 +1726,8 @@
             setState(matrixData);
         }
 
-        function copyToClipboard(text) {
+        function copyToClipboard(base64String) {
+            const text = b64DecodeUnicode(base64String);
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(text);
 
@@ -1792,11 +1838,12 @@
 
         function popShareModal(id) {
             const path = `${document.location.origin}/${id}`;
+            const base64Path = b64EncodeUnicode(path);
             swalBS.fire({
                 title: getCorrectTranslation('shareTitle'),
                 icon: "success",
                 theme: "dark",
-                html: `<div class="code-container"><code>${path}</code><button class="btn btn-outline-primary copy-code" onclick="copyToClipboard('${path}');">${getCorrectTranslation('copy')}</button></div>`,
+                html: `<div class="code-container"><code>${path}</code><button class="btn btn-outline-primary copy-code" onclick="copyToClipboard('${base64Path}');">${getCorrectTranslation('copy')}</button></div>`,
                 showCloseButton: false,
                 showCancelButton: false,
                 focusConfirm: false,
@@ -1808,13 +1855,14 @@
 
         // Export matrix data as JSON
         function exportData() {
-            const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');
+            const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+            const base64Data = b64EncodeUnicode(dataStr);
 
             swalBS.fire({
                 title: getCorrectTranslation('copycode'),
                 icon: "success",
                 theme: "dark",
-                html: `<div class="code-container"><code>${dataStr}</code><button class="btn btn-outline-primary copy-code" onclick="copyToClipboard('${dataStr}');">${getCorrectTranslation('copy')}</button></div>`,
+                html: `<div class="code-container"><code>${dataStr}</code><button class="btn btn-outline-primary copy-code" onclick="copyToClipboard('${base64Data}');">${getCorrectTranslation('copy')}</button></div>`,
                 showCloseButton: false,
                 showCancelButton: false,
                 focusConfirm: false,
@@ -1869,6 +1917,10 @@
                             case 0:
                                 updateCell(coords.row, coords.col, colorMap.black);
                                 break;
+                            case 2:
+                                const customColor = $('#custom-color-picker').val();
+                                updateCell(coords.row, coords.col, customColor, true);
+                                break;
                         }
                         break;
                     case 'fill':
@@ -1888,6 +1940,10 @@
                             case 0:
                                 fillAll(coords.row, coords.col, colorMap.black);
                                 break;
+                            case 2:
+                                const customColor = $('#custom-color-picker').val();
+                                fillAll(coords.row, coords.col, customColor);
+
                         }
                         break;
                 }
@@ -1919,6 +1975,10 @@
                                 case 0:
                                     updateCell(coords.row, coords.col, colorMap.black);
                                     break;
+                                case 2:
+                                    const customColor = $('#custom-color-picker').val();
+                                    updateCell(coords.row, coords.col, customColor, true);
+                                    break;
                             }
                             break;
                     }
@@ -1946,83 +2006,94 @@
         setState(matrixData);
 
         $(document).keydown(function (e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-                // Undo
-                undo();
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-                // Redo
-                redo();
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
-                //Export
-                $('#export-btn').click();
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-                // Copy
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#808080"', '0.5').replaceAll('"#262626"', '0.7').replaceAll('"#2FACED"', '0.3');;
-                copyToClipboard(dataStr);
-                return;
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-                // Paste
-                importData();
-                return;
-            } else if (e.key === 'd') {
-                // Draw
-                $('#draw').click();
-                return;
-            } else if (e.key === 'f') {
-                // Fill
-                $('#fill').click();
-                return;
-            } else if (e.key === 'c') {
-                // Clear
-                clearAll();
-                return;
-            } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
-                // Invert Black White
-                invertBlackWhite();
-                return;
-            } else if ((e.altKey) && e.key === 'i') {
-                // Invert Translucents
-                invertTranslucents();
-                return;
-            } else if (e.key === 'i') {
-                // Invert All
-                invertAll();
-                return;
-            } else if (e.key === '1') {
-                // Opaque
-                $('#draw-full').click();
-                return;
-            } else if (e.key === '2') {
-                // Forced
-                $('#draw-forced').click();
-                return;
-            } else if (e.key === '3') {
-                // Translucent
-                $('#draw-translucent').click();
-                return;
-            } else if (e.key === '4') {
-                // Semi-Translucent
-                $('#draw-semi-translucent').click();
-                return;
-            } else if (e.key === '5') {
-                // Off
-                $('#draw-clear').click();
-                return;
+            if ($('.modal:visible').length > 0) {
+                console.log("A modal is currently open.");
             } else {
-                switch (e.which) {
-                    case 37: // left arrow key
-                        moveLeft();
-                        break;
-                    case 38: // up arrow key
-                        moveUp();
-                        break;
-                    case 39: // right arrow key
-                        moveRight();
-                        break;
-                    case 40: // down arrow key
-                        moveDown();
-                        break;
-                    default: return;
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                    // Undo
+                    undo();
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+                    // Redo
+                    redo();
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                    //Export
+                    $('#export-btn').click();
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                    // Copy
+                    const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+                    const base64Data = b64EncodeUnicode(dataStr);
+                    copyToClipboard(base64Data);
+                    return;
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                    // Paste
+                    importData();
+                    return;
+                } else if (e.key === 'd') {
+                    // Draw
+                    $('#draw').click();
+                    return;
+                } else if (e.key === 'f') {
+                    // Fill
+                    $('#fill').click();
+                    return;
+                } else if (e.key === 'c') {
+                    // Clear
+                    clearAll();
+                    return;
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+                    // Invert Black White
+                    invertBlackWhite();
+                    return;
+                } else if ((e.altKey) && e.key === 'i') {
+                    // Invert Translucents
+                    invertTranslucents();
+                    return;
+                } else if (e.key === 'i') {
+                    // Invert All
+                    invertAll();
+                    return;
+                } else if (e.key === '1') {
+                    // Opaque
+                    $('#draw-full').click();
+                    return;
+                } else if (e.key === '2') {
+                    // Forced
+                    $('#draw-forced').click();
+                    return;
+                } else if (e.key === '3') {
+                    // Translucent
+                    $('#draw-translucent').click();
+                    return;
+                } else if (e.key === '4') {
+                    // Semi-Translucent
+                    $('#draw-semi-translucent').click();
+                    return;
+                } else if (e.key === '5') {
+                    // Off
+                    $('#draw-clear').click();
+                    return;
+                } else if (e.key === '6') {
+                    // Custom
+                    $('#draw-custom').click();
+                    return;
+                } else {
+                    if ($('input:focus').length === 0) {
+                        switch (e.which) {
+                            case 37: // left arrow key
+                                moveLeft();
+                                break;
+                            case 38: // up arrow key
+                                moveUp();
+                                break;
+                            case 39: // right arrow key
+                                moveRight();
+                                break;
+                            case 40: // down arrow key
+                                moveDown();
+                                break;
+                            default: return;
+                        }
+                    }
                 }
             }
         });
