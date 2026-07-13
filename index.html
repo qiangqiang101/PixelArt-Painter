@@ -341,10 +341,10 @@
                         <label for="draw-full" class="paint-swatch" title="Transparent (effect shows through)"></label>
 
                         <input type="radio" class="btn-check" id="draw-translucent" name="draw-color" value="0.5">
-                        <label for="draw-translucent" class="paint-swatch" title="Translucent 1 (dimmer)"></label>
+                        <label for="draw-translucent" class="paint-swatch" title="Translucent 1 (dimmer effect)"></label>
 
                         <input type="radio" class="btn-check" id="draw-semi-translucent" name="draw-color" value="0.7">
-                        <label for="draw-semi-translucent" class="paint-swatch" title="Translucent 2 (brighter)"></label>
+                        <label for="draw-semi-translucent" class="paint-swatch" title="Translucent 2 (even dimmer effect)"></label>
 
                         <input type="radio" class="btn-check" id="draw-forced" name="draw-color" value="0.3">
                         <label for="draw-forced" class="paint-swatch" title="Forced (single color)"></label>
@@ -372,6 +372,8 @@
                     </div>
 
                     <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" id="new-btn" title="New drawing (reset tool)" onclick="resetTool();"><span
+                                class="mdi mdi-file-plus-outline"></span> New</button>
                         <button type="button" class="btn btn-outline-primary" id="import-btn" onclick="importData();"><span
                                 class="mdi mdi-import"></span> Import Data</button>
                         <button type="button" class="btn btn-outline-primary" id="export-btn" onclick="exportData();"><span
@@ -384,9 +386,6 @@
                     <input type="hidden" id="clipboard" />
 
                     <div class="btn-group btn-group-sm" id="editItem" style="display: none;">
-                        <button type="button" class="btn btn-success" id="btnUpdateEdit" data-bs-toggle="modal"
-                            data-bs-target="#modal-update"><span class="mdi mdi-content-save-outline"></span>
-                            Update</button>
                         <button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
                             onclick="cancelEdit();"><span class="mdi mdi-cancel"></span> Cancel</button>
                         <input id="txtUpdateId" value="-1" type="hidden" />
@@ -461,6 +460,15 @@
                             <label for="txt-save" class="form-label">What would you like to call this pixel art?</label>
                             <input id="txt-save" type="text" class="form-control" placeholder="my cool pixel art"
                                 maxlength="50" />
+                        </div>
+                    </div>
+                    <div class="row mt-3" id="save-copy-row" style="display: none;">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="chk-save-copy" />
+                                <label class="form-check-label" for="chk-save-copy">Save as a copy (new
+                                    drawing)</label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -868,6 +876,7 @@
                     $('#txtUpdateName').val(payload.updateName || '');
                     $('#btnShare').prop('disabled', true);
                 }
+                refreshSaveButton();
 
                 // Preserve the previous unsaved-changes state across the reload:
                 // if it was dirty, use a sentinel baseline so it stays dirty.
@@ -876,6 +885,65 @@
             } catch (e) {
                 console.error('Failed to restore autosave:', e);
                 return false;
+            }
+        }
+
+        // Reflect edit state on the Save button: when editing an owned record it
+        // acts as (and reads) "Update"; otherwise it creates a new drawing.
+        function refreshSaveButton() {
+            const $btn = $('#save-btn');
+            if (!$btn.length) return;
+            const editing = parseInt($('#txtUpdateId').val(), 10) > 0;
+            $btn.html(getCorrectTranslation(editing ? 'update' : 'save'));
+            $btn.toggleClass('btn-success', editing).toggleClass('btn-primary', !editing);
+        }
+
+        // Reset the tool back to a fresh, blank drawing at the default size.
+        function resetTool() {
+            const doReset = function () {
+                pauseAnimation();
+                COLS = 16;
+                ROWS = 16;
+                $('#size-cols').val(COLS);
+                $('#size-rows').val(ROWS);
+                $('#anim-fps').val(10);
+
+                matrixData = createBlankGrid(COLS, ROWS);
+                frames = [JSON.parse(JSON.stringify(matrixData))];
+                currentFrameIndex = 0;
+                frameHistories = [createUndoRedoManager(matrixData, COLS, ROWS)];
+                history = frameHistories[0];
+                setState(matrixData);
+
+                // Leave edit mode so the next Save creates a new drawing.
+                $('#editItem').css('display', 'none');
+                $('#txtUpdateId').val('-1');
+                $('#txtUpdateName').val('');
+                $('#btnShare').prop('disabled', false);
+                refreshSaveButton();
+
+                resizeCanvas();
+                drawMatrix();
+                renderFramesBar();
+                updateFrameControls();
+
+                markDrawingSaved();
+                try { lastAutosaveSig = drawingSignature(); } catch (e) { }
+                persistAutosave();
+            };
+
+            if (isDrawingDirty()) {
+                swalBS.fire({
+                    icon: 'warning',
+                    theme: 'dark',
+                    title: getCorrectTranslation('oops'),
+                    text: 'Reset the tool to a new blank drawing? Unsaved changes will be lost.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Reset',
+                    cancelButtonText: 'Cancel'
+                }).then(function (r) { if (r.isConfirmed) doReset(); });
+            } else {
+                doReset();
             }
         }
 
@@ -918,6 +986,7 @@
             }
 
             try { lastAutosaveSig = drawingSignature(); } catch (e) { lastAutosaveSig = null; }
+            refreshSaveButton();
 
             // Periodically persist the working drawing so a reload can restore it.
             setInterval(function () {
@@ -1071,11 +1140,28 @@
         function openSaveModal() {
             if (!requireLogin()) return;
             var updateId = parseInt($('#txtUpdateId').val());
+            var editing = updateId > 0;
             // When editing your own record, default the name to that record's name.
-            $('#txt-save').val(updateId > 0 ? $('#txtUpdateName').val() : '');
+            $('#txt-save').val(editing ? $('#txtUpdateName').val() : '');
             if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
+            // "Save as a copy" is only meaningful when editing an existing record.
+            $('#chk-save-copy').prop('checked', false);
+            $('#save-copy-row').css('display', editing ? 'flex' : 'none');
             $('#modal-save').modal('show');
         }
+
+        // Toggling "save as a copy" suggests a distinct name so the original is not overwritten.
+        $('#chk-save-copy').on('change', function () {
+            var base = $('#txtUpdateName').val() || '';
+            if (this.checked) {
+                if (base && !/\bcopy$/i.test($('#txt-save').val().trim())) {
+                    $('#txt-save').val((base + ' copy').substring(0, 50));
+                }
+                $('#txt-save').focus().select();
+            } else {
+                $('#txt-save').val(base);
+            }
+        });
 
         // The "Load" button opens the Community panel filtered to the current user's own drawings.
         function openMyDrawings() {
@@ -1116,8 +1202,10 @@
                 };
                 const jsonData = JSON.stringify(json);
                 // If the owner is editing an existing record, update it; otherwise insert a new one.
+                // "Save as a copy" forces a new insert even while editing.
                 const updateId = parseInt($('#txtUpdateId').val());
-                const editing = updateId > 0;
+                const saveAsCopy = $('#chk-save-copy').is(':checked');
+                const editing = updateId > 0 && !saveAsCopy;
                 const url = editing ? `${api}updateitem/${updateId}` : `${api}items`;
 
                 $.ajax({
@@ -1145,6 +1233,7 @@
                                 $('#txtUpdateName').val(name);
                                 $('#btnShare').prop('disabled', true);
                             }
+                            refreshSaveButton();
 
                             markDrawingSaved();
                             try { lastAutosaveSig = drawingSignature(); } catch (e) { }
@@ -1704,6 +1793,7 @@
                             $('#txtUpdateName').val('');
                             $('#btnShare').prop('disabled', false);
                         }
+                        refreshSaveButton();
 
                         markDrawingSaved();
                         try { lastAutosaveSig = drawingSignature(); } catch (e) { }
@@ -1737,6 +1827,7 @@
             $('#editItem').css('display', 'none');
             $('#txtUpdateId').val('-1');
             $('#btnShare').prop('disabled', false);
+            refreshSaveButton();
             clearAll('#000000');
             // Reset to a single blank frame when canceling edit
             frames = [JSON.parse(JSON.stringify(matrixData))];
@@ -2738,7 +2829,17 @@
             if ($('.modal:visible').length > 0) {
                 console.log("A modal is currently open.");
             } else {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    // Save
+                    e.preventDefault();
+                    openSaveModal();
+                    return;
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+                    // Load
+                    e.preventDefault();
+                    openMyDrawings();
+                    return;
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                     // Undo
                     undo();
                 } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {

@@ -132,6 +132,7 @@ function changeLanguage(lang) {
             $('#export-btn').html(langDB.export.zh);
             $('#load-btn').html(langDB.load.zh);
             $('#save-btn').html(langDB.save.zh);
+            if (typeof refreshSaveButton === 'function') refreshSaveButton();
             $('label[for="draw"]').html(langDB.draw.zh);
             $('label[for="fill"]').html(langDB.fill.zh);
             $('label[for="clear"]').html(langDB.erase.zh);
@@ -218,6 +219,7 @@ function changeLanguage(lang) {
             $('#export-btn').html(langDB.export.en);
             $('#load-btn').html(langDB.load.en);
             $('#save-btn').html(langDB.save.en);
+            if (typeof refreshSaveButton === 'function') refreshSaveButton();
             $('label[for="draw"]').html(langDB.draw.en);
             $('label[for="fill"]').html(langDB.fill.en);
             $('label[for="clear"]').html(langDB.erase.en);
