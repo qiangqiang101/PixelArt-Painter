@@ -267,6 +267,9 @@
                         <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill">
                         <label for="fill" class="btn btn-primary rail-btn" title="Fill"><span
                                 class="mdi mdi-format-color-fill"></span></label>
+                        <input type="radio" class="btn-check" id="pick" name="draw-mode" value="pick">
+                        <label for="pick" class="btn btn-primary rail-btn" title="Pick color (K)"><span
+                                class="mdi mdi-eyedropper"></span></label>
                         <button class="btn btn-primary rail-btn" id="clear-btn" onclick="clearAll('#000000');"
                             title="Clear all"><span class="mdi mdi-trash-can-outline"></span></button>
                     </div>
@@ -788,6 +791,90 @@
             updateFrameControls();
         }
 
+        // ---------------------------------------------------------------------
+        // Autosave & unsaved-changes tracking
+        // ---------------------------------------------------------------------
+        const AUTOSAVE_KEY = 'pixelart_autosave';
+        // Signature of the last saved/loaded/initial (clean) state.
+        let savedBaseline = null;
+        let lastAutosaveSig = null;
+
+        function drawingSignature() {
+            // encodeArtData() commits the active frame, so this is a stable
+            // content hash covering all frames plus the canvas dimensions.
+            return JSON.stringify({ d: encodeArtData(), c: COLS, r: ROWS });
+        }
+
+        function isDrawingDirty() {
+            if (savedBaseline === null) return false;
+            try { return drawingSignature() !== savedBaseline; } catch (e) { return false; }
+        }
+
+        // Call after the drawing matches persisted storage (init/load/save).
+        function markDrawingSaved() {
+            try { savedBaseline = drawingSignature(); } catch (e) { savedBaseline = null; }
+        }
+
+        function persistAutosave() {
+            if (isPlayingAnimation) return;
+            try {
+                const payload = {
+                    v: 1,
+                    data: encodeArtData(),
+                    cols: COLS,
+                    rows: ROWS,
+                    frameIndex: currentFrameIndex,
+                    fps: getAnimFps(),
+                    updateId: $('#txtUpdateId').val(),
+                    updateName: $('#txtUpdateName').val(),
+                    dirty: isDrawingDirty(),
+                    ts: Date.now()
+                };
+                localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(payload));
+            } catch (e) { /* storage may be unavailable or full */ }
+        }
+
+        function restoreAutosave() {
+            let payload;
+            try {
+                const raw = localStorage.getItem(AUTOSAVE_KEY);
+                if (!raw) return false;
+                payload = JSON.parse(raw);
+            } catch (e) { return false; }
+            if (!payload || !payload.data) return false;
+            try {
+                const parsed = JSON.parse(payload.data);
+                loadArt(parsed, payload.cols, payload.rows);
+
+                if (typeof payload.frameIndex === 'number' &&
+                    payload.frameIndex > 0 && payload.frameIndex < frames.length) {
+                    currentFrameIndex = payload.frameIndex;
+                    matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+                    history = frameHistories[currentFrameIndex];
+                    drawMatrix();
+                    renderFramesBar();
+                    updateFrameControls();
+                }
+
+                if (payload.fps) $('#anim-fps').val(payload.fps);
+
+                if (payload.updateId && payload.updateId !== '-1' && payload.updateId !== -1) {
+                    $('#editItem').css('display', 'block');
+                    $('#txtUpdateId').val(payload.updateId);
+                    $('#txtUpdateName').val(payload.updateName || '');
+                    $('#btnShare').prop('disabled', true);
+                }
+
+                // Preserve the previous unsaved-changes state across the reload:
+                // if it was dirty, use a sentinel baseline so it stays dirty.
+                savedBaseline = payload.dirty ? '__unsaved__' : drawingSignature();
+                return true;
+            } catch (e) {
+                console.error('Failed to restore autosave:', e);
+                return false;
+            }
+        }
+
         $(document).ready(function () {
             let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
             if (loggedIn.userid != null && loggedIn.username != null) loginUser(loggedIn.userid, loggedIn.username);
@@ -817,8 +904,37 @@
             renderFramesBar();
             updateFrameControls();
 
+            markDrawingSaved(); // a blank canvas is the clean starting point
+
             let shareId = getUrlParam('id'); //getUrlVars()['id'];
-            if (shareId != undefined && $.isNumeric(shareId)) downloadItem(shareId);
+            if (shareId != undefined && $.isNumeric(shareId)) {
+                downloadItem(shareId);
+            } else {
+                restoreAutosave();
+            }
+
+            try { lastAutosaveSig = drawingSignature(); } catch (e) { lastAutosaveSig = null; }
+
+            // Periodically persist the working drawing so a reload can restore it.
+            setInterval(function () {
+                if (isPlayingAnimation) return;
+                let sig;
+                try { sig = drawingSignature(); } catch (e) { return; }
+                if (sig !== lastAutosaveSig) {
+                    persistAutosave();
+                    lastAutosaveSig = sig;
+                }
+            }, 1500);
+
+            // Warn before leaving/reloading when there are unsaved changes.
+            window.addEventListener('beforeunload', function (e) {
+                try { persistAutosave(); } catch (err) { /* ignore */ }
+                if (isDrawingDirty()) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                    return '';
+                }
+            });
         });
 
         const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
@@ -858,7 +974,37 @@
 
         $('input[name="draw-mode"]').change(function () {
             currentMode = this.value;
+            $('#matrix-canvas').css('cursor', currentMode === 'pick' ? 'crosshair' : 'default');
         });
+
+        // Eyedropper: sample the clicked cell's color and select the matching
+        // paint mode (or Custom for arbitrary hex colors).
+        function pickColor(row, col) {
+            if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
+            const value = matrixData[row][col];
+            switch (value) {
+                case colorMap.white:
+                    $('#draw-full').prop('checked', true).trigger('change');
+                    break;
+                case colorMap.black:
+                    $('#draw-clear').prop('checked', true).trigger('change');
+                    break;
+                case colorMap.lightTranslucent:
+                    $('#draw-translucent').prop('checked', true).trigger('change');
+                    break;
+                case colorMap.darkTranslucent:
+                    $('#draw-semi-translucent').prop('checked', true).trigger('change');
+                    break;
+                case colorMap.forced:
+                    $('#draw-forced').prop('checked', true).trigger('change');
+                    break;
+                default:
+                    if (typeof value === 'string' && value.charAt(0) === '#') {
+                        $('#custom-color-picker').val(value.substring(0, 7));
+                        $('#draw-custom').prop('checked', true).trigger('change');
+                    }
+            }
+        }
 
         $('input[name="draw-color"]').change(function () {
             currentColor = parseFloat(this.value);
@@ -990,6 +1136,10 @@
                                 $('#txtUpdateName').val(name);
                                 $('#btnShare').prop('disabled', true);
                             }
+
+                            markDrawingSaved();
+                            try { lastAutosaveSig = drawingSignature(); } catch (e) { }
+                            persistAutosave();
 
                             $('#txt-save').val('');
                             if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
@@ -1534,6 +1684,10 @@
                             $('#txtUpdateName').val('');
                             $('#btnShare').prop('disabled', false);
                         }
+
+                        markDrawingSaved();
+                        try { lastAutosaveSig = drawingSignature(); } catch (e) { }
+                        persistAutosave();
 
                         console.log(`Successfully loaded community drawing ${id}: ${newCols}x${newRows}, frames=${frames.length}`);
                     } catch (error) {
@@ -2367,6 +2521,9 @@
 
                         }
                         break;
+                    case 'pick':
+                        pickColor(coords.row, coords.col);
+                        break;
                 }
             }
         });
@@ -2445,6 +2602,19 @@
             });
         })();
 
+        // The tool rail is scrollable, which clips absolutely-positioned
+        // dropdown menus. Use Popper's fixed strategy so they float freely.
+        (function initRailDropdowns() {
+            if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) return;
+            document.querySelectorAll('.tool-rail [data-bs-toggle="dropdown"]').forEach(function (el) {
+                bootstrap.Dropdown.getOrCreateInstance(el, {
+                    popperConfig: function (defaultConfig) {
+                        return Object.assign({}, defaultConfig, { strategy: 'fixed' });
+                    }
+                });
+            });
+        })();
+
         $(document).on('click', '.preset', function () {
             $('#custom-color-picker').val($(this).attr('data-color')).trigger('change');
         });
@@ -2490,6 +2660,10 @@
                 } else if (e.key === 'f') {
                     // Fill
                     $('#fill').click();
+                    return;
+                } else if (e.key === 'k') {
+                    // Pick color (eyedropper)
+                    $('#pick').click();
                     return;
                 } else if (e.key === 'c') {
                     // Clear
