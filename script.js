@@ -181,7 +181,6 @@ function changeLanguage(lang) {
             $('label[for="draw-full"]').html(langDB.colorFull.zh);
             $('label[for="draw-translucent"]').html(langDB.colorTranslucent.zh);
             $('label[for="draw-semi-translucent"]').html(langDB.colorSemiTranslucent.zh);
-            $('label[for="draw-clear"]').html(langDB.colorOff.zh);
             $('#btnLogin').html(langDB.navLogin.zh);
             $('#btnSignup').html(langDB.navSignUp.zh);
             $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.zh);
@@ -268,7 +267,6 @@ function changeLanguage(lang) {
             $('label[for="draw-full"]').html(langDB.colorFull.en);
             $('label[for="draw-translucent"]').html(langDB.colorTranslucent.en);
             $('label[for="draw-semi-translucent"]').html(langDB.colorSemiTranslucent.en);
-            $('label[for="draw-clear"]').html(langDB.colorOff.en);
             $('#btnLogin').html(langDB.navLogin.en);
             $('#btnSignup').html(langDB.navSignUp.en);
             $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.en);

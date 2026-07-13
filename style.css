@@ -151,7 +151,7 @@ main.app-shell {
 
 .paint-modes {
     display: grid;
-    grid-template-columns: repeat(3, var(--swatch));
+    grid-template-columns: repeat(4, var(--swatch));
     gap: var(--rail-gap);
     justify-content: center;
 }
@@ -217,40 +217,36 @@ main.app-shell {
     box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.55);
 }
 
-/* Opaque modes (no checkerboard shows through, no tag) */
+/* Transparent (value 1): full checkerboard shows through (no overlay). */
 label[for="draw-full"] {
-    --ov: #ffffff;
+    --ov: transparent;
 }
 
-label[for="draw-clear"] {
-    --ov: #000000;
-}
-
-.paint-swatch-custom {
-    --ov: conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
-}
-
-/* Translucent modes (checkerboard shows through + letter tag) */
+/* Translucent levels dim the checkerboard: faint, then fainter. The overlay
+   is a black veil over the checkerboard base. */
 label[for="draw-translucent"] {
-    --ov: rgba(255, 255, 255, 0.80);
-    --tag: "T";
+    --ov: rgba(0, 0, 0, 0.5);
 }
 
 label[for="draw-semi-translucent"] {
-    --ov: rgba(255, 255, 255, 0.61);
-    --tag: "S";
+    --ov: rgba(0, 0, 0, 0.7);
 }
 
-/* Forced is a special mode, not just an opacity: dashed accent border + tag */
+/* Forced is replaced by a single color in the plugin: cyan with a centered F. */
 label[for="draw-forced"] {
-    --ov: rgba(255, 255, 255, 0.41);
+    --ov: #00ffff;
     --tag: "F";
-    border-style: dashed;
-    border-color: #ffc107;
 }
 
-.btn-check:checked + label[for="draw-forced"] {
-    border-style: solid;
+label[for="draw-forced"]::after {
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    color: #003a3a;
+    text-shadow: none;
 }
 
 /* ==========================================================================
@@ -335,6 +331,7 @@ canvas {
 .frames-strip {
     display: flex;
     flex-direction: row;
+    align-items: center;
     gap: 8px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -344,7 +341,8 @@ canvas {
 
 .frame-thumb {
     flex: 0 0 auto;
-    width: 72px;
+    width: auto;
+    min-width: 26px;
     cursor: pointer;
     border: 2px solid #555;
     border-radius: 6px;
@@ -365,8 +363,8 @@ canvas {
 }
 
 .frame-thumb canvas {
-    width: 60px;
-    height: 60px;
+    display: block;
+    margin: 0 auto;
     image-rendering: pixelated;
     background: #000;
     border-radius: 3px;

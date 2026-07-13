@@ -334,23 +334,20 @@
                     <div class="rail-presets" id="color-presets"></div>
                     <div class="paint-divider" aria-hidden="true"></div>
                     <div class="paint-modes" role="group">
+                        <!-- Hidden: custom painting is driven by the color picker/presets above. -->
                         <input type="radio" class="btn-check" id="draw-custom" name="draw-color" value="2">
-                        <label for="draw-custom" class="paint-swatch paint-swatch-custom" title="Custom color"></label>
-
-                        <input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
-                        <label for="draw-clear" class="paint-swatch" title="Off"></label>
 
                         <input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
-                        <label for="draw-full" class="paint-swatch" title="Full (opaque)"></label>
+                        <label for="draw-full" class="paint-swatch" title="Transparent (effect shows through)"></label>
 
                         <input type="radio" class="btn-check" id="draw-translucent" name="draw-color" value="0.5">
-                        <label for="draw-translucent" class="paint-swatch" title="Translucent"></label>
+                        <label for="draw-translucent" class="paint-swatch" title="Translucent 1 (dimmer)"></label>
 
                         <input type="radio" class="btn-check" id="draw-semi-translucent" name="draw-color" value="0.7">
-                        <label for="draw-semi-translucent" class="paint-swatch" title="Semi translucent"></label>
+                        <label for="draw-semi-translucent" class="paint-swatch" title="Translucent 2 (brighter)"></label>
 
                         <input type="radio" class="btn-check" id="draw-forced" name="draw-color" value="0.3">
-                        <label for="draw-forced" class="paint-swatch" title="Forced"></label>
+                        <label for="draw-forced" class="paint-swatch" title="Forced (single color)"></label>
                     </div>
                 </div>
             </aside>
@@ -701,6 +698,10 @@
         //const api = 'https://pixelart.nolliergb.com/api/';
 
         const swalBS = Swal.mixin({
+            // Prevent SweetAlert from toggling `height:auto` on <html>, which
+            // breaks the app's full-height (100vh) layout and briefly resizes
+            // the canvas/frames panel while a toast is shown.
+            heightAuto: false,
             customClass: {
                 confirmButton: 'btn btn-primary',
                 cancelButton: 'btn btn-secondary'
@@ -766,10 +767,13 @@
                 loadedFrames = [decodeGrid(parsed)];
             }
 
+            // Derive dimensions from the actual pixel data — the stored size
+            // hint can be stale/incorrect (e.g. an older save), so the data wins.
             const first = loadedFrames[0];
-            const newRows = rowsHint || first.length;
-            const newCols = colsHint || (first[0] ? first[0].length : 16);
+            const newRows = first.length || rowsHint || 16;
+            const newCols = (first[0] && first[0].length) ? first[0].length : (colsHint || 16);
 
+            // All frames must share the same dimensions as the first frame.
             for (let i = 0; i < loadedFrames.length; i++) {
                 const f = loadedFrames[i];
                 if (!Array.isArray(f) || f.length !== newRows || !f.every(row => Array.isArray(row) && row.length === newCols)) {
@@ -972,8 +976,16 @@
             }, 250); // 250ms debounce
         });
 
+        // Remembers the tool used before switching to the eyedropper so it can
+        // be restored automatically after a color is sampled.
+        let previousPaintTool = 'draw';
+
         $('input[name="draw-mode"]').change(function () {
-            currentMode = this.value;
+            const newMode = this.value;
+            if (newMode === 'pick' && currentMode !== 'pick') {
+                previousPaintTool = currentMode;
+            }
+            currentMode = newMode;
             $('#matrix-canvas').css('cursor', currentMode === 'pick' ? 'crosshair' : 'default');
         });
 
@@ -985,9 +997,6 @@
             switch (value) {
                 case colorMap.white:
                     $('#draw-full').prop('checked', true).trigger('change');
-                    break;
-                case colorMap.black:
-                    $('#draw-clear').prop('checked', true).trigger('change');
                     break;
                 case colorMap.lightTranslucent:
                     $('#draw-translucent').prop('checked', true).trigger('change');
@@ -1101,7 +1110,7 @@
                 const json = {
                     author: sessionStorage.getItem('username'),
                     name: name,
-                    size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
+                    size: [COLS, ROWS],
                     data: dataStr,
                     preview: canvasToBase64()
                 };
@@ -1490,10 +1499,21 @@
         }
 
         function canvasToBase64() {
-            var canvas = $('#matrix-canvas')[0]; // Get the DOM element
-            resizeCanvas(true);
-            var base64String = canvas.toDataURL('image/jpeg', 0.5); // Default is PNG format
-            return base64String;
+            // Render the preview on an offscreen canvas so the visible canvas
+            // (and its computed size) is never disturbed while saving.
+            const previewMax = 250;
+            const cell = Math.max(1, Math.floor(Math.min(previewMax / COLS, previewMax / ROWS)));
+            const off = document.createElement('canvas');
+            off.width = COLS * cell;
+            off.height = ROWS * cell;
+            const octx = off.getContext('2d');
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    octx.fillStyle = (matrixData[row] && matrixData[row][col]) ? matrixData[row][col] : '#000000';
+                    octx.fillRect(col * cell, row * cell, cell, cell);
+                }
+            }
+            return off.toDataURL('image/jpeg', 0.5);
         }
 
         $('#btnUpdateConfirm').click(function (evt) {
@@ -1514,7 +1534,7 @@
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtUpdateName').val(),
-                    size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
+                    size: [COLS, ROWS],
                     data: dataStr,
                     preview: canvasToBase64()
                 };
@@ -1586,7 +1606,7 @@
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtShareName').val(),
-                    size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
+                    size: [COLS, ROWS],
                     data: dataStr,
                     preview: canvasToBase64()
                 };
@@ -1910,6 +1930,57 @@
             drawMatrix();
         }
 
+        // Draw a 2x2 transparency checkerboard in a cell. `factor` dims it
+        // (1 = full/Transparent, lower = fainter Translucent levels).
+        function drawCheckerCell(x, y, w, h, factor) {
+            const light = Math.round(190 * factor);
+            const dark = Math.round(110 * factor);
+            const lc = `rgb(${light},${light},${light})`;
+            const dc = `rgb(${dark},${dark},${dark})`;
+            const hw = w / 2, hh = h / 2;
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x, y, w, h);
+            ctx.fillStyle = lc;
+            ctx.fillRect(x, y, hw, hh);
+            ctx.fillRect(x + hw, y + hh, w - hw, h - hh);
+            ctx.fillStyle = dc;
+            ctx.fillRect(x + hw, y, w - hw, hh);
+            ctx.fillRect(x, y + hh, hw, h - hh);
+        }
+
+        // Forced cells are replaced by one color in the plugin: cyan with an "F".
+        function drawForcedCell(x, y, w, h) {
+            ctx.fillStyle = '#00FFFF';
+            ctx.fillRect(x, y, w, h);
+            const fs = Math.max(6, Math.floor(Math.min(w, h) * 0.7));
+            ctx.fillStyle = '#003a3a';
+            ctx.font = `bold ${fs}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('F', x + w / 2, y + h / 2 + 1);
+        }
+
+        // Paint a single cell, honoring the special plugin values.
+        function fillCell(x, y, w, h, value) {
+            switch (value) {
+                case colorMap.white:            // Transparent
+                    drawCheckerCell(x, y, w, h, 1);
+                    break;
+                case colorMap.lightTranslucent: // Translucent (faint)
+                    drawCheckerCell(x, y, w, h, 0.5);
+                    break;
+                case colorMap.darkTranslucent:  // Semi translucent (fainter)
+                    drawCheckerCell(x, y, w, h, 0.3);
+                    break;
+                case colorMap.forced:           // Forced (cyan + F)
+                    drawForcedCell(x, y, w, h);
+                    break;
+                default:
+                    ctx.fillStyle = (typeof value === 'string' && value) ? value : '#000000';
+                    ctx.fillRect(x, y, w, h);
+            }
+        }
+
         // Draw a specific grid onto the main canvas (no cell borders during playback uses same borders)
         function drawFrame(grid) {
             if (!grid || !ctx) return;
@@ -1918,8 +1989,7 @@
                 for (let col = 0; col < COLS; col++) {
                     const x = col * cellWidth;
                     const y = row * cellHeight;
-                    ctx.fillStyle = (grid[row] && grid[row][col]) ? grid[row][col] : '#000000';
-                    ctx.fillRect(x, y, cellWidth, cellHeight);
+                    fillCell(x, y, cellWidth, cellHeight, (grid[row] && grid[row][col]) ? grid[row][col] : '#000000');
                     ctx.strokeStyle = '#333333';
                     ctx.strokeRect(x, y, cellWidth, cellHeight);
                 }
@@ -1981,6 +2051,18 @@
             });
         }
 
+        // Representative solid colors for the special values at thumbnail scale
+        // (too small for checkerboards/letters), kept consistent with the canvas.
+        function thumbColor(value) {
+            switch (value) {
+                case colorMap.white: return '#8a8a8a';           // Transparent
+                case colorMap.lightTranslucent: return '#4b4b4b'; // Translucent
+                case colorMap.darkTranslucent: return '#2d2d2d';  // Semi translucent
+                case colorMap.forced: return '#00ffff';           // Forced
+                default: return (typeof value === 'string' && value) ? value : '#000000';
+            }
+        }
+
         function paintThumbCanvas(thumbCanvas, grid) {
             if (!thumbCanvas || !grid) return;
             const tctx = thumbCanvas.getContext('2d');
@@ -1994,7 +2076,7 @@
             tctx.clearRect(0, 0, tw, th);
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
-                    tctx.fillStyle = grid[r][c] || '#000000';
+                    tctx.fillStyle = thumbColor(grid[r][c]);
                     tctx.fillRect(c * cw, r * ch, cw, ch);
                 }
             }
@@ -2006,11 +2088,29 @@
             $strip.empty();
             frames.forEach((frame, i) => {
                 const active = i === currentFrameIndex ? ' active' : '';
+                // Size the thumbnail to the frame's aspect ratio within a 60px box.
+                const rows = frame.length || 1;
+                const cols = (frame[0] && frame[0].length) ? frame[0].length : 1;
+                const box = 60;
+                let dispW, dispH;
+                if (cols >= rows) {
+                    dispW = box;
+                    dispH = Math.max(1, Math.round(box * rows / cols));
+                } else {
+                    dispH = box;
+                    dispW = Math.max(1, Math.round(box * cols / rows));
+                }
                 const $el = $(`<div class="frame-thumb${active}" data-frame-index="${i}" role="button" tabindex="0">
-                    <canvas width="64" height="64"></canvas>
+                    <canvas></canvas>
                     <span class="frame-index">${i + 1}</span>
                 </div>`);
-                paintThumbCanvas($el.find('canvas')[0], frame);
+                const thumb = $el.find('canvas')[0];
+                // Backing store = one pixel per cell for a crisp, undistorted scale.
+                thumb.width = cols;
+                thumb.height = rows;
+                thumb.style.width = dispW + 'px';
+                thumb.style.height = dispH + 'px';
+                paintThumbCanvas(thumb, frame);
                 $el.on('click', function () {
                     if (isPlayingAnimation) return;
                     selectFrame(parseInt($(this).attr('data-frame-index'), 10));
@@ -2179,8 +2279,7 @@
                 const x = col * cellWidth;
                 const y = row * cellHeight;
 
-                ctx.fillStyle = color;
-                ctx.fillRect(x, y, cellWidth, cellHeight);
+                fillCell(x, y, cellWidth, cellHeight, color);
 
                 ctx.strokeStyle = isCustom ? '#EFFEC7' : '#333333';
                 ctx.strokeRect(x, y, cellWidth, cellHeight);
@@ -2523,6 +2622,11 @@
                         break;
                     case 'pick':
                         pickColor(coords.row, coords.col);
+                        // Don't let the current mouse press turn into a stroke
+                        // once we switch back to the drawing tool.
+                        isDrawing = false;
+                        // Return to whatever tool was active before picking.
+                        $('#' + (previousPaintTool || 'draw')).prop('checked', true).trigger('change');
                         break;
                 }
             }
@@ -2696,10 +2800,6 @@
                 } else if (e.key === '4') {
                     // Semi-Translucent
                     $('#draw-semi-translucent').click();
-                    return;
-                } else if (e.key === '5') {
-                    // Off
-                    $('#draw-clear').click();
                     return;
                 } else if (e.key === '6') {
                     // Custom
