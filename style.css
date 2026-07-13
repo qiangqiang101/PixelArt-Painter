@@ -1,6 +1,298 @@
+/* ==========================================================================
+   App shell — full height, no page scroll
+   ========================================================================== */
+html,
+body {
+    height: 100%;
+}
+
+body {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+body > header {
+    flex: 0 0 auto;
+}
+
+main.app-shell {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+}
+
+/* ==========================================================================
+   Left tool rail
+   ========================================================================== */
+.tool-rail {
+    --rail-gap: 6px;
+    --rail-btn: 48px;
+    --swatch: 26px;
+    flex: 0 0 auto;
+    width: 148px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    background-color: #1b1e21;
+    border-right: 1px solid #343a40;
+    scrollbar-width: thin;
+}
+
+.tool-rail::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tool-rail::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 6px;
+}
+
+.rail-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rail-gap);
+    padding-bottom: 12px;
+    border-bottom: 1px solid #343a40;
+}
+
+.rail-section:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.rail-tools {
+    display: grid;
+    grid-template-columns: repeat(2, var(--rail-btn));
+    gap: var(--rail-gap);
+    justify-content: center;
+    width: 100%;
+}
+
+/* Neutralize Bootstrap btn-group-vertical so our grid sizing wins */
+.rail-tools.btn-group-vertical > .btn,
+.rail-tools.btn-group-vertical > .btn-check + .btn,
+.rail-tools.btn-group-vertical > .dropdown {
+    width: var(--rail-btn);
+    margin: 0 !important;
+    border-radius: 10px !important;
+}
+
+.rail-tools > .dropdown {
+    width: var(--rail-btn);
+    display: flex;
+    justify-content: center;
+}
+
+.rail-btn {
+    width: var(--rail-btn);
+    height: var(--rail-btn);
+    min-width: var(--rail-btn);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 0;
+    border-radius: 10px !important;
+}
+
+.rail-btn .mdi {
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.rail-btn.dropdown-toggle::after {
+    display: none;
+}
+
+/* Color section */
+.rail-color {
+    gap: var(--rail-gap);
+}
+
+.rail-color-main {
+    width: 100%;
+    height: var(--rail-btn);
+    padding: 4px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.rail-presets {
+    display: grid;
+    grid-template-columns: repeat(4, var(--swatch));
+    gap: var(--rail-gap);
+    justify-content: center;
+}
+
+.preset {
+    width: var(--swatch);
+    height: var(--swatch);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 7px;
+    padding: 0;
+    cursor: pointer;
+}
+
+.preset:hover {
+    outline: 2px solid #0d6efd;
+    outline-offset: 1px;
+}
+
+.paint-modes {
+    display: grid;
+    grid-template-columns: repeat(3, var(--swatch));
+    gap: var(--rail-gap);
+    justify-content: center;
+}
+
+.paint-divider {
+    grid-column: 1 / -1;
+    height: 1px;
+    background: #343a40;
+    margin: 2px 0;
+}
+
+/* Each swatch has a checkerboard base so translucent modes reveal it. */
+.paint-swatch {
+    position: relative;
+    width: var(--swatch);
+    height: var(--swatch);
+    border-radius: 7px;
+    border: 2px solid #495057;
+    cursor: pointer;
+    display: block;
+    overflow: hidden;
+    font-size: 0;
+    transition: transform 0.1s ease, border-color 0.1s ease;
+    background-color: #c9c9c9;
+    background-image:
+        linear-gradient(45deg, #808080 25%, transparent 25%),
+        linear-gradient(-45deg, #808080 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #808080 75%),
+        linear-gradient(-45deg, transparent 75%, #808080 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+/* Color/opacity overlay drawn over the checkerboard. */
+.paint-swatch::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ov, transparent);
+    z-index: 1;
+}
+
+/* Corner tag to distinguish the translucency levels at a glance. */
+.paint-swatch::after {
+    content: var(--tag, "");
+    position: absolute;
+    right: 2px;
+    bottom: 1px;
+    z-index: 2;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    color: #111;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.95), 0 0 2px rgba(255, 255, 255, 0.95);
+}
+
+.paint-swatch:hover {
+    transform: translateY(-1px);
+}
+
+.btn-check:checked + .paint-swatch {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.55);
+}
+
+/* Opaque modes (no checkerboard shows through, no tag) */
+label[for="draw-full"] {
+    --ov: #ffffff;
+}
+
+label[for="draw-clear"] {
+    --ov: #000000;
+}
+
+.paint-swatch-custom {
+    --ov: conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+}
+
+/* Translucent modes (checkerboard shows through + letter tag) */
+label[for="draw-translucent"] {
+    --ov: rgba(255, 255, 255, 0.80);
+    --tag: "T";
+}
+
+label[for="draw-semi-translucent"] {
+    --ov: rgba(255, 255, 255, 0.61);
+    --tag: "S";
+}
+
+/* Forced is a special mode, not just an opacity: dashed accent border + tag */
+label[for="draw-forced"] {
+    --ov: rgba(255, 255, 255, 0.41);
+    --tag: "F";
+    border-style: dashed;
+    border-color: #ffc107;
+}
+
+.btn-check:checked + label[for="draw-forced"] {
+    border-style: solid;
+}
+
+/* ==========================================================================
+   Center canvas stage
+   ========================================================================== */
+.canvas-stage {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.stage-topbar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #343a40;
+}
+
+.stage-size .form-control {
+    max-width: 3.6rem;
+}
+
+#canvas-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 14px;
+}
+
 #matrix-canvas {
     border: 2px solid #555;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    image-rendering: pixelated;
 }
 
 canvas {
@@ -8,11 +300,147 @@ canvas {
 }
 
 #matrix-info {
-    margin-top: 10px;
-    font-size: 14px;
+    flex: 0 0 auto;
+    text-align: center;
+    padding-bottom: 8px;
+    font-size: 13px;
     color: #aaa;
+    font-variant-numeric: tabular-nums;
 }
 
+/* ==========================================================================
+   Bottom frames footer
+   ========================================================================== */
+.frames-footer {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+    background-color: #1b1e21;
+    border-top: 1px solid #343a40;
+}
+
+.frames-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+#frames-label {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+.frames-strip {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.frame-thumb {
+    flex: 0 0 auto;
+    width: 72px;
+    cursor: pointer;
+    border: 2px solid #555;
+    border-radius: 6px;
+    background: #111;
+    padding: 3px;
+    text-align: center;
+    transition: border-color 0.12s ease, transform 0.12s ease;
+}
+
+.frame-thumb:hover {
+    transform: translateY(-2px);
+    border-color: #6ea8fe;
+}
+
+.frame-thumb.active {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.5);
+}
+
+.frame-thumb canvas {
+    width: 60px;
+    height: 60px;
+    image-rendering: pixelated;
+    background: #000;
+    border-radius: 3px;
+}
+
+.frame-thumb .frame-index {
+    display: block;
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.2;
+    margin-top: 3px;
+    font-weight: 600;
+}
+
+.frames-footer.playing .frame-thumb {
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+/* ==========================================================================
+   Community browser
+   ========================================================================== */
+.community-thumb {
+    position: relative;
+    cursor: pointer;
+}
+
+.community-clickable {
+    cursor: pointer;
+}
+
+.community-anim-canvas {
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+    background: #000;
+    display: block;
+}
+
+.generated-item img.card-img-top {
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    background: #000;
+    image-rendering: pixelated;
+}
+
+.community-thumb .anim-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: #fff;
+    background: rgba(13, 110, 253, 0.9);
+    border-radius: 999px;
+    pointer-events: none;
+}
+
+.generated-item p.card-text span {
+    display: block;
+    white-space: pre;
+    text-align: right;
+    font-style: italic;
+    font-size: small;
+}
+
+/* ==========================================================================
+   Misc / existing helpers
+   ========================================================================== */
 .swal2-html-container code {
     display: block;
     padding: 20px 50px;
@@ -39,12 +467,20 @@ canvas {
     border-bottom-left-radius: 4px !important;
 }
 
+form.dropdown-menu {
+    width: 18rem;
+}
+
 .nudgeX {
     animation: nudgeX-animation 0.3s ease-in-out;
 }
 
 .nudgeY {
     animation: nudgeY-animation 0.3s ease-in-out;
+}
+
+.input-group {
+    width: fit-content;
 }
 
 @keyframes nudgeX-animation {
@@ -97,16 +533,4 @@ canvas {
     100% {
         transform: translateY(0);
     }
-}
-
-form.dropdown-menu {
-    width: 18rem;
-}
-
-.generated-item p.card-text span {
-    display: block;
-    white-space: pre;
-    text-align: right;
-    font-style: italic;
-    font-size: small;
 }

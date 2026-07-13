@@ -71,16 +71,30 @@
             };
         }
 
-        // Global variables
+        // Global variables — matrixData is the active frame; frames[] holds all frames.
         let matrixData = Array(16).fill().map(() => Array(16).fill('#000000'));
-        const history = createUndoRedoManager(matrixData, 16, 16);
+        let frames = [JSON.parse(JSON.stringify(matrixData))];
+        let currentFrameIndex = 0;
+        let frameHistories = [createUndoRedoManager(matrixData, 16, 16)];
+        let history = frameHistories[0];
+        let isPlayingAnimation = false;
+        let animationTimer = null;
+        let previewFrameIndex = 0;
+
+        function commitCurrentFrame() {
+            if (!frames.length) return;
+            frames[currentFrameIndex] = JSON.parse(JSON.stringify(matrixData));
+            if (typeof renderFramesBar === 'function') renderFramesBar();
+        }
 
         // Set new state
         function setState(newState, cols = COLS, rows = ROWS) {
+            if (isPlayingAnimation) pauseAnimation();
             history.setState(JSON.parse(JSON.stringify(newState)), cols, rows); // Deep copy with dimensions
             matrixData = JSON.parse(JSON.stringify(newState));
             COLS = cols;
             ROWS = rows;
+            commitCurrentFrame();
             resizeCanvas();
             $('#size-cols').val(COLS); // Update input fields
             $('#size-rows').val(ROWS);
@@ -89,11 +103,13 @@
 
         // Modified undo to handle dimensions
         function undo() {
+            if (isPlayingAnimation) return;
             const previous = history.undo();
             if (previous) {
                 matrixData = JSON.parse(JSON.stringify(previous.matrix));
                 COLS = previous.cols;
                 ROWS = previous.rows;
+                commitCurrentFrame();
                 $('#size-cols').val(COLS); // Update input fields
                 $('#size-rows').val(ROWS);
                 resizeCanvas();
@@ -103,11 +119,13 @@
 
         // Modified redo to handle dimensions
         function redo() {
+            if (isPlayingAnimation) return;
             const next = history.redo();
             if (next) {
                 matrixData = JSON.parse(JSON.stringify(next.matrix));
                 COLS = next.cols;
                 ROWS = next.rows;
+                commitCurrentFrame();
                 $('#size-cols').val(COLS); // Update input fields
                 $('#size-rows').val(ROWS);
                 resizeCanvas();
@@ -120,6 +138,7 @@
             matrixData = JSON.parse(JSON.stringify(clearedState.matrix));
             COLS = clearedState.cols;
             ROWS = clearedState.rows;
+            commitCurrentFrame();
             $('#size-cols').val(COLS);
             $('#size-rows').val(ROWS);
             resizeCanvas();
@@ -237,121 +256,37 @@
         </nav>
     </header>
 
-    <main>
-        <section class="py-4 text-center container">
-            <div id="controls" class="row mb-3 g-3 d-flex justify-content-center">
-                <div class="col-auto">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text" id="size-label"><span
-                                class="mdi mdi-image-size-select-small"></span> Size</span>
-                        <input class="form-control" id="size-cols" type="number" value="16" min="1" step="1" max="99"
-                            style="width: 6rem;" />
-                        <input class="form-control" id="size-rows" type="number" value="16" min="1" step="1" max="99"
-                            style="width: 6rem;" />
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text" id="cuscol-label"><span class="mdi mdi-palette"></span> Custom
-                            Color</span>
-                        <input type="color" class="form-control form-control-color form-control-sm" id="custom-color-picker"
-                            placeholder="#FF0000" value="#FF0000" title="Choose your color" style="width: 3rem;">
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-primary btn-sm" id="import-btn" onclick="importData();"><span
-                            class="mdi mdi-import"></span> Import Data</button>
-                    <button type="button" class="btn btn-primary btn-sm" id="export-btn" onclick="exportData();"><span
-                            class="mdi mdi-export"></span> Export Data</button>
-                    <input type="hidden" id="clipboard" />
-                    <!-- <button type="button" class="btn btn-primary btn-sm" id="load-btn" data-bs-toggle="modal"
-                        data-bs-target="#modal-load" onclick="reloadSavedPixelArt();">
-                        <span class="mdi mdi-cloud-outline"></span> Load
-                    </button>
-                    <button type="button" class="btn btn-primary btn-sm" id="save-btn" data-bs-toggle="modal"
-                        data-bs-target="#modal-save">
-                        <span class="mdi mdi-content-save-outline"></span> Save
-                    </button> -->
-                </div>
-                <div class="col-auto" id="editItem" style="display: none;">
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-outline-success" id="btnUpdateEdit" data-bs-toggle="modal"
-                            data-bs-target="#modal-update">
-                            <span class="mdi mdi-content-save-outline"></span> Update
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
-                            onclick="cancelEdit();">
-                            <span class="mdi mdi-cancel"></span> Cancel
-                        </button>
-                    </div>
-
-                    <input id="txtUpdateId" value="-1" type="hidden" />
-                </div>
-            </div>
-
-            <div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-primary" id="btnUndo"><span class="mdi mdi-undo"></span>
-                            Undo</button>
-                        <button type="button" class="btn btn-primary" id="btnRedo"><span class="mdi mdi-redo"></span>
-                            Redo</button>
-                    </div>
-                </div>
-
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
+    <main class="app-shell">
+        <div class="editor">
+            <aside class="tool-rail">
+                <div class="rail-section">
+                    <div class="btn-group-vertical btn-group-sm rail-tools" role="group">
                         <input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked>
-                        <label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
+                        <label for="draw" class="btn btn-primary rail-btn" title="Draw"><span
+                                class="mdi mdi-draw"></span></label>
                         <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill">
-                        <label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span>
-                            Fill</label>
-                        <button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span
-                                class="mdi mdi-trash-can-outline"></span>
-                            Clear
-                            All</button>
+                        <label for="fill" class="btn btn-primary rail-btn" title="Fill"><span
+                                class="mdi mdi-format-color-fill"></span></label>
+                        <button class="btn btn-primary rail-btn" id="clear-btn" onclick="clearAll('#000000');"
+                            title="Clear all"><span class="mdi mdi-trash-can-outline"></span></button>
                     </div>
                 </div>
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
-                        <label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> Full</label>
 
-                        <input type="radio" class="btn-check" id="draw-forced" name="draw-color" value="0.3">
-                        <label for="draw-forced" class="btn btn-primary"><span class="mdi mdi-water"></span>
-                            Forced</label>
 
-                        <input type="radio" class="btn-check" id="draw-translucent" name="draw-color" value="0.5">
-                        <label for="draw-translucent" class="btn btn-primary"><span
-                                class="mdi mdi-water-opacity"></span> Translucent</label>
 
-                        <input type="radio" class="btn-check" id="draw-semi-translucent" name="draw-color" value="0.7">
-                        <label for="draw-semi-translucent" class="btn btn-primary"><span
-                                class="mdi mdi-water-opacity"></span> Semi Translucent</label>
-
-                        <input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
-                        <label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span>
-                            Black</label>
-
-                        <input type="radio" class="btn-check" id="draw-custom" name="draw-color" value="2">
-                        <label for="draw-custom" class="btn btn-primary"><span class="mdi mdi-water-plus"></span>
-                            Custom</label>
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <div class="btn-group dropdown btn-group-sm">
-                            <a class="btn btn-primary dropdown-toggle" id="ddInvert" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-invert-colors"></span> Invert
-                            </a>
+                <div class="rail-section">
+                    <div class="btn-group-vertical btn-group-sm rail-tools" role="group">
+                        <div class="dropdown">
+                            <a class="btn btn-primary rail-btn dropdown-toggle" id="ddInvert" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false" title="Invert"><span
+                                    class="mdi mdi-invert-colors"></span></a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" id="btnInvert" href="#" onclick="invertAll();">
                                         <span class="mdi mdi-invert-colors"></span> Invert All
                                     </a></li>
                                 <li><a class="dropdown-item" id="btnInvertBlackWhite" href="#"
                                         onclick="invertBlackWhite();">
-                                        <span class="mdi mdi-invert-colors"></span> Invert Black & White
+                                        <span class="mdi mdi-invert-colors"></span> Invert Black &amp; White
                                     </a></li>
                                 <li><a class="dropdown-item" id="btnInvertTranslucents" href="#"
                                         onclick="invertTranslucents();">
@@ -359,28 +294,24 @@
                                     </a></li>
                             </ul>
                         </div>
-
-                        <div class="btn-group dropdown btn-group-sm">
-                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-flip-to-front"></span> Mirror
-                            </a>
+                        <div class="dropdown">
+                            <a class="btn btn-primary rail-btn dropdown-toggle" id="ddMirror" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false" title="Mirror"><span
+                                    class="mdi mdi-flip-to-front"></span></a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#"
                                         onclick="mirrorHorizontal();">
                                         <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
                                     </a></li>
-                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#"
-                                        onclick="mirrorVertical();">
+                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#" onclick="mirrorVertical();">
                                         <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
                                     </a></li>
                             </ul>
                         </div>
-                        <div class="btn-group dropdown btn-group-sm">
-                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-rotate-orbit"></span> Flip
-                            </a>
+                        <div class="dropdown">
+                            <a class="btn btn-primary rail-btn dropdown-toggle" id="ddFlip" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false" title="Flip"><span
+                                    class="mdi mdi-rotate-orbit"></span></a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" id="btnFlipHorizontal" href="#"
                                         onclick="flip('horizontal');">
@@ -393,23 +324,131 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <div class="container">
-            <div id="canvas-container" class="d-flex justify-content-center">
-                <canvas id="matrix-canvas"></canvas>
-            </div>
+                <div class="rail-section rail-color">
+                    <input type="color" class="form-control form-control-color rail-color-main" id="custom-color-picker"
+                        value="#FF0000" title="Custom color">
+                    <div class="rail-presets" id="color-presets"></div>
+                    <div class="paint-divider" aria-hidden="true"></div>
+                    <div class="paint-modes" role="group">
+                        <input type="radio" class="btn-check" id="draw-custom" name="draw-color" value="2">
+                        <label for="draw-custom" class="paint-swatch paint-swatch-custom" title="Custom color"></label>
 
-            <div id="matrix-info" class="d-flex justify-content-center">
-                <span id="mouse-pos">Position: (-1, -1)</span>
-                <span id="mi-seperator" style="margin: 0 10px;"> | </span>
-                <span id="cell-size">Cell Size: 0x0</span>
-            </div>
+                        <input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
+                        <label for="draw-clear" class="paint-swatch" title="Off"></label>
+
+                        <input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
+                        <label for="draw-full" class="paint-swatch" title="Full (opaque)"></label>
+
+                        <input type="radio" class="btn-check" id="draw-translucent" name="draw-color" value="0.5">
+                        <label for="draw-translucent" class="paint-swatch" title="Translucent"></label>
+
+                        <input type="radio" class="btn-check" id="draw-semi-translucent" name="draw-color" value="0.7">
+                        <label for="draw-semi-translucent" class="paint-swatch" title="Semi translucent"></label>
+
+                        <input type="radio" class="btn-check" id="draw-forced" name="draw-color" value="0.3">
+                        <label for="draw-forced" class="paint-swatch" title="Forced"></label>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="canvas-stage">
+                <div class="stage-topbar">
+                    <div class="input-group input-group-sm stage-size">
+                        <span class="input-group-text" id="size-label"><span
+                                class="mdi mdi-image-size-select-small"></span> Size</span>
+                        <input class="form-control text-center" id="size-cols" type="number" value="16" min="1" step="1"
+                            max="99" />
+                        <span class="input-group-text">&times;</span>
+                        <input class="form-control text-center" id="size-rows" type="number" value="16" min="1" step="1"
+                            max="99" />
+                    </div>
+
+                    <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary" id="btnUndo" title="Undo"><span
+                                    class="mdi mdi-undo"></span></button>
+                            <button type="button" class="btn btn-outline-primary" id="btnRedo" title="Redo"><span
+                                    class="mdi mdi-redo"></span></button>
+                    </div>
+
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" id="import-btn" onclick="importData();"><span
+                                class="mdi mdi-import"></span> Import Data</button>
+                        <button type="button" class="btn btn-outline-primary" id="export-btn" onclick="exportData();"><span
+                                class="mdi mdi-export"></span> Export Data</button>
+                        <button type="button" class="btn btn-outline-primary" id="load-btn" onclick="openMyDrawings();"><span
+                                class="mdi mdi-cloud-outline"></span> Load</button>
+                        <button type="button" class="btn btn-primary" id="save-btn" onclick="openSaveModal();"><span
+                                class="mdi mdi-content-save-outline"></span> Save</button>
+                    </div>
+                    <input type="hidden" id="clipboard" />
+
+                    <div class="btn-group btn-group-sm" id="editItem" style="display: none;">
+                        <button type="button" class="btn btn-success" id="btnUpdateEdit" data-bs-toggle="modal"
+                            data-bs-target="#modal-update"><span class="mdi mdi-content-save-outline"></span>
+                            Update</button>
+                        <button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
+                            onclick="cancelEdit();"><span class="mdi mdi-cancel"></span> Cancel</button>
+                        <input id="txtUpdateId" value="-1" type="hidden" />
+                    </div>
+                </div>
+
+                <div id="canvas-container">
+                    <canvas id="matrix-canvas"></canvas>
+                </div>
+
+                <div id="matrix-info">
+                    <span id="mouse-pos">Position: (-1, -1)</span>
+                    <span id="mi-seperator" style="margin: 0 10px;"> | </span>
+                    <span id="cell-size">Cell Size: 0x0</span>
+                </div>
+            </section>
         </div>
+
+        <footer class="frames-footer" id="frames-panel">
+            <div class="frames-toolbar">
+                <span id="frames-label" class="text-muted small"><span class="mdi mdi-filmstrip"></span> Frames</span>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" id="btn-frame-add" onclick="addFrame();"
+                        title="Add frame">
+                        <span class="mdi mdi-plus"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btn-frame-dup" onclick="duplicateFrame();"
+                        title="Duplicate frame">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" id="btn-frame-del" onclick="deleteFrame();"
+                        title="Delete frame">
+                        <span class="mdi mdi-delete-outline"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-frame-left" onclick="moveFrame(-1);"
+                        title="Move left">
+                        <span class="mdi mdi-arrow-left"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-frame-right" onclick="moveFrame(1);"
+                        title="Move right">
+                        <span class="mdi mdi-arrow-right"></span>
+                    </button>
+                </div>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-success" id="btn-anim-play"
+                        onclick="toggleAnimationPlayback();">
+                        <span class="mdi mdi-play"></span> <span id="btn-anim-play-label">Play</span>
+                    </button>
+                </div>
+                <div class="input-group input-group-sm" style="width: auto;">
+                    <span class="input-group-text" id="fps-label">FPS</span>
+                    <input type="number" class="form-control" id="anim-fps" value="10" min="1" max="60" step="1"
+                        style="width: 4.5rem;" />
+                </div>
+                <span class="text-muted small ms-auto" id="fps-hint">Preview FPS is local only; the WLED plugin uses its
+                    own Pixel art FPS setting.</span>
+            </div>
+            <div id="frames-strip" class="frames-strip"></div>
+        </footer>
     </main>
 
-    <!-- <div class="modal fade" id="modal-save" tabindex="-1" aria-labelledby="modal-save-label" aria-hidden="true">
+    <div class="modal fade" id="modal-save" tabindex="-1" aria-labelledby="modal-save-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -430,32 +469,7 @@
                 </div>
             </div>
         </div>
-    </div> -->
-
-    <!-- <div class="modal fade" id="modal-load" tabindex="-1" aria-labelledby="modal-load-label" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal-load-label">Load pixel art</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-12">
-                            <label for="select-load" class="form-label">Which pixel art would you like load?</label>
-                            <select class="form-select" id="select-load">
-                                <option value="null" disabled selected>Please select...</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" id="remove-confirm-btn">Remove</button>
-                    <button type="button" class="btn btn-primary" id="load-confirm-btn">Submit</button>
-                </div>
-            </div>
-        </div>
-    </div> -->
+    </div>
 
     <div class="modal fade" id="modal-share" tabindex="-1" aria-labelledby="modal-share-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -606,7 +620,13 @@
 
                 <li class="nav-item">
                     <button class="nav-link" id="favorites-items-tab" data-bs-toggle="tab"
-                        data-bs-target="#favorite-items" onclick="getFavoritesCommunityItems();">Favorites</button>
+                        data-bs-target="#favorite-items">Favorites</button>
+                </li>
+
+                <li class="nav-item">
+                    <button class="nav-link" id="my-items-tab" data-bs-toggle="tab"
+                        data-bs-target="#my-items"><span
+                            class="mdi mdi-account-outline"></span> My Drawings</button>
                 </li>
             </ul>
 
@@ -655,6 +675,17 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="tab-pane fade" id="my-items" aria-labelledby="my-items-tab">
+                    <div class="row mb-3" id="community-mine-container">
+                    </div>
+                    <div class="row">
+                        <div class="d-grid gap-2 col-auto mx-auto">
+                            <button class="btn btn-outline-primary" type="button" data-page="0"
+                                id="mine-load-more-btn" disabled>Load More</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -663,8 +694,8 @@
 
 
     <script>
-        //const api = 'http://localhost:3001/api/';
-        const api = 'https://pixelart.nolliergb.com/api/';
+        const api = 'http://localhost:3001/api/';
+        //const api = 'https://pixelart.nolliergb.com/api/';
 
         const swalBS = Swal.mixin({
             customClass: {
@@ -676,6 +707,86 @@
         var favorites = [];
 
         const colorMap = { white: '#FFFFFFFF', lightTranslucent: '#FFFFFFCD', darkTranslucent: '#FFFFFF9B', black: '#000000', forced: '#FFFFFF69' };
+
+        function encodeGrid(grid) {
+            return JSON.stringify(grid)
+                .replaceAll('"#FFFFFFFF"', '1')
+                .replaceAll('"#000000"', '0')
+                .replaceAll('"#FFFFFFCD"', '0.5')
+                .replaceAll('"#FFFFFF9B"', '0.7')
+                .replaceAll('"#FFFFFF69"', '0.3');
+        }
+
+        function encodeArtData() {
+            commitCurrentFrame();
+            if (frames.length <= 1) {
+                return encodeGrid(frames[0] || matrixData);
+            }
+            return '[' + frames.map(encodeGrid).join(',') + ']';
+        }
+
+        function decodeCell(value) {
+            switch (value) {
+                case 0: return colorMap.black;
+                case 0.3: return colorMap.forced;
+                case 0.5: return colorMap.lightTranslucent;
+                case 0.7: return colorMap.darkTranslucent;
+                case 1: return colorMap.white;
+                default: return typeof value === 'string' ? value : colorMap.black;
+            }
+        }
+
+        function decodeGrid(grid) {
+            return grid.map(row => row.map(decodeCell));
+        }
+
+        function createBlankGrid(cols, rows) {
+            return Array(rows).fill().map(() => Array(cols).fill('#000000'));
+        }
+
+        function rebuildFrameHistoriesFromFrames(cols, rows) {
+            frameHistories = frames.map(f => createUndoRedoManager(f, cols, rows));
+            history = frameHistories[currentFrameIndex];
+        }
+
+        function loadArt(parsed, colsHint, rowsHint) {
+            pauseAnimation();
+            if (!Array.isArray(parsed) || parsed.length === 0) {
+                throw new Error('Invalid art data');
+            }
+
+            let loadedFrames;
+            // Animated: [[[row]], [[row]], ...] — Array.isArray(parsed[0][0])
+            if (Array.isArray(parsed[0]) && Array.isArray(parsed[0][0])) {
+                loadedFrames = parsed.map(frame => decodeGrid(frame));
+            } else {
+                loadedFrames = [decodeGrid(parsed)];
+            }
+
+            const first = loadedFrames[0];
+            const newRows = rowsHint || first.length;
+            const newCols = colsHint || (first[0] ? first[0].length : 16);
+
+            for (let i = 0; i < loadedFrames.length; i++) {
+                const f = loadedFrames[i];
+                if (!Array.isArray(f) || f.length !== newRows || !f.every(row => Array.isArray(row) && row.length === newCols)) {
+                    throw new Error('Matrix data dimensions mismatch');
+                }
+            }
+
+            frames = loadedFrames.map(f => JSON.parse(JSON.stringify(f)));
+            currentFrameIndex = 0;
+            matrixData = JSON.parse(JSON.stringify(frames[0]));
+            COLS = newCols;
+            ROWS = newRows;
+            rebuildFrameHistoriesFromFrames(COLS, ROWS);
+            $('#size-cols').val(COLS);
+            $('#size-rows').val(ROWS);
+            resizeCanvas();
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
 
         $(document).ready(function () {
             let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
@@ -693,13 +804,18 @@
             }
             changeLanguage(language);
 
-            // Initialize matrix and history
+            // Initialize matrix, frames, and history
             COLS = parseInt($('#size-cols').val());
             ROWS = parseInt($('#size-rows').val());
             matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-            history.clear(); // Reset history
+            frames = [JSON.parse(JSON.stringify(matrixData))];
+            currentFrameIndex = 0;
+            frameHistories = [createUndoRedoManager(matrixData, COLS, ROWS)];
+            history = frameHistories[0];
             setState(matrixData); // Save initial state
             resizeCanvas();
+            renderFramesBar();
+            updateFrameControls();
 
             let shareId = getUrlParam('id'); //getUrlVars()['id'];
             if (shareId != undefined && $.isNumeric(shareId)) downloadItem(shareId);
@@ -712,17 +828,31 @@
         $('#size-cols, #size-rows').on('input', function () {
             clearTimeout(resizeTimeout); // Clear previous timeout
             resizeTimeout = setTimeout(() => {
+                pauseAnimation();
                 const newCols = parseInt($('#size-cols').val()) || 16; // Fallback to 16 if invalid
                 const newRows = parseInt($('#size-rows').val()) || 16;
+                const oldCols = COLS;
+                const oldRows = ROWS;
 
-                // Create new matrix, preserving old data where possible
-                const newMatrix = Array(newRows).fill().map((_, row) =>
-                    Array(newCols).fill('#000000').map((_, col) =>
-                        row < ROWS && col < COLS ? matrixData[row][col] : '#000000'
+                commitCurrentFrame();
+
+                // Resize every frame, preserving old data where possible
+                frames = frames.map(frame =>
+                    Array(newRows).fill().map((_, row) =>
+                        Array(newCols).fill('#000000').map((_, col) =>
+                            row < oldRows && col < oldCols ? frame[row][col] : '#000000'
+                        )
                     )
                 );
 
-                setState(newMatrix, newCols, newRows); // Save state with new dimensions
+                COLS = newCols;
+                ROWS = newRows;
+                matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+                rebuildFrameHistoriesFromFrames(COLS, ROWS);
+                resizeCanvas();
+                drawMatrix();
+                renderFramesBar();
+                updateFrameControls();
             }, 250); // 250ms debounce
         });
 
@@ -753,37 +883,8 @@
                 $('#clipboard').val(text);
             }
             try {
-                matrixData = JSON.parse($('#clipboard').val());
-
-                const msize = { cols: matrixData[0].length, rows: matrixData.length };
-                console.log(msize);
-
-                $('#size-cols').val(msize.cols);
-                $('#size-rows').val(msize.rows);
-
-                matrixData = matrixData.map(row => row.map(function (value) {
-                    switch (value) {
-                        case 0:
-                            return colorMap.black;
-                            break;
-                        case 0.3:
-                            return colorMap.forced;
-                            break;
-                        case 0.5:
-                            return colorMap.lightTranslucent;
-                            break;
-                        case 0.7:
-                            return colorMap.darkTranslucent;
-                            break;
-                        case 1:
-                            return colorMap.white;
-                            break;
-                        default:
-                            return value;
-                    }
-                }));
-
-                setState(matrixData, msize.cols, msize.rows); // Save state
+                const parsed = JSON.parse($('#clipboard').val());
+                loadArt(parsed);
             } catch (e) {
                 console.log(e);
                 swalBS.fire({
@@ -796,158 +897,181 @@
             }
         }
 
-        // $('#remove-confirm-btn').click(function (evt) {
-        //     if ($('#select-load').val() === 'null') {
-        //         $('#select-load').addClass('is-invalid');
-        //     } else {
-        //         let name = $('#select-load option:selected').text();
-        //         console.log(name);
-        //         localStorage.removeItem(`item-${name}`);
+        // Save / Load are backed by the database and require a logged-in user.
+        function isLoggedIn() {
+            return !!sessionStorage.getItem('username');
+        }
 
-        //         if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
-        //         $('#modal-load').modal('hide');
-        //     }
-        // });
+        function requireLogin() {
+            if (isLoggedIn()) return true;
+            swalBS.fire({
+                icon: "info",
+                title: getCorrectTranslation('oops'),
+                theme: "dark",
+                text: getCorrectTranslation('loginToSave'),
+            });
+            return false;
+        }
 
-        // $('#load-confirm-btn').click(function (evt) {
-        //     if ($('#select-load').val() === 'null') {
-        //         $('#select-load').addClass('is-invalid');
-        //     } else {
-        //         try {
-        //             var $select = $('#select-load option:selected');
-        //             let size = JSON.parse($select.attr('data-size')); // always array
-        //             COLS = size[0];
-        //             ROWS = size[1];
+        function openSaveModal() {
+            if (!requireLogin()) return;
+            var updateId = parseInt($('#txtUpdateId').val());
+            // When editing your own record, default the name to that record's name.
+            $('#txt-save').val(updateId > 0 ? $('#txtUpdateName').val() : '');
+            if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
+            $('#modal-save').modal('show');
+        }
 
-        //             // Parse the actual matrix first
-        //             let raw = $select.val();
-        //             matrixData = typeof raw === "string" ? JSON.parse(raw) : raw;
+        // The "Load" button opens the Community panel filtered to the current user's own drawings.
+        function openMyDrawings() {
+            if (!requireLogin()) return;
+            $('#community').offcanvas('show');
+            if ($('#my-items-tab').hasClass('active')) {
+                getMyCommunityItems();
+            } else {
+                // Switching tabs fires 'shown.bs.tab', which loads the content.
+                $('#my-items-tab').tab('show');
+            }
+        }
 
+        $('#save-confirm-btn').click(function (evt) {
+            if (!requireLogin()) return;
 
+            if (!$('#txt-save').val()) {
+                $('#txt-save').addClass('is-invalid');
+                $('#txt-save').focus();
+            } else if (naughtyWords.includes($('#txt-save').val())) {
+                $('#txt-save').addClass('is-invalid');
+                $('#txt-save').focus();
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('inappropriateTextWarning'),
+                });
+            } else {
+                const dataStr = encodeArtData();
+                const name = $('#txt-save').val();
+                const json = {
+                    author: sessionStorage.getItem('username'),
+                    name: name,
+                    size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
+                    data: dataStr,
+                    preview: canvasToBase64()
+                };
+                const jsonData = JSON.stringify(json);
+                // If the owner is editing an existing record, update it; otherwise insert a new one.
+                const updateId = parseInt($('#txtUpdateId').val());
+                const editing = updateId > 0;
+                const url = editing ? `${api}updateitem/${updateId}` : `${api}items`;
 
-        //             matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-        //             historyClear(); // Clear history
-        //             resizeCanvas();
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: jsonData,
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success === true) {
+                            swalBS.fire({
+                                position: "top-end",
+                                icon: "success",
+                                theme: "dark",
+                                title: getCorrectTranslation('saved'),
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
 
-        //             matrixData = typeof $select.val() === "string" ? JSON.parse($select.val()) : $select.val();
-        //             matrixData = matrixData.map(row => row.map(function (value) {
-        //                 switch (value) {
-        //                     case 0:
-        //                         return colorMap.black;
-        //                         break;
-        //                     case 0.3:
-        //                         return colorMap.forced;
-        //                         break;
-        //                     case 0.5:
-        //                         return colorMap.lightTranslucent;
-        //                         break;
-        //                     case 0.7:
-        //                         return colorMap.darkTranslucent;
-        //                         break;
-        //                     case 1:
-        //                         return colorMap.white;
-        //                         break;
-        //                     default:
-        //                         return value;
-        //                 }
-        //             }));
+                            // Enter/stay in edit mode for the saved record so further Saves update it.
+                            const savedId = editing ? updateId : (response.data && response.data.id);
+                            if (savedId) {
+                                $('#editItem').css('display', 'block');
+                                $('#txtUpdateId').val(savedId);
+                                $('#txtUpdateName').val(name);
+                                $('#btnShare').prop('disabled', true);
+                            }
 
-        //             $('#size-cols').val(COLS);
-        //             $('#size-rows').val(ROWS);
+                            $('#txt-save').val('');
+                            if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
+                            $('#modal-save').modal('hide');
+                        } else {
+                            swalBS.fire({
+                                icon: "error",
+                                title: getCorrectTranslation('oops'),
+                                theme: "dark",
+                                text: getCorrectTranslation('itemExists'),
+                            });
+                        }
+                    },
+                    error: function (err) {
+                        swalBS.fire({
+                            icon: "error",
+                            title: getCorrectTranslation('oops'),
+                            theme: "dark",
+                            text: err.statusText,
+                        });
+                    }
+                });
+            }
+        });
 
-        //             setState(matrixData, COLS, ROWS); // Save state
+        // "My Drawings" tab: lists only the logged-in user's own drawings from the database.
+        function getMyCommunityItems(page = 0) {
+            const username = sessionStorage.getItem('username');
+            if (!username) {
+                $('#community-mine-container').empty().append(`<p class="text-center text-muted">${getCorrectTranslation('loginToSave')}</p>`);
+                $('#mine-load-more-btn').prop('disabled', true);
+                return;
+            }
 
-        //             if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
-        //             $('#modal-load').modal('hide');
-        //         } catch (e) {
-        //             console.log(e);
-        //             swalBS.fire({
-        //                 icon: "error",
-        //                 title: getCorrectTranslation('oops'),
-        //                 theme: "dark",
-        //                 text: getCorrectTranslation('errorParsingJson'),
-        //             });
-        //             undo(); // Revert on error
-        //         }
-        //     }
+            if (page === 0) {
+                $('#community-mine-container').empty().append(appendPlaceholders(Math.random() * 20));
+            } else {
+                $('#community-mine-container').append(appendPlaceholders(Math.random() * 20));
+            }
 
-        // });
+            $.ajax({
+                url: `${api}useritems/${encodeURIComponent(username)}/${page}`,
+                type: 'GET',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (response) {
+                    $('#community-mine-container').find('.placeholder-item').remove();
 
-        // $('#save-confirm-btn').click(function (evt) {
-        //     if (!$('#txt-save').val()) {
-        //         $('#txt-save').addClass('is-invalid');
-        //         $('#txt-save').focus();
-        //     } else if (naughtyWords.includes($('#txt-save').val())) {
-        //         $('#txt-save').addClass('is-invalid');
-        //         $('#txt-save').focus();
-        //         swalBS.fire({
-        //             icon: "error",
-        //             title: getCorrectTranslation('oops'),
-        //             theme: "dark",
-        //             text: getCorrectTranslation('inappropriateTextWarning'),
-        //         });
-        //     } else {
-        //         const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
-        //         const name = $('#txt-save').val();
-        //         const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
-        //         localStorage.setItem(`item-${name}`, JSON.stringify(obj));
+                    if (response.success === true && response.pagination && response.pagination.total >= 1) {
+                        if (page === 0) $('#community-mine-container').empty();
+                        var children = [];
 
-        //         swalBS.fire({
-        //             position: "top-end",
-        //             icon: "success",
-        //             theme: "dark",
-        //             title: getCorrectTranslation('saved'),
-        //             showConfirmButton: false,
-        //             timer: 1500
-        //         });
+                        $.each(response.data, function (key, item) {
+                            var child = generateItem(item.id, item.preview, item.name, item.author, item.data, item.size);
+                            children.push(child);
+                        });
 
-        //         $('#txt-save').val('');
-        //         if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
-        //         $('#modal-save').modal('hide');
-        //     }
-        // });
-
-        // function reloadSavedPixelArt() {
-        //     $('#select-load').find('optgroup').remove();
-        //     $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')));
-        //     var values = stringifyLocalStorageExcept(['language', 'username', 'password', 'remember', 'favorites']);
-        //     $.each(values, function (key, item) {
-        //         if (Array.isArray(item.size)) {
-        //             $('#select-load').append($(
-        //                 `<option data-size="[${item.size}]" 
-        //              data-group="${item.size[0]}x${item.size[1]}" 
-        //              value="${item.data}">${item.name}</option>`
-        //             ));
-        //         } else {
-        //             console.warn("Item missing size:", item);
-        //         }
-        //     });
-
-        //     var optiongroups = {};
-        //     $("#select-load option[data-group]").each(function () {
-        //         optiongroups[$.trim($(this).attr("data-group"))] = true;
-        //     });
-        //     $.each(optiongroups, function (c) {
-        //         $("select option[data-group='" + c + "']").wrapAll('<optgroup label="' + c + '">');
-        //     });
-        // };
-
-        // function stringifyLocalStorageExcept(keysToSkip) {
-        //     if (!Array.isArray(keysToSkip)) keysToSkip = [keysToSkip];
-
-        //     const filtered = {};
-        //     for (let i = 0; i < localStorage.length; i++) {
-        //         const key = localStorage.key(i);
-        //         if (!keysToSkip.includes(key)) {
-        //             try {
-        //                 filtered[key] = JSON.parse(localStorage.getItem(key));
-        //             } catch (e) {
-        //                 filtered[key] = localStorage.getItem(key);
-        //             }
-        //         }
-        //     }
-        //     return filtered;
-        // }
+                        $('#community-mine-container').append(children);
+                        initCommunityThumbs();
+                        if (response.pagination.hasMore) {
+                            $('#mine-load-more-btn').attr('data-page', response.pagination.nextPage);
+                            $('#mine-load-more-btn').prop('disabled', false);
+                        } else {
+                            $('#mine-load-more-btn').prop('disabled', true);
+                        }
+                    } else if (page === 0) {
+                        $('#community-mine-container').empty().append(`<p class="text-center text-muted">${getCorrectTranslation('noSavedItems')}</p>`);
+                        $('#mine-load-more-btn').prop('disabled', true);
+                    }
+                },
+                error: function (err) {
+                    $('#community-mine-container').find('.placeholder-item').remove();
+                    console.log(err);
+                    swalBS.fire({
+                        icon: "error",
+                        title: getCorrectTranslation('oops'),
+                        theme: "dark",
+                        text: err.statusText,
+                    });
+                }
+            });
+        };
 
         function appendPlaceholders(count) {
             var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex placeholder-item">
@@ -978,8 +1102,21 @@
             return duplicate;
         }
 
-        function generateItem(id, preview, name, author) {
+        function generateItem(id, preview, name, author, data, size) {
             let isFavorite = favorites.includes(id);
+            const animFrames = decodeCommunityData(data);
+            let previewMarkup;
+            if (animFrames) {
+                const cols = animFrames[0][0] ? animFrames[0][0].length : ((size && size[0]) || 16);
+                const rows = animFrames[0] ? animFrames[0].length : ((size && size[1]) || 16);
+                communityAnim[id] = { frames: animFrames, timer: null };
+                previewMarkup = `<div class="community-thumb" data-anim-id="${id}" data-load-id="${id}" role="button" title="${getCorrectTranslation('openDrawing')}">
+                                    <canvas class="card-img-top community-anim-canvas" width="${cols}" height="${rows}"></canvas>
+                                    <span class="anim-badge" title="Animated"><span class="mdi mdi-filmstrip"></span> ${animFrames.length}</span>
+                                </div>`;
+            } else {
+                previewMarkup = `<img src="${preview}" class="image-fluid card-img-top community-clickable" data-load-id="${id}" role="button" title="${getCorrectTranslation('openDrawing')}" />`;
+            }
             var dropdown = '';
             if (author === sessionStorage.getItem('username')) {
                 dropdown = `<div class="btn-group btn-group-sm">
@@ -993,7 +1130,7 @@
 
             var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch generated-item">
                             <div class="card shadow-sm">
-                                <img src="${preview}" class="image-fluid card-img-top" />
+                                ${previewMarkup}
                                 <div class="card-body">
                                     <p class="card-text">${name}<span>— ${author}</span></p>
                                     <div class="d-flex justify-content-between align-items-center mt-auto">
@@ -1037,12 +1174,13 @@
                         var children = [];
 
                         $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
+                            var child = generateItem(item.id, item.preview, item.name, item.author, item.data, item.size);
                             children.push(child);
                         });
 
                         $('#community-search-container').find('.placeholder-item').remove();
                         $('#community-search-container').append(children);
+                        initCommunityThumbs();
                         if (response.pagination.hasMore) {
                             $('#search-load-more-btn').attr('data-page', response.pagination.nextPage);
                             $('#search-load-more-btn').prop('disabled', false);
@@ -1083,6 +1221,25 @@
             this.setSelectionRange(start, end);
         });
 
+        // Load a tab's content whenever it becomes active, regardless of how the
+        // Community panel was opened (nav link or the "Load" button).
+        $('#stepTab button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+            switch (e.target.id) {
+                case 'new-items-tab':
+                    getCommunityItems();
+                    break;
+                case 'search-items-tab':
+                    if ($('#txt-search').val()) searchCommunityItems($('#txt-search').val());
+                    break;
+                case 'favorites-items-tab':
+                    getFavoritesCommunityItems();
+                    break;
+                case 'my-items-tab':
+                    getMyCommunityItems();
+                    break;
+            }
+        });
+
         function getCommunityItems(page = 0) {
             if (page === 0) {
                 $('#community-container').empty().append(appendPlaceholders(Math.random() * 20));
@@ -1101,12 +1258,13 @@
                         var children = [];
 
                         $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
+                            var child = generateItem(item.id, item.preview, item.name, item.author, item.data, item.size);
                             children.push(child);
                         });
 
                         $('#community-container').find('.placeholder-item').remove();
                         $('#community-container').append(children);
+                        initCommunityThumbs();
                         if (response.pagination.hasMore) {
                             $('#community-load-more-btn').attr('data-page', response.pagination.nextPage);
                             $('#community-load-more-btn').prop('disabled', false);
@@ -1129,6 +1287,13 @@
         }
 
         function getFavoritesCommunityItems(page = 0) {
+            // No favorites → skip the request (an empty id list produces invalid SQL) and show a message.
+            if (!Array.isArray(favorites) || favorites.length === 0) {
+                $('#community-favorites-container').empty().append(`<p class="text-center text-muted">${getCorrectTranslation('noFavorites')}</p>`);
+                $('#favorites-load-more-btn').prop('disabled', true);
+                return;
+            }
+
             if (page === 0) {
                 $('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 20));
             } else {
@@ -1146,12 +1311,13 @@
                         var children = [];
 
                         $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
+                            var child = generateItem(item.id, item.preview, item.name, item.author, item.data, item.size);
                             children.push(child);
                         });
 
                         $('#community-favorites-container').find('.placeholder-item').remove();
                         $('#community-favorites-container').append(children);
+                        initCommunityThumbs();
                         if (response.pagination.hasMore) {
                             $('#favorites-load-more-btn').attr('data-page', response.pagination.nextPage);
                             $('#favorites-load-more-btn').prop('disabled', false);
@@ -1194,7 +1360,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+                const dataStr = encodeArtData();
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtUpdateName').val(),
@@ -1266,7 +1432,7 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+                const dataStr = encodeArtData();
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtShareName').val(),
@@ -1342,43 +1508,34 @@
                             throw new Error('Invalid dimensions: cols or rows invalid');
                         }
 
-                        // Parse data
-                        let newMatrix;
+                        // Parse data (single frame or multi-frame animation)
+                        let parsed;
                         try {
-                            newMatrix = JSON.parse($item.data);
+                            parsed = JSON.parse($item.data);
                         } catch (e) {
                             throw new Error(`Failed to parse data: ${e.message}`);
                         }
-                        if (!Array.isArray(newMatrix) || newMatrix.length !== newRows || !newMatrix.every(row => Array.isArray(row) && row.length === newCols)) {
-                            throw new Error('Matrix data dimensions mismatch');
-                        }
 
-                        // Map values to colors
-                        newMatrix = newMatrix.map(row => row.map(value => {
-                            switch (value) {
-                                case 0: return colorMap.black;
-                                case 0.3: return colorMap.forced;
-                                case 0.5: return colorMap.lightTranslucent;
-                                case 0.7: return colorMap.darkTranslucent;
-                                case 1: return colorMap.white;
-                                default: return colorMap.black; // Fallback for invalid values
-                            }
-                        }));
-
-                        // Update state
-                        setState(newMatrix, newCols, newRows);
-                        $('#size-cols').val(newCols);
-                        $('#size-rows').val(newRows);
+                        loadArt(parsed, newCols, newRows);
                         $('#community').offcanvas('hide');
 
-                        if (edit) {
+                        // Treat loading as an edit when the current user owns the drawing,
+                        // so a subsequent Save pre-fills the name and updates the record.
+                        const isOwner = $item.author && $item.author === sessionStorage.getItem('username');
+                        if (edit || isOwner) {
                             $('#editItem').css('display', 'block');
                             $('#txtUpdateId').val(id);
                             $('#txtUpdateName').val($item.name);
                             $('#btnShare').prop('disabled', true);
+                        } else {
+                            // Loading someone else's drawing: ensure Save creates a new item.
+                            $('#editItem').css('display', 'none');
+                            $('#txtUpdateId').val('-1');
+                            $('#txtUpdateName').val('');
+                            $('#btnShare').prop('disabled', false);
                         }
 
-                        console.log(`Successfully loaded community drawing ${id}: ${newCols}x${newRows}`);
+                        console.log(`Successfully loaded community drawing ${id}: ${newCols}x${newRows}, frames=${frames.length}`);
                     } catch (error) {
                         console.error('Error loading community drawing:', error);
                         swalBS.fire({
@@ -1402,10 +1559,18 @@
         }
 
         function cancelEdit() {
+            pauseAnimation();
             $('#editItem').css('display', 'none');
             $('#txtUpdateId').val('-1');
             $('#btnShare').prop('disabled', false);
-            fillAll('#000000');
+            clearAll('#000000');
+            // Reset to a single blank frame when canceling edit
+            frames = [JSON.parse(JSON.stringify(matrixData))];
+            currentFrameIndex = 0;
+            frameHistories = [createUndoRedoManager(matrixData, COLS, ROWS)];
+            history = frameHistories[0];
+            renderFramesBar();
+            updateFrameControls();
         }
 
         $('#txt-search').on('keydown', function (e) {
@@ -1413,6 +1578,16 @@
                 $('#community-search').click();
                 e.preventDefault()
             }
+        });
+
+        $(document).on('mouseenter', '.community-thumb[data-anim-id]', function () {
+            startCommunityAnim($(this).attr('data-anim-id'), $(this).find('canvas')[0]);
+        }).on('mouseleave', '.community-thumb[data-anim-id]', function () {
+            stopCommunityAnim($(this).attr('data-anim-id'), $(this).find('canvas')[0]);
+        });
+
+        $(document).on('click', '[data-load-id]', function () {
+            downloadItem(parseInt($(this).attr('data-load-id'), 10));
         });
 
         // Lazyload
@@ -1425,6 +1600,9 @@
                         break;
                     case 'favorites-items-tab':
                         $('#favorites-load-more-btn').trigger('click');
+                        break;
+                    case 'my-items-tab':
+                        $('#mine-load-more-btn').trigger('click');
                         break;
                     default:
                         $('#community-load-more-btn').trigger('click');
@@ -1447,6 +1625,11 @@
             getFavoritesCommunityItems($(this.attr('data-page')));
             $('#favorites-load-more-btn').prop('disabled', true);
         })
+
+        $('#mine-load-more-btn').click(function (evt) {
+            getMyCommunityItems(parseInt($(this).attr('data-page')));
+            $('#mine-load-more-btn').prop('disabled', true);
+        });
 
         function addToFavorite(id) {
             if (!favorites.includes(id)) {
@@ -1534,6 +1717,21 @@
         function resizeCanvas(manual = false, mwidth = 250, mheight = 250) {
             var maxWidth = window.innerWidth * 0.95;
             var maxHeight = window.innerHeight * 0.7;
+
+            // Fit the canvas to the available stage area (minus padding).
+            const container = document.getElementById('canvas-container');
+            if (container) {
+                const cs = getComputedStyle(container);
+                const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+                const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+                const availW = container.clientWidth - padX;
+                const availH = container.clientHeight - padY;
+                if (availW > 20 && availH > 20) {
+                    maxWidth = availW;
+                    maxHeight = availH;
+                }
+            }
+
             if (manual === true) {
                 maxWidth = mwidth;
                 maxHeight = mheight;
@@ -1558,25 +1756,247 @@
             drawMatrix();
         }
 
-        // Draw the entire matrix
-        function drawMatrix() {
+        // Draw a specific grid onto the main canvas (no cell borders during playback uses same borders)
+        function drawFrame(grid) {
+            if (!grid || !ctx) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw each cell
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     const x = col * cellWidth;
                     const y = row * cellHeight;
-
-                    // Draw the cell background
-                    ctx.fillStyle = matrixData[row][col];
+                    ctx.fillStyle = (grid[row] && grid[row][col]) ? grid[row][col] : '#000000';
                     ctx.fillRect(x, y, cellWidth, cellHeight);
-
-                    // Draw the cell border
                     ctx.strokeStyle = '#333333';
                     ctx.strokeRect(x, y, cellWidth, cellHeight);
                 }
             }
+        }
+
+        // Draw the entire matrix (active editing frame)
+        function drawMatrix() {
+            drawFrame(matrixData);
+        }
+
+        const communityAnim = {};
+
+        function decodeCommunityData(dataStr) {
+            if (dataStr == null) return null;
+            try {
+                const parsed = typeof dataStr === 'string' ? JSON.parse(dataStr) : dataStr;
+                if (!Array.isArray(parsed) || parsed.length === 0) return null;
+                // Animated data is a 3D array: [ [[row],...], ... ]
+                if (!(Array.isArray(parsed[0]) && Array.isArray(parsed[0][0]))) return null;
+                const frames = parsed.map(f => decodeGrid(f));
+                if (frames.length <= 1) return null;
+                return frames;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function startCommunityAnim(id, canvas) {
+            const entry = communityAnim[id];
+            if (!entry || !canvas || entry.timer) return;
+            let i = 0;
+            const step = () => {
+                paintThumbCanvas(canvas, entry.frames[i]);
+                i = (i + 1) % entry.frames.length;
+            };
+            step();
+            entry.timer = setInterval(step, 1000 / 10);
+        }
+
+        function stopCommunityAnim(id, canvas) {
+            const entry = communityAnim[id];
+            if (!entry) return;
+            if (entry.timer) {
+                clearInterval(entry.timer);
+                entry.timer = null;
+            }
+            if (canvas) paintThumbCanvas(canvas, entry.frames[0]);
+        }
+
+        function initCommunityThumbs() {
+            $('.community-anim-canvas').each(function () {
+                if (this.dataset.painted) return;
+                const id = $(this).closest('[data-anim-id]').attr('data-anim-id');
+                if (communityAnim[id]) {
+                    paintThumbCanvas(this, communityAnim[id].frames[0]);
+                    this.dataset.painted = '1';
+                }
+            });
+        }
+
+        function paintThumbCanvas(thumbCanvas, grid) {
+            if (!thumbCanvas || !grid) return;
+            const tctx = thumbCanvas.getContext('2d');
+            const tw = thumbCanvas.width;
+            const th = thumbCanvas.height;
+            const rows = grid.length;
+            const cols = grid[0] ? grid[0].length : 0;
+            if (!rows || !cols) return;
+            const cw = tw / cols;
+            const ch = th / rows;
+            tctx.clearRect(0, 0, tw, th);
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    tctx.fillStyle = grid[r][c] || '#000000';
+                    tctx.fillRect(c * cw, r * ch, cw, ch);
+                }
+            }
+        }
+
+        function renderFramesBar() {
+            const $strip = $('#frames-strip');
+            if (!$strip.length) return;
+            $strip.empty();
+            frames.forEach((frame, i) => {
+                const active = i === currentFrameIndex ? ' active' : '';
+                const $el = $(`<div class="frame-thumb${active}" data-frame-index="${i}" role="button" tabindex="0">
+                    <canvas width="64" height="64"></canvas>
+                    <span class="frame-index">${i + 1}</span>
+                </div>`);
+                paintThumbCanvas($el.find('canvas')[0], frame);
+                $el.on('click', function () {
+                    if (isPlayingAnimation) return;
+                    selectFrame(parseInt($(this).attr('data-frame-index'), 10));
+                });
+                $strip.append($el);
+            });
+        }
+
+        function updateFrameControls() {
+            const multi = frames.length > 1;
+            $('#btn-frame-del').prop('disabled', !multi || isPlayingAnimation);
+            $('#btn-frame-left').prop('disabled', currentFrameIndex <= 0 || isPlayingAnimation);
+            $('#btn-frame-right').prop('disabled', currentFrameIndex >= frames.length - 1 || isPlayingAnimation);
+            $('#btn-frame-add, #btn-frame-dup').prop('disabled', isPlayingAnimation);
+            $('#anim-fps').prop('disabled', isPlayingAnimation);
+            $('#frames-panel').toggleClass('playing', isPlayingAnimation);
+            const playLabel = isPlayingAnimation
+                ? (typeof getCorrectTranslation === 'function' ? getCorrectTranslation('pause') : 'Pause')
+                : (typeof getCorrectTranslation === 'function' ? getCorrectTranslation('play') : 'Play');
+            $('#btn-anim-play-label').text(playLabel);
+            $('#btn-anim-play').find('.mdi').attr('class', isPlayingAnimation ? 'mdi mdi-pause' : 'mdi mdi-play');
+        }
+
+        function selectFrame(i) {
+            if (i < 0 || i >= frames.length || i === currentFrameIndex) {
+                if (i === currentFrameIndex) {
+                    drawMatrix();
+                    renderFramesBar();
+                }
+                return;
+            }
+            pauseAnimation();
+            commitCurrentFrame();
+            currentFrameIndex = i;
+            matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function addFrame() {
+            pauseAnimation();
+            commitCurrentFrame();
+            const blank = createBlankGrid(COLS, ROWS);
+            const insertAt = currentFrameIndex + 1;
+            frames.splice(insertAt, 0, blank);
+            frameHistories.splice(insertAt, 0, createUndoRedoManager(blank, COLS, ROWS));
+            currentFrameIndex = insertAt;
+            matrixData = JSON.parse(JSON.stringify(blank));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function duplicateFrame() {
+            pauseAnimation();
+            commitCurrentFrame();
+            const copy = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+            const insertAt = currentFrameIndex + 1;
+            frames.splice(insertAt, 0, copy);
+            frameHistories.splice(insertAt, 0, createUndoRedoManager(copy, COLS, ROWS));
+            currentFrameIndex = insertAt;
+            matrixData = JSON.parse(JSON.stringify(copy));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function deleteFrame() {
+            if (frames.length <= 1) return;
+            pauseAnimation();
+            frames.splice(currentFrameIndex, 1);
+            frameHistories.splice(currentFrameIndex, 1);
+            if (currentFrameIndex >= frames.length) currentFrameIndex = frames.length - 1;
+            matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function moveFrame(dir) {
+            const target = currentFrameIndex + dir;
+            if (target < 0 || target >= frames.length) return;
+            pauseAnimation();
+            commitCurrentFrame();
+            const tmpF = frames[currentFrameIndex];
+            frames[currentFrameIndex] = frames[target];
+            frames[target] = tmpF;
+            const tmpH = frameHistories[currentFrameIndex];
+            frameHistories[currentFrameIndex] = frameHistories[target];
+            frameHistories[target] = tmpH;
+            currentFrameIndex = target;
+            matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function getAnimFps() {
+            const fps = parseInt($('#anim-fps').val(), 10);
+            return Math.min(60, Math.max(1, isNaN(fps) ? 10 : fps));
+        }
+
+        function pauseAnimation() {
+            if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+            if (isPlayingAnimation) {
+                isPlayingAnimation = false;
+                matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+                drawMatrix();
+                updateFrameControls();
+            }
+        }
+
+        function playAnimation() {
+            commitCurrentFrame();
+            if (frames.length < 1) return;
+            isPlayingAnimation = true;
+            previewFrameIndex = currentFrameIndex;
+            updateFrameControls();
+            const tick = () => {
+                drawFrame(frames[previewFrameIndex]);
+                $('#frames-strip .frame-thumb').removeClass('active');
+                $(`#frames-strip .frame-thumb[data-frame-index="${previewFrameIndex}"]`).addClass('active');
+                previewFrameIndex = (previewFrameIndex + 1) % frames.length;
+            };
+            tick();
+            animationTimer = setInterval(tick, 1000 / getAnimFps());
+        }
+
+        function toggleAnimationPlayback() {
+            if (isPlayingAnimation) pauseAnimation();
+            else playAnimation();
         }
 
         // Convert mouse position to matrix coordinates
@@ -1853,9 +2273,9 @@
 
         }
 
-        // Export matrix data as JSON
+        // Export matrix data as JSON (2D for one frame, 3D for animations)
         function exportData() {
-            const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+            const dataStr = encodeArtData();
             const base64Data = b64EncodeUnicode(dataStr);
 
             swalBS.fire({
@@ -1895,6 +2315,7 @@
 
         // Canvas event listeners
         canvas.addEventListener('mousedown', (e) => {
+            if (isPlayingAnimation) return;
             isDrawing = true;
 
             const coords = getMatrixCoords(e);
@@ -1956,7 +2377,7 @@
 
                 mousePosDisplay.text(`${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`);
 
-                if (isDrawing) {
+                if (isDrawing && !isPlayingAnimation) {
                     switch (currentMode) {
                         case 'draw':
                             switch (currentColor) {
@@ -2004,6 +2425,40 @@
         // Initial setup
         resizeCanvas();
         setState(matrixData);
+        renderFramesBar();
+        updateFrameControls();
+
+        // Photoshop-style quick color presets
+        (function initColorPresets() {
+            const presets = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF',
+                '#8B00FF', '#FF00FF', '#FFFFFF', '#AAAAAA', '#555555', '#000000'];
+            const container = document.getElementById('color-presets');
+            if (!container) return;
+            presets.forEach(function (c) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'preset';
+                b.style.background = c;
+                b.title = c;
+                b.setAttribute('data-color', c);
+                container.appendChild(b);
+            });
+        })();
+
+        $(document).on('click', '.preset', function () {
+            $('#custom-color-picker').val($(this).attr('data-color')).trigger('change');
+        });
+
+        // Choosing a custom color automatically switches to the Custom paint mode
+        $('#custom-color-picker').on('input change', function () {
+            if (!$('#draw-custom').is(':checked')) {
+                $('#draw-custom').prop('checked', true).trigger('change');
+            }
+        });
+
+        // Re-fit once late-loading layout (e.g. the navbar logo) settles
+        window.addEventListener('load', function () { resizeCanvas(); });
+        requestAnimationFrame(function () { resizeCanvas(); });
 
         $(document).keydown(function (e) {
             if ($('.modal:visible').length > 0) {
@@ -2020,7 +2475,7 @@
                     $('#export-btn').click();
                 } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
                     // Copy
-                    const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+                    const dataStr = encodeArtData();
                     const base64Data = b64EncodeUnicode(dataStr);
                     copyToClipboard(base64Data);
                     return;

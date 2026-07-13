@@ -27,6 +27,7 @@ const langDB = {
     ok: { en: 'OK', zh: '确认' },
     copied: { en: 'Code copied to clipboard.', zh: '代码已复制到剪贴板。' },
     load: { en: '<span class="mdi mdi-cloud-outline"></span> Load', zh: '<span class="mdi mdi-cloud-outline"></span> 载入' },
+    openDrawing: { en: 'Open drawing', zh: '打开绘图' },
     save: { en: '<span class="mdi mdi-content-save-outline"></span> Save', zh: '<span class="mdi mdi-content-save-outline"></span> 保存' },
     saveTitle: { en: 'Save pixel art', zh: '保存像素屏' },
     saveSubtitle: { en: 'What would you like to call this pixel art?', zh: '您想将这个像素艺术存档命名为什么？' },
@@ -34,6 +35,10 @@ const langDB = {
     loadTitle: { en: 'Load pixel art', zh: '载入像素屏' },
     loadSubtitle: { en: 'Which pixel art would you like load?', zh: '您想要加载哪一个像素存档？' },
     saved: { en: 'Pixel art saved.', zh: '像素存档保存成功。' },
+    loginToSave: { en: 'Please log in to save or load your pixel art.', zh: '请先登录以保存或载入您的像素作品。' },
+    removed: { en: 'Pixel art removed.', zh: '像素存档已删除。' },
+    noSavedItems: { en: 'You have no saved pixel art yet.', zh: '您还没有保存的像素作品。' },
+    noFavorites: { en: 'You have no favorites yet.', zh: '您还没有收藏任何作品。' },
     remove: { en: 'Remove', zh: '删除' },
     update: { en: 'Update', zh: '更新' },
     edit: { en: 'Edit', zh: '修改' },
@@ -52,6 +57,17 @@ const langDB = {
     search2: { en: '<span class="mdi mdi-magnify"></span> Search', zh: '<span class="mdi mdi-magnify"></span> 搜索' },
     loadMore: { en: '<span class="mdi mdi-plus"></span> Load More', zh: '<span class="mdi mdi-plus"></span> 加载更多' },
     favorites: { en: '<span class="mdi mdi-heart-outline"></span> Favorites', zh: '<span class="mdi mdi-heart-outline"></span> 收藏夹' },
+    myDrawings: { en: '<span class="mdi mdi-account-outline"></span> My Drawings', zh: '<span class="mdi mdi-account-outline"></span> 我的作品' },
+    frames: { en: '<span class="mdi mdi-filmstrip"></span> Frames', zh: '<span class="mdi mdi-filmstrip"></span> 帧' },
+    play: { en: 'Play', zh: '播放' },
+    pause: { en: 'Pause', zh: '暂停' },
+    fps: { en: 'FPS', zh: '帧率' },
+    fpsHint: { en: 'Preview FPS is local only; the WLED plugin uses its own Pixel art FPS setting.', zh: '预览帧率仅用于本地预览；WLED 插件使用其自己的像素艺术帧率设置。' },
+    addFrame: { en: 'Add frame', zh: '添加帧' },
+    duplicateFrame: { en: 'Duplicate frame', zh: '复制帧' },
+    deleteFrame: { en: 'Delete frame', zh: '删除帧' },
+    moveFrameLeft: { en: 'Move left', zh: '左移' },
+    moveFrameRight: { en: 'Move right', zh: '右移' },
     infoName: { en: 'Name', zh: '名字' },
     infoAuthor: { en: 'Author', zh: '作者' },
     infoCreated: { en: 'Created', zh: '提交时间' },
@@ -143,8 +159,18 @@ function changeLanguage(lang) {
             $('#txt-search').attr('placeholder', langDB.search.zh);
             $('#new-items-tab').html(langDB.latest.zh);
             $('#search-items-tab').html(langDB.search2.zh);
-            $('#community-load-more-btn, #search-load-more-btn, #favorites-load-more-btn').html(langDB.loadMore.zh);
+            $('#community-load-more-btn, #search-load-more-btn, #favorites-load-more-btn, #mine-load-more-btn').html(langDB.loadMore.zh);
             $('#favorites-items-tab').html(langDB.favorites.zh);
+            $('#my-items-tab').html(langDB.myDrawings.zh);
+            $('#frames-label').html(langDB.frames.zh);
+            $('#fps-label').text(langDB.fps.zh);
+            $('#fps-hint').text(langDB.fpsHint.zh);
+            $('#btn-frame-add').attr('title', langDB.addFrame.zh);
+            $('#btn-frame-dup').attr('title', langDB.duplicateFrame.zh);
+            $('#btn-frame-del').attr('title', langDB.deleteFrame.zh);
+            $('#btn-frame-left').attr('title', langDB.moveFrameLeft.zh);
+            $('#btn-frame-right').attr('title', langDB.moveFrameRight.zh);
+            if (typeof updateFrameControls === 'function') updateFrameControls();
             $('label[for="txtInfoName"]').text(langDB.infoName.zh);
             $('label[for="txtInfoAuthor"]').text(langDB.infoAuthor.zh);
             $('label[for="txtInfoDate"]').text(langDB.infoCreated.zh);
@@ -220,8 +246,18 @@ function changeLanguage(lang) {
             $('#txt-search').attr('placeholder', langDB.search.en);
             $('#new-items-tab').html(langDB.latest.en);
             $('#search-items-tab').html(langDB.search2.en);
-            $('#community-load-more-btn, #search-load-more-btn, #favorites-load-more-btn').html(langDB.loadMore.en);
+            $('#community-load-more-btn, #search-load-more-btn, #favorites-load-more-btn, #mine-load-more-btn').html(langDB.loadMore.en);
             $('#favorites-items-tab').html(langDB.favorites.en);
+            $('#my-items-tab').html(langDB.myDrawings.en);
+            $('#frames-label').html(langDB.frames.en);
+            $('#fps-label').text(langDB.fps.en);
+            $('#fps-hint').text(langDB.fpsHint.en);
+            $('#btn-frame-add').attr('title', langDB.addFrame.en);
+            $('#btn-frame-dup').attr('title', langDB.duplicateFrame.en);
+            $('#btn-frame-del').attr('title', langDB.deleteFrame.en);
+            $('#btn-frame-left').attr('title', langDB.moveFrameLeft.en);
+            $('#btn-frame-right').attr('title', langDB.moveFrameRight.en);
+            if (typeof updateFrameControls === 'function') updateFrameControls();
             $('label[for="txtInfoName"]').text(langDB.infoName.en);
             $('label[for="txtInfoAuthor"]').text(langDB.infoAuthor.en);
             $('label[for="txtInfoDate"]').text(langDB.infoCreated.en);

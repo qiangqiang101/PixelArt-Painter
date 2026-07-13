@@ -82,14 +82,14 @@ class ItemService {
                 query += ` ORDER BY ${orderBy} ${orderDirection.toUpperCase()}`;
             }
 
-            // Add pagination if limit is specified
+            // Add pagination if limit is specified.
+            // LIMIT/OFFSET are inlined (as validated integers) because mysql2's
+            // prepared-statement protocol rejects them as bound parameters on MySQL.
             if (limit) {
-                query += ' LIMIT ?';
-                queryParams.push(parseInt(limit));
+                query += ` LIMIT ${parseInt(limit)}`;
 
                 if (offset > 0) {
-                    query += ' OFFSET ?';
-                    queryParams.push(parseInt(offset));
+                    query += ` OFFSET ${parseInt(offset)}`;
                 }
             }
 
@@ -111,6 +111,67 @@ class ItemService {
                 }
 
                 const [countResult] = await connection.execute(countQuery, countParams);
+                totalCount = countResult[0].total;
+            }
+
+            if (totalCount == 0) totalCount = rows.length;
+
+            return {
+                success: true,
+                data: rows,
+                pagination: limit ? {
+                    total: totalCount,
+                    limit: parseInt(limit),
+                    offset: parseInt(offset),
+                    hasMore: (parseInt(offset) + parseInt(limit)) < totalCount
+                } : null
+            };
+        } catch (error) {
+            console.error('Database error:', error);
+            return {
+                success: false,
+                message: 'Failed to retrieve items',
+                error: error.message
+            };
+        } finally {
+            connection.release();
+        }
+    }
+
+    async getItemsByAuthor(author, options = {}) {
+        const connection = await this.pool.getConnection();
+
+        try {
+            const {
+                limit = null,
+                offset = 0,
+                orderBy = 'id',
+                orderDirection = 'DESC'
+            } = options;
+
+            let query = 'SELECT id, author, name, width, height, data, preview, submittime FROM items WHERE author = ?';
+            let queryParams = [author];
+
+            const validOrderColumns = ['id', 'name', 'author', 'submittime'];
+            const validDirections = ['ASC', 'DESC'];
+
+            if (validOrderColumns.includes(orderBy) && validDirections.includes(orderDirection.toUpperCase())) {
+                query += ` ORDER BY ${orderBy} ${orderDirection.toUpperCase()}`;
+            }
+
+            if (limit) {
+                query += ` LIMIT ${parseInt(limit)}`;
+
+                if (offset > 0) {
+                    query += ` OFFSET ${parseInt(offset)}`;
+                }
+            }
+
+            const [rows] = await connection.execute(query, queryParams);
+
+            let totalCount = 0;
+            if (limit) {
+                const [countResult] = await connection.execute('SELECT COUNT(*) as total FROM items WHERE author = ?', [author]);
                 totalCount = countResult[0].total;
             }
 
@@ -161,14 +222,14 @@ class ItemService {
                 query += ` ORDER BY ${orderBy} ${orderDirection.toUpperCase()}`;
             }
 
-            // Add pagination if limit is specified
+            // Add pagination if limit is specified.
+            // LIMIT/OFFSET are inlined (as validated integers) because mysql2's
+            // prepared-statement protocol rejects them as bound parameters on MySQL.
             if (limit) {
-                query += ' LIMIT ?';
-                queryParams.push(parseInt(limit));
+                query += ` LIMIT ${parseInt(limit)}`;
 
                 if (offset > 0) {
-                    query += ' OFFSET ?';
-                    queryParams.push(parseInt(offset));
+                    query += ` OFFSET ${parseInt(offset)}`;
                 }
             }
 
