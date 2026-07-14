@@ -376,6 +376,10 @@
                                 class="mdi mdi-file-plus-outline"></span> New</button>
                         <button type="button" class="btn btn-outline-primary" id="import-btn" onclick="importData();"><span
                                 class="mdi mdi-import"></span> Import Data</button>
+                        <button type="button" class="btn btn-outline-primary" id="import-gif-btn"
+                            title="Import a GIF animation (scaled to the current canvas size)"
+                            onclick="document.getElementById('gif-file-input').click();"><span
+                                class="mdi mdi-file-gif-box"></span> Import GIF</button>
                         <button type="button" class="btn btn-outline-primary" id="export-btn" onclick="exportData();"><span
                                 class="mdi mdi-export"></span> Export Data</button>
                         <button type="button" class="btn btn-outline-primary" id="load-btn" onclick="openMyDrawings();"><span
@@ -384,6 +388,7 @@
                                 class="mdi mdi-content-save-outline"></span> Save</button>
                     </div>
                     <input type="hidden" id="clipboard" />
+                    <input type="file" id="gif-file-input" accept="image/gif" style="display: none;" />
 
                     <div class="btn-group btn-group-sm" id="editItem" style="display: none;">
                         <button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
@@ -1120,6 +1125,181 @@
                 undo(); // Revert on error
             }
         }
+
+        // ---------------------------------------------------------------------
+        // GIF import: decode an animated GIF, scale each frame down to the
+        // current canvas size, and load them as animation frames.
+        // ---------------------------------------------------------------------
+        const MAX_GIF_FRAMES = 60;
+
+        // gifuct-js is a CommonJS module; load it lazily as a bundled ES module
+        // only when the user actually imports a GIF.
+        let _gifuctPromise = null;
+        function loadGifuct() {
+            if (!_gifuctPromise) {
+                _gifuctPromise = import('https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm');
+            }
+            return _gifuctPromise;
+        }
+
+        function toHex2(n) {
+            return ('0' + (n & 0xff).toString(16).toUpperCase()).slice(-2);
+        }
+
+        // Convert scaled RGBA pixel data into a hex-string grid. Mostly-transparent
+        // pixels become the tool's "Transparent" special value.
+        function rgbaToGrid(data, cols, rows) {
+            const grid = [];
+            for (let y = 0; y < rows; y++) {
+                const row = [];
+                for (let x = 0; x < cols; x++) {
+                    const i = (y * cols + x) * 4;
+                    if (data[i + 3] < 128) {
+                        row.push(colorMap.white); // Transparent
+                    } else {
+                        row.push('#' + toHex2(data[i]) + toHex2(data[i + 1]) + toHex2(data[i + 2]));
+                    }
+                }
+                grid.push(row);
+            }
+            return grid;
+        }
+
+        // Composite the decompressed GIF frames (which may be partial patches with
+        // their own disposal rules), scaling every fully-composited frame down to
+        // the target cols x rows grid.
+        function gifFramesToGrids(gframes, gifWidth, gifHeight, cols, rows) {
+            const full = document.createElement('canvas');
+            full.width = gifWidth;
+            full.height = gifHeight;
+            const fctx = full.getContext('2d');
+
+            const patch = document.createElement('canvas');
+            const pctx = patch.getContext('2d');
+
+            const small = document.createElement('canvas');
+            small.width = cols;
+            small.height = rows;
+            const sctx = small.getContext('2d');
+            sctx.imageSmoothingEnabled = true;
+
+            let saved = null;
+            const grids = [];
+
+            for (const frame of gframes) {
+                const dims = frame.dims;
+
+                if (frame.disposalType === 3) {
+                    saved = fctx.getImageData(0, 0, full.width, full.height);
+                }
+
+                // Render the patch to its own canvas, then drawImage so the frame's
+                // transparent pixels composite over the previous frame (alpha-aware),
+                // unlike putImageData which would overwrite them.
+                patch.width = dims.width;
+                patch.height = dims.height;
+                pctx.putImageData(new ImageData(new Uint8ClampedArray(frame.patch), dims.width, dims.height), 0, 0);
+                fctx.drawImage(patch, dims.left, dims.top);
+
+                sctx.clearRect(0, 0, cols, rows);
+                sctx.drawImage(full, 0, 0, gifWidth, gifHeight, 0, 0, cols, rows);
+                grids.push(rgbaToGrid(sctx.getImageData(0, 0, cols, rows).data, cols, rows));
+
+                if (frame.disposalType === 2) {
+                    fctx.clearRect(dims.left, dims.top, dims.width, dims.height);
+                } else if (frame.disposalType === 3 && saved) {
+                    fctx.putImageData(saved, 0, 0);
+                }
+            }
+            return grids;
+        }
+
+        // Evenly sample a list down to at most `max` items, preserving order.
+        function sampleEvenly(arr, max) {
+            if (arr.length <= max) return arr;
+            const out = [];
+            const step = arr.length / max;
+            for (let i = 0; i < max; i++) out.push(arr[Math.floor(i * step)]);
+            return out;
+        }
+
+        async function importGifFile(file) {
+            if (!file) return;
+            let gifuct;
+            try {
+                gifuct = await loadGifuct();
+            } catch (e) {
+                console.error('Failed to load GIF decoder:', e);
+                swalBS.fire({
+                    icon: 'error',
+                    title: getCorrectTranslation('oops'),
+                    theme: 'dark',
+                    text: 'Could not load the GIF decoder. Check your internet connection.'
+                });
+                return;
+            }
+
+            try {
+                const buffer = await file.arrayBuffer();
+                const gif = gifuct.parseGIF(buffer);
+                const decoded = gifuct.decompressFrames(gif, true);
+                if (!decoded || decoded.length === 0) {
+                    throw new Error('No frames found in GIF');
+                }
+
+                const gifW = gif.lsd.width;
+                const gifH = gif.lsd.height;
+
+                // Average the per-frame delays into a single preview FPS, since the
+                // tool uses one FPS for the whole animation.
+                const delays = decoded.map(f => f.delay || 0).filter(d => d > 0);
+                let fps = 10;
+                if (delays.length) {
+                    const avg = delays.reduce((a, b) => a + b, 0) / delays.length;
+                    fps = Math.min(60, Math.max(1, Math.round(1000 / avg)));
+                }
+
+                let grids = gifFramesToGrids(decoded, gifW, gifH, COLS, ROWS);
+                const wasCapped = grids.length > MAX_GIF_FRAMES;
+                grids = sampleEvenly(grids, MAX_GIF_FRAMES);
+
+                // grids are already hex/target-sized; loadArt happily passes strings
+                // through and rebuilds the frames + histories for us.
+                loadArt(grids, COLS, ROWS);
+                $('#anim-fps').val(fps);
+
+                // A freshly imported GIF is unsaved content.
+                savedBaseline = '__unsaved__';
+                try { lastAutosaveSig = drawingSignature(); } catch (e) { }
+                persistAutosave();
+
+                let msg = `Imported ${grids.length} frame(s) at ${COLS}x${ROWS}, ~${fps} FPS.`;
+                if (wasCapped) msg += ` The GIF had more than ${MAX_GIF_FRAMES} frames, so it was sampled down.`;
+                swalBS.fire({
+                    position: 'top-end',
+                    icon: 'success',
+                    theme: 'dark',
+                    title: msg,
+                    showConfirmButton: false,
+                    timer: 2500
+                });
+            } catch (e) {
+                console.error('Failed to import GIF:', e);
+                swalBS.fire({
+                    icon: 'error',
+                    title: getCorrectTranslation('oops'),
+                    theme: 'dark',
+                    text: 'Failed to import GIF: ' + e.message
+                });
+            }
+        }
+
+        $('#gif-file-input').on('change', function () {
+            const file = this.files && this.files[0];
+            importGifFile(file);
+            // Reset so selecting the same file again re-triggers change.
+            this.value = '';
+        });
 
         // Save / Load are backed by the database and require a logged-in user.
         function isLoggedIn() {

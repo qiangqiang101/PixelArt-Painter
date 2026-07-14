@@ -6,6 +6,7 @@ const langDB = {
     size: { en: '<span class="mdi mdi-image-size-select-small"></span> Size', zh: '<span class="mdi mdi-image-size-select-small"></span> 大小' },
     import: { en: '<span class="mdi mdi-import"></span> Import', zh: '<span class="mdi mdi-import"></span> 导入' },
     export: { en: '<span class="mdi mdi-export"></span> Export', zh: '<span class="mdi mdi-export"></span> 导出' },
+    importGif: { en: '<span class="mdi mdi-file-gif-box"></span> Import GIF', zh: '<span class="mdi mdi-file-gif-box"></span> 导入 GIF' },
     draw: { en: '<span class="mdi mdi-draw"></span> Draw', zh: '<span class="mdi mdi-draw"></span> 绘画模式' },
     fill: { en: '<span class="mdi mdi-format-color-fill"></span> Fill', zh: '<span class="mdi mdi-format-color-fill"></span> 填充模式' },
     erase: { en: '<span class="mdi mdi-eraser"></span> Erase', zh: '<span class="mdi mdi-eraser"></span> 擦除模式' },
@@ -129,6 +130,7 @@ function changeLanguage(lang) {
             document.title = langDB.header.zh;
             $('#size-label').html(langDB.size.zh);
             $('#import-btn').html(langDB.import.zh);
+            $('#import-gif-btn').html(langDB.importGif.zh);
             $('#export-btn').html(langDB.export.zh);
             $('#load-btn').html(langDB.load.zh);
             $('#save-btn').html(langDB.save.zh);
@@ -216,6 +218,7 @@ function changeLanguage(lang) {
             document.title = langDB.header.en;
             $('#size-label').html(langDB.size.en);
             $('#import-btn').html(langDB.import.en);
+            $('#import-gif-btn').html(langDB.importGif.en);
             $('#export-btn').html(langDB.export.en);
             $('#load-btn').html(langDB.load.en);
             $('#save-btn').html(langDB.save.en);
