@@ -376,10 +376,10 @@
                                 class="mdi mdi-file-plus-outline"></span> New</button>
                         <button type="button" class="btn btn-outline-primary" id="import-btn" onclick="importData();"><span
                                 class="mdi mdi-import"></span> Import Data</button>
-                        <button type="button" class="btn btn-outline-primary" id="import-gif-btn"
-                            title="Import a GIF animation (scaled to the current canvas size)"
-                            onclick="document.getElementById('gif-file-input').click();"><span
-                                class="mdi mdi-file-gif-box"></span> Import GIF</button>
+                        <button type="button" class="btn btn-outline-primary" id="import-image-btn"
+                            title="Import an image or GIF animation (scaled to the current canvas size)"
+                            onclick="document.getElementById('image-file-input').click();"><span
+                                class="mdi mdi-image-outline"></span> Import Image</button>
                         <button type="button" class="btn btn-outline-primary" id="export-btn" onclick="exportData();"><span
                                 class="mdi mdi-export"></span> Export Data</button>
                         <button type="button" class="btn btn-outline-primary" id="load-btn" onclick="openMyDrawings();"><span
@@ -388,7 +388,7 @@
                                 class="mdi mdi-content-save-outline"></span> Save</button>
                     </div>
                     <input type="hidden" id="clipboard" />
-                    <input type="file" id="gif-file-input" accept="image/gif" style="display: none;" />
+                    <input type="file" id="image-file-input" accept="image/*" style="display: none;" />
 
                     <div class="btn-group btn-group-sm" id="editItem" style="display: none;">
                         <button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
@@ -1127,8 +1127,8 @@
         }
 
         // ---------------------------------------------------------------------
-        // GIF import: decode an animated GIF, scale each frame down to the
-        // current canvas size, and load them as animation frames.
+        // Image import: scale any image (PNG/JPEG/WebP/etc.) to the current
+        // canvas size, or decode an animated GIF into multiple frames.
         // ---------------------------------------------------------------------
         const MAX_GIF_FRAMES = 60;
 
@@ -1163,6 +1163,19 @@
                 grid.push(row);
             }
             return grid;
+        }
+
+        // Scale a drawable image source (HTMLImageElement / ImageBitmap / Canvas)
+        // down to a cols x rows hex grid.
+        function sourceToGrid(source, cols, rows) {
+            const small = document.createElement('canvas');
+            small.width = cols;
+            small.height = rows;
+            const sctx = small.getContext('2d');
+            sctx.imageSmoothingEnabled = true;
+            sctx.clearRect(0, 0, cols, rows);
+            sctx.drawImage(source, 0, 0, cols, rows);
+            return rgbaToGrid(sctx.getImageData(0, 0, cols, rows).data, cols, rows);
         }
 
         // Composite the decompressed GIF frames (which may be partial patches with
@@ -1223,80 +1236,113 @@
             return out;
         }
 
-        async function importGifFile(file) {
-            if (!file) return;
+        function isGifFile(file) {
+            if (!file) return false;
+            if (file.type === 'image/gif') return true;
+            // Some browsers leave type empty; fall back to the extension.
+            return /\.gif$/i.test(file.name || '');
+        }
+
+        function loadImageElement(file) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = function () {
+                    URL.revokeObjectURL(url);
+                    resolve(img);
+                };
+                img.onerror = function () {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('Browser could not decode this image'));
+                };
+                img.src = url;
+            });
+        }
+
+        function applyImportedFrames(grids, fps, toastMsg) {
+            loadArt(grids, COLS, ROWS);
+            if (typeof fps === 'number') $('#anim-fps').val(fps);
+
+            // A freshly imported image is unsaved content.
+            savedBaseline = '__unsaved__';
+            try { lastAutosaveSig = drawingSignature(); } catch (e) { }
+            persistAutosave();
+
+            swalBS.fire({
+                position: 'top-end',
+                icon: 'success',
+                theme: 'dark',
+                title: toastMsg,
+                showConfirmButton: false,
+                timer: 2500
+            });
+        }
+
+        async function importGifFrames(file) {
             let gifuct;
             try {
                 gifuct = await loadGifuct();
             } catch (e) {
                 console.error('Failed to load GIF decoder:', e);
-                swalBS.fire({
-                    icon: 'error',
-                    title: getCorrectTranslation('oops'),
-                    theme: 'dark',
-                    text: 'Could not load the GIF decoder. Check your internet connection.'
-                });
-                return;
+                throw new Error('Could not load the GIF decoder. Check your internet connection.');
             }
 
+            const buffer = await file.arrayBuffer();
+            const gif = gifuct.parseGIF(buffer);
+            const decoded = gifuct.decompressFrames(gif, true);
+            if (!decoded || decoded.length === 0) {
+                throw new Error('No frames found in GIF');
+            }
+
+            const gifW = gif.lsd.width;
+            const gifH = gif.lsd.height;
+
+            // Average the per-frame delays into a single preview FPS, since the
+            // tool uses one FPS for the whole animation.
+            const delays = decoded.map(f => f.delay || 0).filter(d => d > 0);
+            let fps = 10;
+            if (delays.length) {
+                const avg = delays.reduce((a, b) => a + b, 0) / delays.length;
+                fps = Math.min(60, Math.max(1, Math.round(1000 / avg)));
+            }
+
+            let grids = gifFramesToGrids(decoded, gifW, gifH, COLS, ROWS);
+            const wasCapped = grids.length > MAX_GIF_FRAMES;
+            grids = sampleEvenly(grids, MAX_GIF_FRAMES);
+
+            let msg = `Imported ${grids.length} frame(s) at ${COLS}x${ROWS}, ~${fps} FPS.`;
+            if (wasCapped) msg += ` The GIF had more than ${MAX_GIF_FRAMES} frames, so it was sampled down.`;
+            applyImportedFrames(grids, fps, msg);
+        }
+
+        async function importStaticImage(file) {
+            const img = await loadImageElement(file);
+            const grid = sourceToGrid(img, COLS, ROWS);
+            applyImportedFrames([grid], null, `Imported image at ${COLS}x${ROWS}.`);
+        }
+
+        async function importImageFile(file) {
+            if (!file) return;
             try {
-                const buffer = await file.arrayBuffer();
-                const gif = gifuct.parseGIF(buffer);
-                const decoded = gifuct.decompressFrames(gif, true);
-                if (!decoded || decoded.length === 0) {
-                    throw new Error('No frames found in GIF');
+                if (isGifFile(file)) {
+                    await importGifFrames(file);
+                } else {
+                    await importStaticImage(file);
                 }
-
-                const gifW = gif.lsd.width;
-                const gifH = gif.lsd.height;
-
-                // Average the per-frame delays into a single preview FPS, since the
-                // tool uses one FPS for the whole animation.
-                const delays = decoded.map(f => f.delay || 0).filter(d => d > 0);
-                let fps = 10;
-                if (delays.length) {
-                    const avg = delays.reduce((a, b) => a + b, 0) / delays.length;
-                    fps = Math.min(60, Math.max(1, Math.round(1000 / avg)));
-                }
-
-                let grids = gifFramesToGrids(decoded, gifW, gifH, COLS, ROWS);
-                const wasCapped = grids.length > MAX_GIF_FRAMES;
-                grids = sampleEvenly(grids, MAX_GIF_FRAMES);
-
-                // grids are already hex/target-sized; loadArt happily passes strings
-                // through and rebuilds the frames + histories for us.
-                loadArt(grids, COLS, ROWS);
-                $('#anim-fps').val(fps);
-
-                // A freshly imported GIF is unsaved content.
-                savedBaseline = '__unsaved__';
-                try { lastAutosaveSig = drawingSignature(); } catch (e) { }
-                persistAutosave();
-
-                let msg = `Imported ${grids.length} frame(s) at ${COLS}x${ROWS}, ~${fps} FPS.`;
-                if (wasCapped) msg += ` The GIF had more than ${MAX_GIF_FRAMES} frames, so it was sampled down.`;
-                swalBS.fire({
-                    position: 'top-end',
-                    icon: 'success',
-                    theme: 'dark',
-                    title: msg,
-                    showConfirmButton: false,
-                    timer: 2500
-                });
             } catch (e) {
-                console.error('Failed to import GIF:', e);
+                console.error('Failed to import image:', e);
                 swalBS.fire({
                     icon: 'error',
                     title: getCorrectTranslation('oops'),
                     theme: 'dark',
-                    text: 'Failed to import GIF: ' + e.message
+                    text: 'Failed to import image: ' + e.message
                 });
             }
         }
 
-        $('#gif-file-input').on('change', function () {
+        $('#image-file-input').on('change', function () {
             const file = this.files && this.files[0];
-            importGifFile(file);
+            importImageFile(file);
             // Reset so selecting the same file again re-triggers change.
             this.value = '';
         });

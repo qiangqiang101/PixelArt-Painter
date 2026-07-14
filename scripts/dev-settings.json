@@ -1,0 +1,10 @@
+{
+  "wampRoot": "C:\\wamp64",
+  "wwwSubfolder": "PixelArt-Painter-dev",
+  "database": "pixelart_dev",
+  "dbUser": "root",
+  "dbPassword": "",
+  "dbHost": "localhost",
+  "apiPort": 3001,
+  "linkInWampWww": false
+}
