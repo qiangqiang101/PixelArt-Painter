@@ -24,6 +24,7 @@ app.options('/api/data', cors({
 
 const databaseConfig = {
   host: config.host,
+  port: config.port || 3306,
   user: config.user,
   password: config.password,
   database: config.database,
@@ -62,6 +63,7 @@ app.get('/api/allitems/:page', (req, res) => {
           author: e.author,
           name: e.name,
           size: [e.width, e.height],
+          data: e.data,
           preview: e.preview,
           submittime: e.submittime
         });
@@ -118,6 +120,7 @@ app.get('/api/items/:id_array/:page', (req, res) => {
           author: e.author,
           name: e.name,
           size: [e.width, e.height],
+          data: e.data,
           preview: e.preview,
           submittime: e.submittime
         });
@@ -130,6 +133,65 @@ app.get('/api/items/:id_array/:page', (req, res) => {
         success: result.success,
         data: data,
         pagination: limit ? {
+          total: parseInt(result.pagination.total),
+          limit: result.pagination.limit,
+          offset: parseInt(result.pagination.offset),
+          hasMore: hasMore,
+          currPage: currPage,
+          nextPage: nextPage
+        } : null
+      });
+    }).catch(error => {
+      console.error(error);
+
+      res.status(201).json({
+        success: false,
+        data: error
+      });
+    });
+});
+
+// GET API endpoint - Retrieve items belonging to a specific author
+app.get('/api/useritems/:author/:page', (req, res) => {
+  const currPage = parseInt(req.params.page);
+  const author = req.params.author;
+  console.log(`GET request received for /api/useritems/${author}/${currPage}`);
+  const offset = currPage * limit;
+  var nextPage = currPage;
+
+  const itemService = new ItemService(databaseConfig);
+
+  itemService.getItemsByAuthor(author, {
+    limit: limit,
+    offset: offset,
+    orderBy: 'id',
+    orderDirection: 'DESC'
+  })
+    .then(result => {
+      console.log(result);
+
+      let data = [];
+      (result.data || []).forEach((e) => {
+        data.push({
+          id: e.id,
+          author: e.author,
+          name: e.name,
+          size: [e.width, e.height],
+          data: e.data,
+          preview: e.preview,
+          submittime: e.submittime
+        });
+      });
+
+      let hasMore = result.pagination
+        ? (parseInt(result.pagination.offset) + parseInt(result.pagination.limit)) < parseInt(result.pagination.total)
+        : false;
+      if (hasMore) nextPage++;
+
+      res.status(201).json({
+        success: result.success,
+        data: data,
+        pagination: result.pagination ? {
           total: parseInt(result.pagination.total),
           limit: result.pagination.limit,
           offset: parseInt(result.pagination.offset),
@@ -201,6 +263,7 @@ app.get('/api/searchitem/:search_string/:page', (req, res) => {
           author: e.author,
           name: e.name,
           size: [e.width, e.height],
+          data: e.data,
           preview: e.preview,
           submittime: e.submittime
         });
@@ -524,6 +587,7 @@ app.listen(PORT, () => {
   console.log('GET endpoints:');
   console.log(`http://localhost:${PORT}/api/allitems/:page`);
   console.log(`http://localhost:${PORT}/api/item/:id`);
+  console.log(`http://localhost:${PORT}/api/useritems/:author/:page`);
   console.log(`http://localhost:${PORT}/api/items/:idarray/:page`);
   console.log(`http://localhost:${PORT}/api/search/:search_string/:page`);
   console.log(`http://localhost:${PORT}/api/allusers`);

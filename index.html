@@ -71,16 +71,30 @@
             };
         }
 
-        // Global variables
+        // Global variables — matrixData is the active frame; frames[] holds all frames.
         let matrixData = Array(16).fill().map(() => Array(16).fill('#000000'));
-        const history = createUndoRedoManager(matrixData, 16, 16);
+        let frames = [JSON.parse(JSON.stringify(matrixData))];
+        let currentFrameIndex = 0;
+        let frameHistories = [createUndoRedoManager(matrixData, 16, 16)];
+        let history = frameHistories[0];
+        let isPlayingAnimation = false;
+        let animationTimer = null;
+        let previewFrameIndex = 0;
+
+        function commitCurrentFrame() {
+            if (!frames.length) return;
+            frames[currentFrameIndex] = JSON.parse(JSON.stringify(matrixData));
+            if (typeof renderFramesBar === 'function') renderFramesBar();
+        }
 
         // Set new state
         function setState(newState, cols = COLS, rows = ROWS) {
+            if (isPlayingAnimation) pauseAnimation();
             history.setState(JSON.parse(JSON.stringify(newState)), cols, rows); // Deep copy with dimensions
             matrixData = JSON.parse(JSON.stringify(newState));
             COLS = cols;
             ROWS = rows;
+            commitCurrentFrame();
             resizeCanvas();
             $('#size-cols').val(COLS); // Update input fields
             $('#size-rows').val(ROWS);
@@ -89,11 +103,13 @@
 
         // Modified undo to handle dimensions
         function undo() {
+            if (isPlayingAnimation) return;
             const previous = history.undo();
             if (previous) {
                 matrixData = JSON.parse(JSON.stringify(previous.matrix));
                 COLS = previous.cols;
                 ROWS = previous.rows;
+                commitCurrentFrame();
                 $('#size-cols').val(COLS); // Update input fields
                 $('#size-rows').val(ROWS);
                 resizeCanvas();
@@ -103,11 +119,13 @@
 
         // Modified redo to handle dimensions
         function redo() {
+            if (isPlayingAnimation) return;
             const next = history.redo();
             if (next) {
                 matrixData = JSON.parse(JSON.stringify(next.matrix));
                 COLS = next.cols;
                 ROWS = next.rows;
+                commitCurrentFrame();
                 $('#size-cols').val(COLS); // Update input fields
                 $('#size-rows').val(ROWS);
                 resizeCanvas();
@@ -120,6 +138,7 @@
             matrixData = JSON.parse(JSON.stringify(clearedState.matrix));
             COLS = clearedState.cols;
             ROWS = clearedState.rows;
+            commitCurrentFrame();
             $('#size-cols').val(COLS);
             $('#size-rows').val(ROWS);
             resizeCanvas();
@@ -237,121 +256,40 @@
         </nav>
     </header>
 
-    <main>
-        <section class="py-4 text-center container">
-            <div id="controls" class="row mb-3 g-3 d-flex justify-content-center">
-                <div class="col-auto">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text" id="size-label"><span
-                                class="mdi mdi-image-size-select-small"></span> Size</span>
-                        <input class="form-control" id="size-cols" type="number" value="16" min="1" step="1" max="99"
-                            style="width: 6rem;" />
-                        <input class="form-control" id="size-rows" type="number" value="16" min="1" step="1" max="99"
-                            style="width: 6rem;" />
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text" id="cuscol-label"><span class="mdi mdi-palette"></span> Custom
-                            Color</span>
-                        <input type="color" class="form-control form-control-color form-control-sm" id="custom-color-picker"
-                            placeholder="#FF0000" value="#FF0000" title="Choose your color" style="width: 3rem;">
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-primary btn-sm" id="import-btn" onclick="importData();"><span
-                            class="mdi mdi-import"></span> Import Data</button>
-                    <button type="button" class="btn btn-primary btn-sm" id="export-btn" onclick="exportData();"><span
-                            class="mdi mdi-export"></span> Export Data</button>
-                    <input type="hidden" id="clipboard" />
-                    <!-- <button type="button" class="btn btn-primary btn-sm" id="load-btn" data-bs-toggle="modal"
-                        data-bs-target="#modal-load" onclick="reloadSavedPixelArt();">
-                        <span class="mdi mdi-cloud-outline"></span> Load
-                    </button>
-                    <button type="button" class="btn btn-primary btn-sm" id="save-btn" data-bs-toggle="modal"
-                        data-bs-target="#modal-save">
-                        <span class="mdi mdi-content-save-outline"></span> Save
-                    </button> -->
-                </div>
-                <div class="col-auto" id="editItem" style="display: none;">
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-outline-success" id="btnUpdateEdit" data-bs-toggle="modal"
-                            data-bs-target="#modal-update">
-                            <span class="mdi mdi-content-save-outline"></span> Update
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
-                            onclick="cancelEdit();">
-                            <span class="mdi mdi-cancel"></span> Cancel
-                        </button>
-                    </div>
-
-                    <input id="txtUpdateId" value="-1" type="hidden" />
-                </div>
-            </div>
-
-            <div id="tools" class="row mb-3 g-3 d-flex justify-content-center">
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <button type="button" class="btn btn-primary" id="btnUndo"><span class="mdi mdi-undo"></span>
-                            Undo</button>
-                        <button type="button" class="btn btn-primary" id="btnRedo"><span class="mdi mdi-redo"></span>
-                            Redo</button>
-                    </div>
-                </div>
-
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
+    <main class="app-shell">
+        <div class="editor">
+            <aside class="tool-rail">
+                <div class="rail-section">
+                    <div class="btn-group-vertical btn-group-sm rail-tools" role="group">
                         <input type="radio" class="btn-check" id="draw" name="draw-mode" value="draw" checked>
-                        <label for="draw" class="btn btn-primary"><span class="mdi mdi-draw"></span> Draw</label>
+                        <label for="draw" class="btn btn-primary rail-btn" title="Draw"><span
+                                class="mdi mdi-draw"></span></label>
                         <input type="radio" class="btn-check" id="fill" name="draw-mode" value="fill">
-                        <label for="fill" class="btn btn-primary"><span class="mdi mdi-format-color-fill"></span>
-                            Fill</label>
-                        <button class="btn btn-primary" id="clear-btn" onclick="clearAll('#000000');"><span
-                                class="mdi mdi-trash-can-outline"></span>
-                            Clear
-                            All</button>
+                        <label for="fill" class="btn btn-primary rail-btn" title="Fill"><span
+                                class="mdi mdi-format-color-fill"></span></label>
+                        <input type="radio" class="btn-check" id="pick" name="draw-mode" value="pick">
+                        <label for="pick" class="btn btn-primary rail-btn" title="Pick color (K)"><span
+                                class="mdi mdi-eyedropper"></span></label>
+                        <button class="btn btn-primary rail-btn" id="clear-btn" onclick="clearAll('#000000');"
+                            title="Clear all"><span class="mdi mdi-trash-can-outline"></span></button>
                     </div>
                 </div>
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
-                        <label for="draw-full" class="btn btn-primary"><span class="mdi mdi-water"></span> Full</label>
 
-                        <input type="radio" class="btn-check" id="draw-forced" name="draw-color" value="0.3">
-                        <label for="draw-forced" class="btn btn-primary"><span class="mdi mdi-water"></span>
-                            Forced</label>
 
-                        <input type="radio" class="btn-check" id="draw-translucent" name="draw-color" value="0.5">
-                        <label for="draw-translucent" class="btn btn-primary"><span
-                                class="mdi mdi-water-opacity"></span> Translucent</label>
 
-                        <input type="radio" class="btn-check" id="draw-semi-translucent" name="draw-color" value="0.7">
-                        <label for="draw-semi-translucent" class="btn btn-primary"><span
-                                class="mdi mdi-water-opacity"></span> Semi Translucent</label>
-
-                        <input type="radio" class="btn-check" id="draw-clear" name="draw-color" value="0">
-                        <label for="draw-clear" class="btn btn-primary"><span class="mdi mdi-water-outline"></span>
-                            Black</label>
-
-                        <input type="radio" class="btn-check" id="draw-custom" name="draw-color" value="2">
-                        <label for="draw-custom" class="btn btn-primary"><span class="mdi mdi-water-plus"></span>
-                            Custom</label>
-                    </div>
-                </div>
-                <div class="col-auto">
-                    <div class="btn-group btn-group-sm">
-                        <div class="btn-group dropdown btn-group-sm">
-                            <a class="btn btn-primary dropdown-toggle" id="ddInvert" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-invert-colors"></span> Invert
-                            </a>
+                <div class="rail-section">
+                    <div class="btn-group-vertical btn-group-sm rail-tools" role="group">
+                        <div class="dropdown">
+                            <a class="btn btn-primary rail-btn dropdown-toggle" id="ddInvert" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false" title="Invert"><span
+                                    class="mdi mdi-invert-colors"></span></a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" id="btnInvert" href="#" onclick="invertAll();">
                                         <span class="mdi mdi-invert-colors"></span> Invert All
                                     </a></li>
                                 <li><a class="dropdown-item" id="btnInvertBlackWhite" href="#"
                                         onclick="invertBlackWhite();">
-                                        <span class="mdi mdi-invert-colors"></span> Invert Black & White
+                                        <span class="mdi mdi-invert-colors"></span> Invert Black &amp; White
                                     </a></li>
                                 <li><a class="dropdown-item" id="btnInvertTranslucents" href="#"
                                         onclick="invertTranslucents();">
@@ -359,28 +297,24 @@
                                     </a></li>
                             </ul>
                         </div>
-
-                        <div class="btn-group dropdown btn-group-sm">
-                            <a class="btn btn-primary dropdown-toggle" id="ddMirror" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-flip-to-front"></span> Mirror
-                            </a>
+                        <div class="dropdown">
+                            <a class="btn btn-primary rail-btn dropdown-toggle" id="ddMirror" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false" title="Mirror"><span
+                                    class="mdi mdi-flip-to-front"></span></a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" id="btnMirrorHorizontal" href="#"
                                         onclick="mirrorHorizontal();">
                                         <span class="mdi mdi-flip-horizontal"></span> Mirror Horizontal
                                     </a></li>
-                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#"
-                                        onclick="mirrorVertical();">
+                                <li><a class="dropdown-item" id="btnMirrorVertical" href="#" onclick="mirrorVertical();">
                                         <span class="mdi mdi-flip-vertical"></span> Mirror Vertical
                                     </a></li>
                             </ul>
                         </div>
-                        <div class="btn-group dropdown btn-group-sm">
-                            <a class="btn btn-primary dropdown-toggle" id="ddFlip" href="#" role="button"
-                                data-bs-toggle="dropdown" aria-expanded="false">
-                                <span class="mdi mdi-rotate-orbit"></span> Flip
-                            </a>
+                        <div class="dropdown">
+                            <a class="btn btn-primary rail-btn dropdown-toggle" id="ddFlip" href="#" role="button"
+                                data-bs-toggle="dropdown" aria-expanded="false" title="Flip"><span
+                                    class="mdi mdi-rotate-orbit"></span></a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" id="btnFlipHorizontal" href="#"
                                         onclick="flip('horizontal');">
@@ -393,23 +327,132 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <div class="container">
-            <div id="canvas-container" class="d-flex justify-content-center">
-                <canvas id="matrix-canvas"></canvas>
-            </div>
+                <div class="rail-section rail-color">
+                    <input type="color" class="form-control form-control-color rail-color-main" id="custom-color-picker"
+                        value="#FF0000" title="Custom color">
+                    <div class="rail-presets" id="color-presets"></div>
+                    <div class="paint-divider" aria-hidden="true"></div>
+                    <div class="paint-modes" role="group">
+                        <!-- Hidden: custom painting is driven by the color picker/presets above. -->
+                        <input type="radio" class="btn-check" id="draw-custom" name="draw-color" value="2">
 
-            <div id="matrix-info" class="d-flex justify-content-center">
-                <span id="mouse-pos">Position: (-1, -1)</span>
-                <span id="mi-seperator" style="margin: 0 10px;"> | </span>
-                <span id="cell-size">Cell Size: 0x0</span>
-            </div>
+                        <input type="radio" class="btn-check" id="draw-full" name="draw-color" value="1" checked>
+                        <label for="draw-full" class="paint-swatch" title="Transparent (effect shows through)"></label>
+
+                        <input type="radio" class="btn-check" id="draw-translucent" name="draw-color" value="0.5">
+                        <label for="draw-translucent" class="paint-swatch" title="Translucent 1 (dimmer effect)"></label>
+
+                        <input type="radio" class="btn-check" id="draw-semi-translucent" name="draw-color" value="0.7">
+                        <label for="draw-semi-translucent" class="paint-swatch" title="Translucent 2 (even dimmer effect)"></label>
+
+                        <input type="radio" class="btn-check" id="draw-forced" name="draw-color" value="0.3">
+                        <label for="draw-forced" class="paint-swatch" title="Forced (single color)"></label>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="canvas-stage">
+                <div class="stage-topbar">
+                    <div class="input-group input-group-sm stage-size">
+                        <span class="input-group-text" id="size-label"><span
+                                class="mdi mdi-image-size-select-small"></span> Size</span>
+                        <input class="form-control text-center" id="size-cols" type="number" value="16" min="1" step="1"
+                            max="99" />
+                        <span class="input-group-text">&times;</span>
+                        <input class="form-control text-center" id="size-rows" type="number" value="16" min="1" step="1"
+                            max="99" />
+                    </div>
+
+                    <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary" id="btnUndo" title="Undo"><span
+                                    class="mdi mdi-undo"></span></button>
+                            <button type="button" class="btn btn-outline-primary" id="btnRedo" title="Redo"><span
+                                    class="mdi mdi-redo"></span></button>
+                    </div>
+
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-primary" id="new-btn" title="New drawing (reset tool)" onclick="resetTool();"><span
+                                class="mdi mdi-file-plus-outline"></span> New</button>
+                        <button type="button" class="btn btn-outline-primary" id="import-btn" onclick="importData();"><span
+                                class="mdi mdi-import"></span> Import Data</button>
+                        <button type="button" class="btn btn-outline-primary" id="import-gif-btn"
+                            title="Import a GIF animation (scaled to the current canvas size)"
+                            onclick="document.getElementById('gif-file-input').click();"><span
+                                class="mdi mdi-file-gif-box"></span> Import GIF</button>
+                        <button type="button" class="btn btn-outline-primary" id="export-btn" onclick="exportData();"><span
+                                class="mdi mdi-export"></span> Export Data</button>
+                        <button type="button" class="btn btn-outline-primary" id="load-btn" onclick="openMyDrawings();"><span
+                                class="mdi mdi-cloud-outline"></span> Load</button>
+                        <button type="button" class="btn btn-primary" id="save-btn" onclick="openSaveModal();"><span
+                                class="mdi mdi-content-save-outline"></span> Save</button>
+                    </div>
+                    <input type="hidden" id="clipboard" />
+                    <input type="file" id="gif-file-input" accept="image/gif" style="display: none;" />
+
+                    <div class="btn-group btn-group-sm" id="editItem" style="display: none;">
+                        <button type="button" class="btn btn-outline-secondary" id="btnCancelEdit"
+                            onclick="cancelEdit();"><span class="mdi mdi-cancel"></span> Cancel</button>
+                        <input id="txtUpdateId" value="-1" type="hidden" />
+                    </div>
+                </div>
+
+                <div id="canvas-container">
+                    <canvas id="matrix-canvas"></canvas>
+                </div>
+
+                <div id="matrix-info">
+                    <span id="mouse-pos">Position: (-1, -1)</span>
+                    <span id="mi-seperator" style="margin: 0 10px;"> | </span>
+                    <span id="cell-size">Cell Size: 0x0</span>
+                </div>
+            </section>
         </div>
+
+        <footer class="frames-footer" id="frames-panel">
+            <div class="frames-toolbar">
+                <span id="frames-label" class="text-muted small"><span class="mdi mdi-filmstrip"></span> Frames</span>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" id="btn-frame-add" onclick="addFrame();"
+                        title="Add frame">
+                        <span class="mdi mdi-plus"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btn-frame-dup" onclick="duplicateFrame();"
+                        title="Duplicate frame">
+                        <span class="mdi mdi-content-copy"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" id="btn-frame-del" onclick="deleteFrame();"
+                        title="Delete frame">
+                        <span class="mdi mdi-delete-outline"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-frame-left" onclick="moveFrame(-1);"
+                        title="Move left">
+                        <span class="mdi mdi-arrow-left"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-frame-right" onclick="moveFrame(1);"
+                        title="Move right">
+                        <span class="mdi mdi-arrow-right"></span>
+                    </button>
+                </div>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-success" id="btn-anim-play"
+                        onclick="toggleAnimationPlayback();">
+                        <span class="mdi mdi-play"></span> <span id="btn-anim-play-label">Play</span>
+                    </button>
+                </div>
+                <div class="input-group input-group-sm" style="width: auto;">
+                    <span class="input-group-text" id="fps-label">FPS</span>
+                    <input type="number" class="form-control" id="anim-fps" value="10" min="1" max="60" step="1"
+                        style="width: 4.5rem;" />
+                </div>
+                <span class="text-muted small ms-auto" id="fps-hint">Preview FPS is local only; the WLED plugin uses its
+                    own Pixel art FPS setting.</span>
+            </div>
+            <div id="frames-strip" class="frames-strip"></div>
+        </footer>
     </main>
 
-    <!-- <div class="modal fade" id="modal-save" tabindex="-1" aria-labelledby="modal-save-label" aria-hidden="true">
+    <div class="modal fade" id="modal-save" tabindex="-1" aria-labelledby="modal-save-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -424,38 +467,22 @@
                                 maxlength="50" />
                         </div>
                     </div>
+                    <div class="row mt-3" id="save-copy-row" style="display: none;">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="chk-save-copy" />
+                                <label class="form-check-label" for="chk-save-copy">Save as a copy (new
+                                    drawing)</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" id="save-confirm-btn">Submit</button>
                 </div>
             </div>
         </div>
-    </div> -->
-
-    <!-- <div class="modal fade" id="modal-load" tabindex="-1" aria-labelledby="modal-load-label" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="modal-load-label">Load pixel art</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-12">
-                            <label for="select-load" class="form-label">Which pixel art would you like load?</label>
-                            <select class="form-select" id="select-load">
-                                <option value="null" disabled selected>Please select...</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" id="remove-confirm-btn">Remove</button>
-                    <button type="button" class="btn btn-primary" id="load-confirm-btn">Submit</button>
-                </div>
-            </div>
-        </div>
-    </div> -->
+    </div>
 
     <div class="modal fade" id="modal-share" tabindex="-1" aria-labelledby="modal-share-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -606,7 +633,13 @@
 
                 <li class="nav-item">
                     <button class="nav-link" id="favorites-items-tab" data-bs-toggle="tab"
-                        data-bs-target="#favorite-items" onclick="getFavoritesCommunityItems();">Favorites</button>
+                        data-bs-target="#favorite-items">Favorites</button>
+                </li>
+
+                <li class="nav-item">
+                    <button class="nav-link" id="my-items-tab" data-bs-toggle="tab"
+                        data-bs-target="#my-items"><span
+                            class="mdi mdi-account-outline"></span> My Drawings</button>
                 </li>
             </ul>
 
@@ -655,6 +688,17 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="tab-pane fade" id="my-items" aria-labelledby="my-items-tab">
+                    <div class="row mb-3" id="community-mine-container">
+                    </div>
+                    <div class="row">
+                        <div class="d-grid gap-2 col-auto mx-auto">
+                            <button class="btn btn-outline-primary" type="button" data-page="0"
+                                id="mine-load-more-btn" disabled>Load More</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -663,10 +707,14 @@
 
 
     <script>
-        //const api = 'http://localhost:3001/api/';
-        const api = 'https://pixelart.nolliergb.com/api/';
+        const api = 'http://localhost:3001/api/';
+        //const api = 'https://pixelart.nolliergb.com/api/';
 
         const swalBS = Swal.mixin({
+            // Prevent SweetAlert from toggling `height:auto` on <html>, which
+            // breaks the app's full-height (100vh) layout and briefly resizes
+            // the canvas/frames panel while a toast is shown.
+            heightAuto: false,
             customClass: {
                 confirmButton: 'btn btn-primary',
                 cancelButton: 'btn btn-secondary'
@@ -676,6 +724,233 @@
         var favorites = [];
 
         const colorMap = { white: '#FFFFFFFF', lightTranslucent: '#FFFFFFCD', darkTranslucent: '#FFFFFF9B', black: '#000000', forced: '#FFFFFF69' };
+
+        function encodeGrid(grid) {
+            return JSON.stringify(grid)
+                .replaceAll('"#FFFFFFFF"', '1')
+                .replaceAll('"#000000"', '0')
+                .replaceAll('"#FFFFFFCD"', '0.5')
+                .replaceAll('"#FFFFFF9B"', '0.7')
+                .replaceAll('"#FFFFFF69"', '0.3');
+        }
+
+        function encodeArtData() {
+            commitCurrentFrame();
+            if (frames.length <= 1) {
+                return encodeGrid(frames[0] || matrixData);
+            }
+            return '[' + frames.map(encodeGrid).join(',') + ']';
+        }
+
+        function decodeCell(value) {
+            switch (value) {
+                case 0: return colorMap.black;
+                case 0.3: return colorMap.forced;
+                case 0.5: return colorMap.lightTranslucent;
+                case 0.7: return colorMap.darkTranslucent;
+                case 1: return colorMap.white;
+                default: return typeof value === 'string' ? value : colorMap.black;
+            }
+        }
+
+        function decodeGrid(grid) {
+            return grid.map(row => row.map(decodeCell));
+        }
+
+        function createBlankGrid(cols, rows) {
+            return Array(rows).fill().map(() => Array(cols).fill('#000000'));
+        }
+
+        function rebuildFrameHistoriesFromFrames(cols, rows) {
+            frameHistories = frames.map(f => createUndoRedoManager(f, cols, rows));
+            history = frameHistories[currentFrameIndex];
+        }
+
+        function loadArt(parsed, colsHint, rowsHint) {
+            pauseAnimation();
+            if (!Array.isArray(parsed) || parsed.length === 0) {
+                throw new Error('Invalid art data');
+            }
+
+            let loadedFrames;
+            // Animated: [[[row]], [[row]], ...] — Array.isArray(parsed[0][0])
+            if (Array.isArray(parsed[0]) && Array.isArray(parsed[0][0])) {
+                loadedFrames = parsed.map(frame => decodeGrid(frame));
+            } else {
+                loadedFrames = [decodeGrid(parsed)];
+            }
+
+            // Derive dimensions from the actual pixel data — the stored size
+            // hint can be stale/incorrect (e.g. an older save), so the data wins.
+            const first = loadedFrames[0];
+            const newRows = first.length || rowsHint || 16;
+            const newCols = (first[0] && first[0].length) ? first[0].length : (colsHint || 16);
+
+            // All frames must share the same dimensions as the first frame.
+            for (let i = 0; i < loadedFrames.length; i++) {
+                const f = loadedFrames[i];
+                if (!Array.isArray(f) || f.length !== newRows || !f.every(row => Array.isArray(row) && row.length === newCols)) {
+                    throw new Error('Matrix data dimensions mismatch');
+                }
+            }
+
+            frames = loadedFrames.map(f => JSON.parse(JSON.stringify(f)));
+            currentFrameIndex = 0;
+            matrixData = JSON.parse(JSON.stringify(frames[0]));
+            COLS = newCols;
+            ROWS = newRows;
+            rebuildFrameHistoriesFromFrames(COLS, ROWS);
+            $('#size-cols').val(COLS);
+            $('#size-rows').val(ROWS);
+            resizeCanvas();
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        // ---------------------------------------------------------------------
+        // Autosave & unsaved-changes tracking
+        // ---------------------------------------------------------------------
+        const AUTOSAVE_KEY = 'pixelart_autosave';
+        // Signature of the last saved/loaded/initial (clean) state.
+        let savedBaseline = null;
+        let lastAutosaveSig = null;
+
+        function drawingSignature() {
+            // encodeArtData() commits the active frame, so this is a stable
+            // content hash covering all frames plus the canvas dimensions.
+            return JSON.stringify({ d: encodeArtData(), c: COLS, r: ROWS });
+        }
+
+        function isDrawingDirty() {
+            if (savedBaseline === null) return false;
+            try { return drawingSignature() !== savedBaseline; } catch (e) { return false; }
+        }
+
+        // Call after the drawing matches persisted storage (init/load/save).
+        function markDrawingSaved() {
+            try { savedBaseline = drawingSignature(); } catch (e) { savedBaseline = null; }
+        }
+
+        function persistAutosave() {
+            if (isPlayingAnimation) return;
+            try {
+                const payload = {
+                    v: 1,
+                    data: encodeArtData(),
+                    cols: COLS,
+                    rows: ROWS,
+                    frameIndex: currentFrameIndex,
+                    fps: getAnimFps(),
+                    updateId: $('#txtUpdateId').val(),
+                    updateName: $('#txtUpdateName').val(),
+                    dirty: isDrawingDirty(),
+                    ts: Date.now()
+                };
+                localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(payload));
+            } catch (e) { /* storage may be unavailable or full */ }
+        }
+
+        function restoreAutosave() {
+            let payload;
+            try {
+                const raw = localStorage.getItem(AUTOSAVE_KEY);
+                if (!raw) return false;
+                payload = JSON.parse(raw);
+            } catch (e) { return false; }
+            if (!payload || !payload.data) return false;
+            try {
+                const parsed = JSON.parse(payload.data);
+                loadArt(parsed, payload.cols, payload.rows);
+
+                if (typeof payload.frameIndex === 'number' &&
+                    payload.frameIndex > 0 && payload.frameIndex < frames.length) {
+                    currentFrameIndex = payload.frameIndex;
+                    matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+                    history = frameHistories[currentFrameIndex];
+                    drawMatrix();
+                    renderFramesBar();
+                    updateFrameControls();
+                }
+
+                if (payload.fps) $('#anim-fps').val(payload.fps);
+
+                if (payload.updateId && payload.updateId !== '-1' && payload.updateId !== -1) {
+                    $('#editItem').css('display', 'block');
+                    $('#txtUpdateId').val(payload.updateId);
+                    $('#txtUpdateName').val(payload.updateName || '');
+                    $('#btnShare').prop('disabled', true);
+                }
+                refreshSaveButton();
+
+                // Preserve the previous unsaved-changes state across the reload:
+                // if it was dirty, use a sentinel baseline so it stays dirty.
+                savedBaseline = payload.dirty ? '__unsaved__' : drawingSignature();
+                return true;
+            } catch (e) {
+                console.error('Failed to restore autosave:', e);
+                return false;
+            }
+        }
+
+        // Reflect edit state on the Save button: when editing an owned record it
+        // acts as (and reads) "Update"; otherwise it creates a new drawing.
+        function refreshSaveButton() {
+            const $btn = $('#save-btn');
+            if (!$btn.length) return;
+            const editing = parseInt($('#txtUpdateId').val(), 10) > 0;
+            $btn.html(getCorrectTranslation(editing ? 'update' : 'save'));
+            $btn.toggleClass('btn-success', editing).toggleClass('btn-primary', !editing);
+        }
+
+        // Reset the tool back to a fresh, blank drawing at the default size.
+        function resetTool() {
+            const doReset = function () {
+                pauseAnimation();
+                COLS = 16;
+                ROWS = 16;
+                $('#size-cols').val(COLS);
+                $('#size-rows').val(ROWS);
+                $('#anim-fps').val(10);
+
+                matrixData = createBlankGrid(COLS, ROWS);
+                frames = [JSON.parse(JSON.stringify(matrixData))];
+                currentFrameIndex = 0;
+                frameHistories = [createUndoRedoManager(matrixData, COLS, ROWS)];
+                history = frameHistories[0];
+                setState(matrixData);
+
+                // Leave edit mode so the next Save creates a new drawing.
+                $('#editItem').css('display', 'none');
+                $('#txtUpdateId').val('-1');
+                $('#txtUpdateName').val('');
+                $('#btnShare').prop('disabled', false);
+                refreshSaveButton();
+
+                resizeCanvas();
+                drawMatrix();
+                renderFramesBar();
+                updateFrameControls();
+
+                markDrawingSaved();
+                try { lastAutosaveSig = drawingSignature(); } catch (e) { }
+                persistAutosave();
+            };
+
+            if (isDrawingDirty()) {
+                swalBS.fire({
+                    icon: 'warning',
+                    theme: 'dark',
+                    title: getCorrectTranslation('oops'),
+                    text: 'Reset the tool to a new blank drawing? Unsaved changes will be lost.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Reset',
+                    cancelButtonText: 'Cancel'
+                }).then(function (r) { if (r.isConfirmed) doReset(); });
+            } else {
+                doReset();
+            }
+        }
 
         $(document).ready(function () {
             let loggedIn = { username: sessionStorage.getItem('username') || null, userid: sessionStorage.getItem('id') || null };
@@ -693,16 +968,51 @@
             }
             changeLanguage(language);
 
-            // Initialize matrix and history
+            // Initialize matrix, frames, and history
             COLS = parseInt($('#size-cols').val());
             ROWS = parseInt($('#size-rows').val());
             matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-            history.clear(); // Reset history
+            frames = [JSON.parse(JSON.stringify(matrixData))];
+            currentFrameIndex = 0;
+            frameHistories = [createUndoRedoManager(matrixData, COLS, ROWS)];
+            history = frameHistories[0];
             setState(matrixData); // Save initial state
             resizeCanvas();
+            renderFramesBar();
+            updateFrameControls();
+
+            markDrawingSaved(); // a blank canvas is the clean starting point
 
             let shareId = getUrlParam('id'); //getUrlVars()['id'];
-            if (shareId != undefined && $.isNumeric(shareId)) downloadItem(shareId);
+            if (shareId != undefined && $.isNumeric(shareId)) {
+                downloadItem(shareId);
+            } else {
+                restoreAutosave();
+            }
+
+            try { lastAutosaveSig = drawingSignature(); } catch (e) { lastAutosaveSig = null; }
+            refreshSaveButton();
+
+            // Periodically persist the working drawing so a reload can restore it.
+            setInterval(function () {
+                if (isPlayingAnimation) return;
+                let sig;
+                try { sig = drawingSignature(); } catch (e) { return; }
+                if (sig !== lastAutosaveSig) {
+                    persistAutosave();
+                    lastAutosaveSig = sig;
+                }
+            }, 1500);
+
+            // Warn before leaving/reloading when there are unsaved changes.
+            window.addEventListener('beforeunload', function (e) {
+                try { persistAutosave(); } catch (err) { /* ignore */ }
+                if (isDrawingDirty()) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                    return '';
+                }
+            });
         });
 
         const naughtyWords = ['`', '"', "'", 'fuck', 'bastard', 'bitch', 'shit', 'damn', 'arse', 'asshole', 'cock', 'cunt', 'crap',
@@ -712,23 +1022,72 @@
         $('#size-cols, #size-rows').on('input', function () {
             clearTimeout(resizeTimeout); // Clear previous timeout
             resizeTimeout = setTimeout(() => {
+                pauseAnimation();
                 const newCols = parseInt($('#size-cols').val()) || 16; // Fallback to 16 if invalid
                 const newRows = parseInt($('#size-rows').val()) || 16;
+                const oldCols = COLS;
+                const oldRows = ROWS;
 
-                // Create new matrix, preserving old data where possible
-                const newMatrix = Array(newRows).fill().map((_, row) =>
-                    Array(newCols).fill('#000000').map((_, col) =>
-                        row < ROWS && col < COLS ? matrixData[row][col] : '#000000'
+                commitCurrentFrame();
+
+                // Resize every frame, preserving old data where possible
+                frames = frames.map(frame =>
+                    Array(newRows).fill().map((_, row) =>
+                        Array(newCols).fill('#000000').map((_, col) =>
+                            row < oldRows && col < oldCols ? frame[row][col] : '#000000'
+                        )
                     )
                 );
 
-                setState(newMatrix, newCols, newRows); // Save state with new dimensions
+                COLS = newCols;
+                ROWS = newRows;
+                matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+                rebuildFrameHistoriesFromFrames(COLS, ROWS);
+                resizeCanvas();
+                drawMatrix();
+                renderFramesBar();
+                updateFrameControls();
             }, 250); // 250ms debounce
         });
 
+        // Remembers the tool used before switching to the eyedropper so it can
+        // be restored automatically after a color is sampled.
+        let previousPaintTool = 'draw';
+
         $('input[name="draw-mode"]').change(function () {
-            currentMode = this.value;
+            const newMode = this.value;
+            if (newMode === 'pick' && currentMode !== 'pick') {
+                previousPaintTool = currentMode;
+            }
+            currentMode = newMode;
+            $('#matrix-canvas').css('cursor', currentMode === 'pick' ? 'crosshair' : 'default');
         });
+
+        // Eyedropper: sample the clicked cell's color and select the matching
+        // paint mode (or Custom for arbitrary hex colors).
+        function pickColor(row, col) {
+            if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
+            const value = matrixData[row][col];
+            switch (value) {
+                case colorMap.white:
+                    $('#draw-full').prop('checked', true).trigger('change');
+                    break;
+                case colorMap.lightTranslucent:
+                    $('#draw-translucent').prop('checked', true).trigger('change');
+                    break;
+                case colorMap.darkTranslucent:
+                    $('#draw-semi-translucent').prop('checked', true).trigger('change');
+                    break;
+                case colorMap.forced:
+                    $('#draw-forced').prop('checked', true).trigger('change');
+                    break;
+                default:
+                    if (typeof value === 'string' && value.charAt(0) === '#') {
+                        $('#custom-color-picker').val(value.substring(0, 7));
+                        $('#draw-custom').prop('checked', true).trigger('change');
+                    }
+            }
+        }
 
         $('input[name="draw-color"]').change(function () {
             currentColor = parseFloat(this.value);
@@ -753,37 +1112,8 @@
                 $('#clipboard').val(text);
             }
             try {
-                matrixData = JSON.parse($('#clipboard').val());
-
-                const msize = { cols: matrixData[0].length, rows: matrixData.length };
-                console.log(msize);
-
-                $('#size-cols').val(msize.cols);
-                $('#size-rows').val(msize.rows);
-
-                matrixData = matrixData.map(row => row.map(function (value) {
-                    switch (value) {
-                        case 0:
-                            return colorMap.black;
-                            break;
-                        case 0.3:
-                            return colorMap.forced;
-                            break;
-                        case 0.5:
-                            return colorMap.lightTranslucent;
-                            break;
-                        case 0.7:
-                            return colorMap.darkTranslucent;
-                            break;
-                        case 1:
-                            return colorMap.white;
-                            break;
-                        default:
-                            return value;
-                    }
-                }));
-
-                setState(matrixData, msize.cols, msize.rows); // Save state
+                const parsed = JSON.parse($('#clipboard').val());
+                loadArt(parsed);
             } catch (e) {
                 console.log(e);
                 swalBS.fire({
@@ -796,158 +1126,380 @@
             }
         }
 
-        // $('#remove-confirm-btn').click(function (evt) {
-        //     if ($('#select-load').val() === 'null') {
-        //         $('#select-load').addClass('is-invalid');
-        //     } else {
-        //         let name = $('#select-load option:selected').text();
-        //         console.log(name);
-        //         localStorage.removeItem(`item-${name}`);
+        // ---------------------------------------------------------------------
+        // GIF import: decode an animated GIF, scale each frame down to the
+        // current canvas size, and load them as animation frames.
+        // ---------------------------------------------------------------------
+        const MAX_GIF_FRAMES = 60;
 
-        //         if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
-        //         $('#modal-load').modal('hide');
-        //     }
-        // });
+        // gifuct-js is a CommonJS module; load it lazily as a bundled ES module
+        // only when the user actually imports a GIF.
+        let _gifuctPromise = null;
+        function loadGifuct() {
+            if (!_gifuctPromise) {
+                _gifuctPromise = import('https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/+esm');
+            }
+            return _gifuctPromise;
+        }
 
-        // $('#load-confirm-btn').click(function (evt) {
-        //     if ($('#select-load').val() === 'null') {
-        //         $('#select-load').addClass('is-invalid');
-        //     } else {
-        //         try {
-        //             var $select = $('#select-load option:selected');
-        //             let size = JSON.parse($select.attr('data-size')); // always array
-        //             COLS = size[0];
-        //             ROWS = size[1];
+        function toHex2(n) {
+            return ('0' + (n & 0xff).toString(16).toUpperCase()).slice(-2);
+        }
 
-        //             // Parse the actual matrix first
-        //             let raw = $select.val();
-        //             matrixData = typeof raw === "string" ? JSON.parse(raw) : raw;
+        // Convert scaled RGBA pixel data into a hex-string grid. Mostly-transparent
+        // pixels become the tool's "Transparent" special value.
+        function rgbaToGrid(data, cols, rows) {
+            const grid = [];
+            for (let y = 0; y < rows; y++) {
+                const row = [];
+                for (let x = 0; x < cols; x++) {
+                    const i = (y * cols + x) * 4;
+                    if (data[i + 3] < 128) {
+                        row.push(colorMap.white); // Transparent
+                    } else {
+                        row.push('#' + toHex2(data[i]) + toHex2(data[i + 1]) + toHex2(data[i + 2]));
+                    }
+                }
+                grid.push(row);
+            }
+            return grid;
+        }
 
+        // Composite the decompressed GIF frames (which may be partial patches with
+        // their own disposal rules), scaling every fully-composited frame down to
+        // the target cols x rows grid.
+        function gifFramesToGrids(gframes, gifWidth, gifHeight, cols, rows) {
+            const full = document.createElement('canvas');
+            full.width = gifWidth;
+            full.height = gifHeight;
+            const fctx = full.getContext('2d');
 
+            const patch = document.createElement('canvas');
+            const pctx = patch.getContext('2d');
 
-        //             matrixData = Array(ROWS).fill().map(() => Array(COLS).fill('#000000'));
-        //             historyClear(); // Clear history
-        //             resizeCanvas();
+            const small = document.createElement('canvas');
+            small.width = cols;
+            small.height = rows;
+            const sctx = small.getContext('2d');
+            sctx.imageSmoothingEnabled = true;
 
-        //             matrixData = typeof $select.val() === "string" ? JSON.parse($select.val()) : $select.val();
-        //             matrixData = matrixData.map(row => row.map(function (value) {
-        //                 switch (value) {
-        //                     case 0:
-        //                         return colorMap.black;
-        //                         break;
-        //                     case 0.3:
-        //                         return colorMap.forced;
-        //                         break;
-        //                     case 0.5:
-        //                         return colorMap.lightTranslucent;
-        //                         break;
-        //                     case 0.7:
-        //                         return colorMap.darkTranslucent;
-        //                         break;
-        //                     case 1:
-        //                         return colorMap.white;
-        //                         break;
-        //                     default:
-        //                         return value;
-        //                 }
-        //             }));
+            let saved = null;
+            const grids = [];
 
-        //             $('#size-cols').val(COLS);
-        //             $('#size-rows').val(ROWS);
+            for (const frame of gframes) {
+                const dims = frame.dims;
 
-        //             setState(matrixData, COLS, ROWS); // Save state
+                if (frame.disposalType === 3) {
+                    saved = fctx.getImageData(0, 0, full.width, full.height);
+                }
 
-        //             if ($('#select-load').hasClass('is-invalid')) $('select-load').removeClass('is-invalid');
-        //             $('#modal-load').modal('hide');
-        //         } catch (e) {
-        //             console.log(e);
-        //             swalBS.fire({
-        //                 icon: "error",
-        //                 title: getCorrectTranslation('oops'),
-        //                 theme: "dark",
-        //                 text: getCorrectTranslation('errorParsingJson'),
-        //             });
-        //             undo(); // Revert on error
-        //         }
-        //     }
+                // Render the patch to its own canvas, then drawImage so the frame's
+                // transparent pixels composite over the previous frame (alpha-aware),
+                // unlike putImageData which would overwrite them.
+                patch.width = dims.width;
+                patch.height = dims.height;
+                pctx.putImageData(new ImageData(new Uint8ClampedArray(frame.patch), dims.width, dims.height), 0, 0);
+                fctx.drawImage(patch, dims.left, dims.top);
 
-        // });
+                sctx.clearRect(0, 0, cols, rows);
+                sctx.drawImage(full, 0, 0, gifWidth, gifHeight, 0, 0, cols, rows);
+                grids.push(rgbaToGrid(sctx.getImageData(0, 0, cols, rows).data, cols, rows));
 
-        // $('#save-confirm-btn').click(function (evt) {
-        //     if (!$('#txt-save').val()) {
-        //         $('#txt-save').addClass('is-invalid');
-        //         $('#txt-save').focus();
-        //     } else if (naughtyWords.includes($('#txt-save').val())) {
-        //         $('#txt-save').addClass('is-invalid');
-        //         $('#txt-save').focus();
-        //         swalBS.fire({
-        //             icon: "error",
-        //             title: getCorrectTranslation('oops'),
-        //             theme: "dark",
-        //             text: getCorrectTranslation('inappropriateTextWarning'),
-        //         });
-        //     } else {
-        //         const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
-        //         const name = $('#txt-save').val();
-        //         const obj = { name: name, size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())], data: dataStr };
-        //         localStorage.setItem(`item-${name}`, JSON.stringify(obj));
+                if (frame.disposalType === 2) {
+                    fctx.clearRect(dims.left, dims.top, dims.width, dims.height);
+                } else if (frame.disposalType === 3 && saved) {
+                    fctx.putImageData(saved, 0, 0);
+                }
+            }
+            return grids;
+        }
 
-        //         swalBS.fire({
-        //             position: "top-end",
-        //             icon: "success",
-        //             theme: "dark",
-        //             title: getCorrectTranslation('saved'),
-        //             showConfirmButton: false,
-        //             timer: 1500
-        //         });
+        // Evenly sample a list down to at most `max` items, preserving order.
+        function sampleEvenly(arr, max) {
+            if (arr.length <= max) return arr;
+            const out = [];
+            const step = arr.length / max;
+            for (let i = 0; i < max; i++) out.push(arr[Math.floor(i * step)]);
+            return out;
+        }
 
-        //         $('#txt-save').val('');
-        //         if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
-        //         $('#modal-save').modal('hide');
-        //     }
-        // });
+        async function importGifFile(file) {
+            if (!file) return;
+            let gifuct;
+            try {
+                gifuct = await loadGifuct();
+            } catch (e) {
+                console.error('Failed to load GIF decoder:', e);
+                swalBS.fire({
+                    icon: 'error',
+                    title: getCorrectTranslation('oops'),
+                    theme: 'dark',
+                    text: 'Could not load the GIF decoder. Check your internet connection.'
+                });
+                return;
+            }
 
-        // function reloadSavedPixelArt() {
-        //     $('#select-load').find('optgroup').remove();
-        //     $('#select-load').find('option').remove().end().append($('<option></option>').val('null').prop('disabled', true).prop('selected', true).html(getCorrectTranslation('pleaseSelect')));
-        //     var values = stringifyLocalStorageExcept(['language', 'username', 'password', 'remember', 'favorites']);
-        //     $.each(values, function (key, item) {
-        //         if (Array.isArray(item.size)) {
-        //             $('#select-load').append($(
-        //                 `<option data-size="[${item.size}]" 
-        //              data-group="${item.size[0]}x${item.size[1]}" 
-        //              value="${item.data}">${item.name}</option>`
-        //             ));
-        //         } else {
-        //             console.warn("Item missing size:", item);
-        //         }
-        //     });
+            try {
+                const buffer = await file.arrayBuffer();
+                const gif = gifuct.parseGIF(buffer);
+                const decoded = gifuct.decompressFrames(gif, true);
+                if (!decoded || decoded.length === 0) {
+                    throw new Error('No frames found in GIF');
+                }
 
-        //     var optiongroups = {};
-        //     $("#select-load option[data-group]").each(function () {
-        //         optiongroups[$.trim($(this).attr("data-group"))] = true;
-        //     });
-        //     $.each(optiongroups, function (c) {
-        //         $("select option[data-group='" + c + "']").wrapAll('<optgroup label="' + c + '">');
-        //     });
-        // };
+                const gifW = gif.lsd.width;
+                const gifH = gif.lsd.height;
 
-        // function stringifyLocalStorageExcept(keysToSkip) {
-        //     if (!Array.isArray(keysToSkip)) keysToSkip = [keysToSkip];
+                // Average the per-frame delays into a single preview FPS, since the
+                // tool uses one FPS for the whole animation.
+                const delays = decoded.map(f => f.delay || 0).filter(d => d > 0);
+                let fps = 10;
+                if (delays.length) {
+                    const avg = delays.reduce((a, b) => a + b, 0) / delays.length;
+                    fps = Math.min(60, Math.max(1, Math.round(1000 / avg)));
+                }
 
-        //     const filtered = {};
-        //     for (let i = 0; i < localStorage.length; i++) {
-        //         const key = localStorage.key(i);
-        //         if (!keysToSkip.includes(key)) {
-        //             try {
-        //                 filtered[key] = JSON.parse(localStorage.getItem(key));
-        //             } catch (e) {
-        //                 filtered[key] = localStorage.getItem(key);
-        //             }
-        //         }
-        //     }
-        //     return filtered;
-        // }
+                let grids = gifFramesToGrids(decoded, gifW, gifH, COLS, ROWS);
+                const wasCapped = grids.length > MAX_GIF_FRAMES;
+                grids = sampleEvenly(grids, MAX_GIF_FRAMES);
+
+                // grids are already hex/target-sized; loadArt happily passes strings
+                // through and rebuilds the frames + histories for us.
+                loadArt(grids, COLS, ROWS);
+                $('#anim-fps').val(fps);
+
+                // A freshly imported GIF is unsaved content.
+                savedBaseline = '__unsaved__';
+                try { lastAutosaveSig = drawingSignature(); } catch (e) { }
+                persistAutosave();
+
+                let msg = `Imported ${grids.length} frame(s) at ${COLS}x${ROWS}, ~${fps} FPS.`;
+                if (wasCapped) msg += ` The GIF had more than ${MAX_GIF_FRAMES} frames, so it was sampled down.`;
+                swalBS.fire({
+                    position: 'top-end',
+                    icon: 'success',
+                    theme: 'dark',
+                    title: msg,
+                    showConfirmButton: false,
+                    timer: 2500
+                });
+            } catch (e) {
+                console.error('Failed to import GIF:', e);
+                swalBS.fire({
+                    icon: 'error',
+                    title: getCorrectTranslation('oops'),
+                    theme: 'dark',
+                    text: 'Failed to import GIF: ' + e.message
+                });
+            }
+        }
+
+        $('#gif-file-input').on('change', function () {
+            const file = this.files && this.files[0];
+            importGifFile(file);
+            // Reset so selecting the same file again re-triggers change.
+            this.value = '';
+        });
+
+        // Save / Load are backed by the database and require a logged-in user.
+        function isLoggedIn() {
+            return !!sessionStorage.getItem('username');
+        }
+
+        function requireLogin() {
+            if (isLoggedIn()) return true;
+            swalBS.fire({
+                icon: "info",
+                title: getCorrectTranslation('oops'),
+                theme: "dark",
+                text: getCorrectTranslation('loginToSave'),
+            });
+            return false;
+        }
+
+        function openSaveModal() {
+            if (!requireLogin()) return;
+            var updateId = parseInt($('#txtUpdateId').val());
+            var editing = updateId > 0;
+            // When editing your own record, default the name to that record's name.
+            $('#txt-save').val(editing ? $('#txtUpdateName').val() : '');
+            if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
+            // "Save as a copy" is only meaningful when editing an existing record.
+            $('#chk-save-copy').prop('checked', false);
+            $('#save-copy-row').css('display', editing ? 'flex' : 'none');
+            $('#modal-save').modal('show');
+        }
+
+        // Toggling "save as a copy" suggests a distinct name so the original is not overwritten.
+        $('#chk-save-copy').on('change', function () {
+            var base = $('#txtUpdateName').val() || '';
+            if (this.checked) {
+                if (base && !/\bcopy$/i.test($('#txt-save').val().trim())) {
+                    $('#txt-save').val((base + ' copy').substring(0, 50));
+                }
+                $('#txt-save').focus().select();
+            } else {
+                $('#txt-save').val(base);
+            }
+        });
+
+        // The "Load" button opens the Community panel filtered to the current user's own drawings.
+        function openMyDrawings() {
+            if (!requireLogin()) return;
+            $('#community').offcanvas('show');
+            if ($('#my-items-tab').hasClass('active')) {
+                getMyCommunityItems();
+            } else {
+                // Switching tabs fires 'shown.bs.tab', which loads the content.
+                $('#my-items-tab').tab('show');
+            }
+        }
+
+        $('#save-confirm-btn').click(function (evt) {
+            if (!requireLogin()) return;
+
+            if (!$('#txt-save').val()) {
+                $('#txt-save').addClass('is-invalid');
+                $('#txt-save').focus();
+            } else if (naughtyWords.includes($('#txt-save').val())) {
+                $('#txt-save').addClass('is-invalid');
+                $('#txt-save').focus();
+                swalBS.fire({
+                    icon: "error",
+                    title: getCorrectTranslation('oops'),
+                    theme: "dark",
+                    text: getCorrectTranslation('inappropriateTextWarning'),
+                });
+            } else {
+                const dataStr = encodeArtData();
+                const name = $('#txt-save').val();
+                const json = {
+                    author: sessionStorage.getItem('username'),
+                    name: name,
+                    size: [COLS, ROWS],
+                    data: dataStr,
+                    preview: canvasToBase64()
+                };
+                const jsonData = JSON.stringify(json);
+                // If the owner is editing an existing record, update it; otherwise insert a new one.
+                // "Save as a copy" forces a new insert even while editing.
+                const updateId = parseInt($('#txtUpdateId').val());
+                const saveAsCopy = $('#chk-save-copy').is(':checked');
+                const editing = updateId > 0 && !saveAsCopy;
+                const url = editing ? `${api}updateitem/${updateId}` : `${api}items`;
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: jsonData,
+                    contentType: 'application/json; charset=utf-8',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response.success === true) {
+                            swalBS.fire({
+                                position: "top-end",
+                                icon: "success",
+                                theme: "dark",
+                                title: getCorrectTranslation('saved'),
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+
+                            // Enter/stay in edit mode for the saved record so further Saves update it.
+                            const savedId = editing ? updateId : (response.data && response.data.id);
+                            if (savedId) {
+                                $('#editItem').css('display', 'block');
+                                $('#txtUpdateId').val(savedId);
+                                $('#txtUpdateName').val(name);
+                                $('#btnShare').prop('disabled', true);
+                            }
+                            refreshSaveButton();
+
+                            markDrawingSaved();
+                            try { lastAutosaveSig = drawingSignature(); } catch (e) { }
+                            persistAutosave();
+
+                            $('#txt-save').val('');
+                            if ($('#txt-save').hasClass('is-invalid')) $('#txt-save').removeClass('is-invalid');
+                            $('#modal-save').modal('hide');
+                        } else {
+                            swalBS.fire({
+                                icon: "error",
+                                title: getCorrectTranslation('oops'),
+                                theme: "dark",
+                                text: getCorrectTranslation('itemExists'),
+                            });
+                        }
+                    },
+                    error: function (err) {
+                        swalBS.fire({
+                            icon: "error",
+                            title: getCorrectTranslation('oops'),
+                            theme: "dark",
+                            text: err.statusText,
+                        });
+                    }
+                });
+            }
+        });
+
+        // "My Drawings" tab: lists only the logged-in user's own drawings from the database.
+        function getMyCommunityItems(page = 0) {
+            const username = sessionStorage.getItem('username');
+            if (!username) {
+                $('#community-mine-container').empty().append(`<p class="text-center text-muted">${getCorrectTranslation('loginToSave')}</p>`);
+                $('#mine-load-more-btn').prop('disabled', true);
+                return;
+            }
+
+            if (page === 0) {
+                $('#community-mine-container').empty().append(appendPlaceholders(Math.random() * 20));
+            } else {
+                $('#community-mine-container').append(appendPlaceholders(Math.random() * 20));
+            }
+
+            $.ajax({
+                url: `${api}useritems/${encodeURIComponent(username)}/${page}`,
+                type: 'GET',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (response) {
+                    $('#community-mine-container').find('.placeholder-item').remove();
+
+                    if (response.success === true && response.pagination && response.pagination.total >= 1) {
+                        if (page === 0) $('#community-mine-container').empty();
+                        var children = [];
+
+                        $.each(response.data, function (key, item) {
+                            var child = generateItem(item.id, item.preview, item.name, item.author, item.data, item.size);
+                            children.push(child);
+                        });
+
+                        $('#community-mine-container').append(children);
+                        initCommunityThumbs();
+                        if (response.pagination.hasMore) {
+                            $('#mine-load-more-btn').attr('data-page', response.pagination.nextPage);
+                            $('#mine-load-more-btn').prop('disabled', false);
+                        } else {
+                            $('#mine-load-more-btn').prop('disabled', true);
+                        }
+                    } else if (page === 0) {
+                        $('#community-mine-container').empty().append(`<p class="text-center text-muted">${getCorrectTranslation('noSavedItems')}</p>`);
+                        $('#mine-load-more-btn').prop('disabled', true);
+                    }
+                },
+                error: function (err) {
+                    $('#community-mine-container').find('.placeholder-item').remove();
+                    console.log(err);
+                    swalBS.fire({
+                        icon: "error",
+                        title: getCorrectTranslation('oops'),
+                        theme: "dark",
+                        text: err.statusText,
+                    });
+                }
+            });
+        };
 
         function appendPlaceholders(count) {
             var placeholder = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex placeholder-item">
@@ -978,8 +1530,21 @@
             return duplicate;
         }
 
-        function generateItem(id, preview, name, author) {
+        function generateItem(id, preview, name, author, data, size) {
             let isFavorite = favorites.includes(id);
+            const animFrames = decodeCommunityData(data);
+            let previewMarkup;
+            if (animFrames) {
+                const cols = animFrames[0][0] ? animFrames[0][0].length : ((size && size[0]) || 16);
+                const rows = animFrames[0] ? animFrames[0].length : ((size && size[1]) || 16);
+                communityAnim[id] = { frames: animFrames, timer: null };
+                previewMarkup = `<div class="community-thumb" data-anim-id="${id}" data-load-id="${id}" role="button" title="${getCorrectTranslation('openDrawing')}">
+                                    <canvas class="card-img-top community-anim-canvas" width="${cols}" height="${rows}"></canvas>
+                                    <span class="anim-badge" title="Animated"><span class="mdi mdi-filmstrip"></span> ${animFrames.length}</span>
+                                </div>`;
+            } else {
+                previewMarkup = `<img src="${preview}" class="image-fluid card-img-top community-clickable" data-load-id="${id}" role="button" title="${getCorrectTranslation('openDrawing')}" />`;
+            }
             var dropdown = '';
             if (author === sessionStorage.getItem('username')) {
                 dropdown = `<div class="btn-group btn-group-sm">
@@ -993,7 +1558,7 @@
 
             var item = `<div class="col-sm-6 col-md-4 col-lg-2 mb-4 d-flex align-items-stretch generated-item">
                             <div class="card shadow-sm">
-                                <img src="${preview}" class="image-fluid card-img-top" />
+                                ${previewMarkup}
                                 <div class="card-body">
                                     <p class="card-text">${name}<span>— ${author}</span></p>
                                     <div class="d-flex justify-content-between align-items-center mt-auto">
@@ -1037,12 +1602,13 @@
                         var children = [];
 
                         $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
+                            var child = generateItem(item.id, item.preview, item.name, item.author, item.data, item.size);
                             children.push(child);
                         });
 
                         $('#community-search-container').find('.placeholder-item').remove();
                         $('#community-search-container').append(children);
+                        initCommunityThumbs();
                         if (response.pagination.hasMore) {
                             $('#search-load-more-btn').attr('data-page', response.pagination.nextPage);
                             $('#search-load-more-btn').prop('disabled', false);
@@ -1083,6 +1649,25 @@
             this.setSelectionRange(start, end);
         });
 
+        // Load a tab's content whenever it becomes active, regardless of how the
+        // Community panel was opened (nav link or the "Load" button).
+        $('#stepTab button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+            switch (e.target.id) {
+                case 'new-items-tab':
+                    getCommunityItems();
+                    break;
+                case 'search-items-tab':
+                    if ($('#txt-search').val()) searchCommunityItems($('#txt-search').val());
+                    break;
+                case 'favorites-items-tab':
+                    getFavoritesCommunityItems();
+                    break;
+                case 'my-items-tab':
+                    getMyCommunityItems();
+                    break;
+            }
+        });
+
         function getCommunityItems(page = 0) {
             if (page === 0) {
                 $('#community-container').empty().append(appendPlaceholders(Math.random() * 20));
@@ -1101,12 +1686,13 @@
                         var children = [];
 
                         $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
+                            var child = generateItem(item.id, item.preview, item.name, item.author, item.data, item.size);
                             children.push(child);
                         });
 
                         $('#community-container').find('.placeholder-item').remove();
                         $('#community-container').append(children);
+                        initCommunityThumbs();
                         if (response.pagination.hasMore) {
                             $('#community-load-more-btn').attr('data-page', response.pagination.nextPage);
                             $('#community-load-more-btn').prop('disabled', false);
@@ -1129,6 +1715,13 @@
         }
 
         function getFavoritesCommunityItems(page = 0) {
+            // No favorites → skip the request (an empty id list produces invalid SQL) and show a message.
+            if (!Array.isArray(favorites) || favorites.length === 0) {
+                $('#community-favorites-container').empty().append(`<p class="text-center text-muted">${getCorrectTranslation('noFavorites')}</p>`);
+                $('#favorites-load-more-btn').prop('disabled', true);
+                return;
+            }
+
             if (page === 0) {
                 $('#community-favorites-container').empty().append(appendPlaceholders(Math.random() * 20));
             } else {
@@ -1146,12 +1739,13 @@
                         var children = [];
 
                         $.each(response.data, function (key, item) {
-                            var child = generateItem(item.id, item.preview, item.name, item.author);
+                            var child = generateItem(item.id, item.preview, item.name, item.author, item.data, item.size);
                             children.push(child);
                         });
 
                         $('#community-favorites-container').find('.placeholder-item').remove();
                         $('#community-favorites-container').append(children);
+                        initCommunityThumbs();
                         if (response.pagination.hasMore) {
                             $('#favorites-load-more-btn').attr('data-page', response.pagination.nextPage);
                             $('#favorites-load-more-btn').prop('disabled', false);
@@ -1174,10 +1768,21 @@
         }
 
         function canvasToBase64() {
-            var canvas = $('#matrix-canvas')[0]; // Get the DOM element
-            resizeCanvas(true);
-            var base64String = canvas.toDataURL('image/jpeg', 0.5); // Default is PNG format
-            return base64String;
+            // Render the preview on an offscreen canvas so the visible canvas
+            // (and its computed size) is never disturbed while saving.
+            const previewMax = 250;
+            const cell = Math.max(1, Math.floor(Math.min(previewMax / COLS, previewMax / ROWS)));
+            const off = document.createElement('canvas');
+            off.width = COLS * cell;
+            off.height = ROWS * cell;
+            const octx = off.getContext('2d');
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    octx.fillStyle = (matrixData[row] && matrixData[row][col]) ? matrixData[row][col] : '#000000';
+                    octx.fillRect(col * cell, row * cell, cell, cell);
+                }
+            }
+            return off.toDataURL('image/jpeg', 0.5);
         }
 
         $('#btnUpdateConfirm').click(function (evt) {
@@ -1194,11 +1799,11 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+                const dataStr = encodeArtData();
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtUpdateName').val(),
-                    size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
+                    size: [COLS, ROWS],
                     data: dataStr,
                     preview: canvasToBase64()
                 };
@@ -1266,11 +1871,11 @@
                     text: getCorrectTranslation('inappropriateTextWarning'),
                 });
             } else {
-                const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+                const dataStr = encodeArtData();
                 var json = {
                     author: sessionStorage.getItem('username'),
                     name: $('#txtShareName').val(),
-                    size: [parseInt($('#size-cols').val()), parseInt($('#size-rows').val())],
+                    size: [COLS, ROWS],
                     data: dataStr,
                     preview: canvasToBase64()
                 };
@@ -1342,43 +1947,39 @@
                             throw new Error('Invalid dimensions: cols or rows invalid');
                         }
 
-                        // Parse data
-                        let newMatrix;
+                        // Parse data (single frame or multi-frame animation)
+                        let parsed;
                         try {
-                            newMatrix = JSON.parse($item.data);
+                            parsed = JSON.parse($item.data);
                         } catch (e) {
                             throw new Error(`Failed to parse data: ${e.message}`);
                         }
-                        if (!Array.isArray(newMatrix) || newMatrix.length !== newRows || !newMatrix.every(row => Array.isArray(row) && row.length === newCols)) {
-                            throw new Error('Matrix data dimensions mismatch');
-                        }
 
-                        // Map values to colors
-                        newMatrix = newMatrix.map(row => row.map(value => {
-                            switch (value) {
-                                case 0: return colorMap.black;
-                                case 0.3: return colorMap.forced;
-                                case 0.5: return colorMap.lightTranslucent;
-                                case 0.7: return colorMap.darkTranslucent;
-                                case 1: return colorMap.white;
-                                default: return colorMap.black; // Fallback for invalid values
-                            }
-                        }));
-
-                        // Update state
-                        setState(newMatrix, newCols, newRows);
-                        $('#size-cols').val(newCols);
-                        $('#size-rows').val(newRows);
+                        loadArt(parsed, newCols, newRows);
                         $('#community').offcanvas('hide');
 
-                        if (edit) {
+                        // Treat loading as an edit when the current user owns the drawing,
+                        // so a subsequent Save pre-fills the name and updates the record.
+                        const isOwner = $item.author && $item.author === sessionStorage.getItem('username');
+                        if (edit || isOwner) {
                             $('#editItem').css('display', 'block');
                             $('#txtUpdateId').val(id);
                             $('#txtUpdateName').val($item.name);
                             $('#btnShare').prop('disabled', true);
+                        } else {
+                            // Loading someone else's drawing: ensure Save creates a new item.
+                            $('#editItem').css('display', 'none');
+                            $('#txtUpdateId').val('-1');
+                            $('#txtUpdateName').val('');
+                            $('#btnShare').prop('disabled', false);
                         }
+                        refreshSaveButton();
 
-                        console.log(`Successfully loaded community drawing ${id}: ${newCols}x${newRows}`);
+                        markDrawingSaved();
+                        try { lastAutosaveSig = drawingSignature(); } catch (e) { }
+                        persistAutosave();
+
+                        console.log(`Successfully loaded community drawing ${id}: ${newCols}x${newRows}, frames=${frames.length}`);
                     } catch (error) {
                         console.error('Error loading community drawing:', error);
                         swalBS.fire({
@@ -1402,10 +2003,19 @@
         }
 
         function cancelEdit() {
+            pauseAnimation();
             $('#editItem').css('display', 'none');
             $('#txtUpdateId').val('-1');
             $('#btnShare').prop('disabled', false);
-            fillAll('#000000');
+            refreshSaveButton();
+            clearAll('#000000');
+            // Reset to a single blank frame when canceling edit
+            frames = [JSON.parse(JSON.stringify(matrixData))];
+            currentFrameIndex = 0;
+            frameHistories = [createUndoRedoManager(matrixData, COLS, ROWS)];
+            history = frameHistories[0];
+            renderFramesBar();
+            updateFrameControls();
         }
 
         $('#txt-search').on('keydown', function (e) {
@@ -1413,6 +2023,16 @@
                 $('#community-search').click();
                 e.preventDefault()
             }
+        });
+
+        $(document).on('mouseenter', '.community-thumb[data-anim-id]', function () {
+            startCommunityAnim($(this).attr('data-anim-id'), $(this).find('canvas')[0]);
+        }).on('mouseleave', '.community-thumb[data-anim-id]', function () {
+            stopCommunityAnim($(this).attr('data-anim-id'), $(this).find('canvas')[0]);
+        });
+
+        $(document).on('click', '[data-load-id]', function () {
+            downloadItem(parseInt($(this).attr('data-load-id'), 10));
         });
 
         // Lazyload
@@ -1425,6 +2045,9 @@
                         break;
                     case 'favorites-items-tab':
                         $('#favorites-load-more-btn').trigger('click');
+                        break;
+                    case 'my-items-tab':
+                        $('#mine-load-more-btn').trigger('click');
                         break;
                     default:
                         $('#community-load-more-btn').trigger('click');
@@ -1447,6 +2070,11 @@
             getFavoritesCommunityItems($(this.attr('data-page')));
             $('#favorites-load-more-btn').prop('disabled', true);
         })
+
+        $('#mine-load-more-btn').click(function (evt) {
+            getMyCommunityItems(parseInt($(this).attr('data-page')));
+            $('#mine-load-more-btn').prop('disabled', true);
+        });
 
         function addToFavorite(id) {
             if (!favorites.includes(id)) {
@@ -1534,6 +2162,21 @@
         function resizeCanvas(manual = false, mwidth = 250, mheight = 250) {
             var maxWidth = window.innerWidth * 0.95;
             var maxHeight = window.innerHeight * 0.7;
+
+            // Fit the canvas to the available stage area (minus padding).
+            const container = document.getElementById('canvas-container');
+            if (container) {
+                const cs = getComputedStyle(container);
+                const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+                const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+                const availW = container.clientWidth - padX;
+                const availH = container.clientHeight - padY;
+                if (availW > 20 && availH > 20) {
+                    maxWidth = availW;
+                    maxHeight = availH;
+                }
+            }
+
             if (manual === true) {
                 maxWidth = mwidth;
                 maxHeight = mheight;
@@ -1558,25 +2201,327 @@
             drawMatrix();
         }
 
-        // Draw the entire matrix
-        function drawMatrix() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Draw a 2x2 transparency checkerboard in a cell. `factor` dims it
+        // (1 = full/Transparent, lower = fainter Translucent levels).
+        function drawCheckerCell(x, y, w, h, factor) {
+            const light = Math.round(190 * factor);
+            const dark = Math.round(110 * factor);
+            const lc = `rgb(${light},${light},${light})`;
+            const dc = `rgb(${dark},${dark},${dark})`;
+            const hw = w / 2, hh = h / 2;
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(x, y, w, h);
+            ctx.fillStyle = lc;
+            ctx.fillRect(x, y, hw, hh);
+            ctx.fillRect(x + hw, y + hh, w - hw, h - hh);
+            ctx.fillStyle = dc;
+            ctx.fillRect(x + hw, y, w - hw, hh);
+            ctx.fillRect(x, y + hh, hw, h - hh);
+        }
 
-            // Draw each cell
+        // Forced cells are replaced by one color in the plugin: cyan with an "F".
+        function drawForcedCell(x, y, w, h) {
+            ctx.fillStyle = '#00FFFF';
+            ctx.fillRect(x, y, w, h);
+            const fs = Math.max(6, Math.floor(Math.min(w, h) * 0.7));
+            ctx.fillStyle = '#003a3a';
+            ctx.font = `bold ${fs}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('F', x + w / 2, y + h / 2 + 1);
+        }
+
+        // Paint a single cell, honoring the special plugin values.
+        function fillCell(x, y, w, h, value) {
+            switch (value) {
+                case colorMap.white:            // Transparent
+                    drawCheckerCell(x, y, w, h, 1);
+                    break;
+                case colorMap.lightTranslucent: // Translucent (faint)
+                    drawCheckerCell(x, y, w, h, 0.5);
+                    break;
+                case colorMap.darkTranslucent:  // Semi translucent (fainter)
+                    drawCheckerCell(x, y, w, h, 0.3);
+                    break;
+                case colorMap.forced:           // Forced (cyan + F)
+                    drawForcedCell(x, y, w, h);
+                    break;
+                default:
+                    ctx.fillStyle = (typeof value === 'string' && value) ? value : '#000000';
+                    ctx.fillRect(x, y, w, h);
+            }
+        }
+
+        // Draw a specific grid onto the main canvas (no cell borders during playback uses same borders)
+        function drawFrame(grid) {
+            if (!grid || !ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (let row = 0; row < ROWS; row++) {
                 for (let col = 0; col < COLS; col++) {
                     const x = col * cellWidth;
                     const y = row * cellHeight;
-
-                    // Draw the cell background
-                    ctx.fillStyle = matrixData[row][col];
-                    ctx.fillRect(x, y, cellWidth, cellHeight);
-
-                    // Draw the cell border
+                    fillCell(x, y, cellWidth, cellHeight, (grid[row] && grid[row][col]) ? grid[row][col] : '#000000');
                     ctx.strokeStyle = '#333333';
                     ctx.strokeRect(x, y, cellWidth, cellHeight);
                 }
             }
+        }
+
+        // Draw the entire matrix (active editing frame)
+        function drawMatrix() {
+            drawFrame(matrixData);
+        }
+
+        const communityAnim = {};
+
+        function decodeCommunityData(dataStr) {
+            if (dataStr == null) return null;
+            try {
+                const parsed = typeof dataStr === 'string' ? JSON.parse(dataStr) : dataStr;
+                if (!Array.isArray(parsed) || parsed.length === 0) return null;
+                // Animated data is a 3D array: [ [[row],...], ... ]
+                if (!(Array.isArray(parsed[0]) && Array.isArray(parsed[0][0]))) return null;
+                const frames = parsed.map(f => decodeGrid(f));
+                if (frames.length <= 1) return null;
+                return frames;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function startCommunityAnim(id, canvas) {
+            const entry = communityAnim[id];
+            if (!entry || !canvas || entry.timer) return;
+            let i = 0;
+            const step = () => {
+                paintThumbCanvas(canvas, entry.frames[i]);
+                i = (i + 1) % entry.frames.length;
+            };
+            step();
+            entry.timer = setInterval(step, 1000 / 10);
+        }
+
+        function stopCommunityAnim(id, canvas) {
+            const entry = communityAnim[id];
+            if (!entry) return;
+            if (entry.timer) {
+                clearInterval(entry.timer);
+                entry.timer = null;
+            }
+            if (canvas) paintThumbCanvas(canvas, entry.frames[0]);
+        }
+
+        function initCommunityThumbs() {
+            $('.community-anim-canvas').each(function () {
+                if (this.dataset.painted) return;
+                const id = $(this).closest('[data-anim-id]').attr('data-anim-id');
+                if (communityAnim[id]) {
+                    paintThumbCanvas(this, communityAnim[id].frames[0]);
+                    this.dataset.painted = '1';
+                }
+            });
+        }
+
+        // Representative solid colors for the special values at thumbnail scale
+        // (too small for checkerboards/letters), kept consistent with the canvas.
+        function thumbColor(value) {
+            switch (value) {
+                case colorMap.white: return '#8a8a8a';           // Transparent
+                case colorMap.lightTranslucent: return '#4b4b4b'; // Translucent
+                case colorMap.darkTranslucent: return '#2d2d2d';  // Semi translucent
+                case colorMap.forced: return '#00ffff';           // Forced
+                default: return (typeof value === 'string' && value) ? value : '#000000';
+            }
+        }
+
+        function paintThumbCanvas(thumbCanvas, grid) {
+            if (!thumbCanvas || !grid) return;
+            const tctx = thumbCanvas.getContext('2d');
+            const tw = thumbCanvas.width;
+            const th = thumbCanvas.height;
+            const rows = grid.length;
+            const cols = grid[0] ? grid[0].length : 0;
+            if (!rows || !cols) return;
+            const cw = tw / cols;
+            const ch = th / rows;
+            tctx.clearRect(0, 0, tw, th);
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    tctx.fillStyle = thumbColor(grid[r][c]);
+                    tctx.fillRect(c * cw, r * ch, cw, ch);
+                }
+            }
+        }
+
+        function renderFramesBar() {
+            const $strip = $('#frames-strip');
+            if (!$strip.length) return;
+            $strip.empty();
+            frames.forEach((frame, i) => {
+                const active = i === currentFrameIndex ? ' active' : '';
+                // Size the thumbnail to the frame's aspect ratio within a 60px box.
+                const rows = frame.length || 1;
+                const cols = (frame[0] && frame[0].length) ? frame[0].length : 1;
+                const box = 60;
+                let dispW, dispH;
+                if (cols >= rows) {
+                    dispW = box;
+                    dispH = Math.max(1, Math.round(box * rows / cols));
+                } else {
+                    dispH = box;
+                    dispW = Math.max(1, Math.round(box * cols / rows));
+                }
+                const $el = $(`<div class="frame-thumb${active}" data-frame-index="${i}" role="button" tabindex="0">
+                    <canvas></canvas>
+                    <span class="frame-index">${i + 1}</span>
+                </div>`);
+                const thumb = $el.find('canvas')[0];
+                // Backing store = one pixel per cell for a crisp, undistorted scale.
+                thumb.width = cols;
+                thumb.height = rows;
+                thumb.style.width = dispW + 'px';
+                thumb.style.height = dispH + 'px';
+                paintThumbCanvas(thumb, frame);
+                $el.on('click', function () {
+                    if (isPlayingAnimation) return;
+                    selectFrame(parseInt($(this).attr('data-frame-index'), 10));
+                });
+                $strip.append($el);
+            });
+        }
+
+        function updateFrameControls() {
+            const multi = frames.length > 1;
+            $('#btn-frame-del').prop('disabled', !multi || isPlayingAnimation);
+            $('#btn-frame-left').prop('disabled', currentFrameIndex <= 0 || isPlayingAnimation);
+            $('#btn-frame-right').prop('disabled', currentFrameIndex >= frames.length - 1 || isPlayingAnimation);
+            $('#btn-frame-add, #btn-frame-dup').prop('disabled', isPlayingAnimation);
+            $('#anim-fps').prop('disabled', isPlayingAnimation);
+            $('#frames-panel').toggleClass('playing', isPlayingAnimation);
+            const playLabel = isPlayingAnimation
+                ? (typeof getCorrectTranslation === 'function' ? getCorrectTranslation('pause') : 'Pause')
+                : (typeof getCorrectTranslation === 'function' ? getCorrectTranslation('play') : 'Play');
+            $('#btn-anim-play-label').text(playLabel);
+            $('#btn-anim-play').find('.mdi').attr('class', isPlayingAnimation ? 'mdi mdi-pause' : 'mdi mdi-play');
+        }
+
+        function selectFrame(i) {
+            if (i < 0 || i >= frames.length || i === currentFrameIndex) {
+                if (i === currentFrameIndex) {
+                    drawMatrix();
+                    renderFramesBar();
+                }
+                return;
+            }
+            pauseAnimation();
+            commitCurrentFrame();
+            currentFrameIndex = i;
+            matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function addFrame() {
+            pauseAnimation();
+            commitCurrentFrame();
+            const blank = createBlankGrid(COLS, ROWS);
+            const insertAt = currentFrameIndex + 1;
+            frames.splice(insertAt, 0, blank);
+            frameHistories.splice(insertAt, 0, createUndoRedoManager(blank, COLS, ROWS));
+            currentFrameIndex = insertAt;
+            matrixData = JSON.parse(JSON.stringify(blank));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function duplicateFrame() {
+            pauseAnimation();
+            commitCurrentFrame();
+            const copy = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+            const insertAt = currentFrameIndex + 1;
+            frames.splice(insertAt, 0, copy);
+            frameHistories.splice(insertAt, 0, createUndoRedoManager(copy, COLS, ROWS));
+            currentFrameIndex = insertAt;
+            matrixData = JSON.parse(JSON.stringify(copy));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function deleteFrame() {
+            if (frames.length <= 1) return;
+            pauseAnimation();
+            frames.splice(currentFrameIndex, 1);
+            frameHistories.splice(currentFrameIndex, 1);
+            if (currentFrameIndex >= frames.length) currentFrameIndex = frames.length - 1;
+            matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function moveFrame(dir) {
+            const target = currentFrameIndex + dir;
+            if (target < 0 || target >= frames.length) return;
+            pauseAnimation();
+            commitCurrentFrame();
+            const tmpF = frames[currentFrameIndex];
+            frames[currentFrameIndex] = frames[target];
+            frames[target] = tmpF;
+            const tmpH = frameHistories[currentFrameIndex];
+            frameHistories[currentFrameIndex] = frameHistories[target];
+            frameHistories[target] = tmpH;
+            currentFrameIndex = target;
+            matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+            history = frameHistories[currentFrameIndex];
+            drawMatrix();
+            renderFramesBar();
+            updateFrameControls();
+        }
+
+        function getAnimFps() {
+            const fps = parseInt($('#anim-fps').val(), 10);
+            return Math.min(60, Math.max(1, isNaN(fps) ? 10 : fps));
+        }
+
+        function pauseAnimation() {
+            if (animationTimer) {
+                clearInterval(animationTimer);
+                animationTimer = null;
+            }
+            if (isPlayingAnimation) {
+                isPlayingAnimation = false;
+                matrixData = JSON.parse(JSON.stringify(frames[currentFrameIndex]));
+                drawMatrix();
+                updateFrameControls();
+            }
+        }
+
+        function playAnimation() {
+            commitCurrentFrame();
+            if (frames.length < 1) return;
+            isPlayingAnimation = true;
+            previewFrameIndex = currentFrameIndex;
+            updateFrameControls();
+            const tick = () => {
+                drawFrame(frames[previewFrameIndex]);
+                $('#frames-strip .frame-thumb').removeClass('active');
+                $(`#frames-strip .frame-thumb[data-frame-index="${previewFrameIndex}"]`).addClass('active');
+                previewFrameIndex = (previewFrameIndex + 1) % frames.length;
+            };
+            tick();
+            animationTimer = setInterval(tick, 1000 / getAnimFps());
+        }
+
+        function toggleAnimationPlayback() {
+            if (isPlayingAnimation) pauseAnimation();
+            else playAnimation();
         }
 
         // Convert mouse position to matrix coordinates
@@ -1605,8 +2550,7 @@
                 const x = col * cellWidth;
                 const y = row * cellHeight;
 
-                ctx.fillStyle = color;
-                ctx.fillRect(x, y, cellWidth, cellHeight);
+                fillCell(x, y, cellWidth, cellHeight, color);
 
                 ctx.strokeStyle = isCustom ? '#EFFEC7' : '#333333';
                 ctx.strokeRect(x, y, cellWidth, cellHeight);
@@ -1853,9 +2797,9 @@
 
         }
 
-        // Export matrix data as JSON
+        // Export matrix data as JSON (2D for one frame, 3D for animations)
         function exportData() {
-            const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+            const dataStr = encodeArtData();
             const base64Data = b64EncodeUnicode(dataStr);
 
             swalBS.fire({
@@ -1895,6 +2839,7 @@
 
         // Canvas event listeners
         canvas.addEventListener('mousedown', (e) => {
+            if (isPlayingAnimation) return;
             isDrawing = true;
 
             const coords = getMatrixCoords(e);
@@ -1946,6 +2891,14 @@
 
                         }
                         break;
+                    case 'pick':
+                        pickColor(coords.row, coords.col);
+                        // Don't let the current mouse press turn into a stroke
+                        // once we switch back to the drawing tool.
+                        isDrawing = false;
+                        // Return to whatever tool was active before picking.
+                        $('#' + (previousPaintTool || 'draw')).prop('checked', true).trigger('change');
+                        break;
                 }
             }
         });
@@ -1956,7 +2909,7 @@
 
                 mousePosDisplay.text(`${getCorrectTranslation('position2')} (${coords.col}, ${coords.row})`);
 
-                if (isDrawing) {
+                if (isDrawing && !isPlayingAnimation) {
                     switch (currentMode) {
                         case 'draw':
                             switch (currentColor) {
@@ -2004,12 +2957,69 @@
         // Initial setup
         resizeCanvas();
         setState(matrixData);
+        renderFramesBar();
+        updateFrameControls();
+
+        // Photoshop-style quick color presets
+        (function initColorPresets() {
+            const presets = ['#FF0000', '#FF7F00', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF',
+                '#8B00FF', '#FF00FF', '#FFFFFF', '#AAAAAA', '#555555', '#000000'];
+            const container = document.getElementById('color-presets');
+            if (!container) return;
+            presets.forEach(function (c) {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'preset';
+                b.style.background = c;
+                b.title = c;
+                b.setAttribute('data-color', c);
+                container.appendChild(b);
+            });
+        })();
+
+        // The tool rail is scrollable, which clips absolutely-positioned
+        // dropdown menus. Use Popper's fixed strategy so they float freely.
+        (function initRailDropdowns() {
+            if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) return;
+            document.querySelectorAll('.tool-rail [data-bs-toggle="dropdown"]').forEach(function (el) {
+                bootstrap.Dropdown.getOrCreateInstance(el, {
+                    popperConfig: function (defaultConfig) {
+                        return Object.assign({}, defaultConfig, { strategy: 'fixed' });
+                    }
+                });
+            });
+        })();
+
+        $(document).on('click', '.preset', function () {
+            $('#custom-color-picker').val($(this).attr('data-color')).trigger('change');
+        });
+
+        // Choosing a custom color automatically switches to the Custom paint mode
+        $('#custom-color-picker').on('input change', function () {
+            if (!$('#draw-custom').is(':checked')) {
+                $('#draw-custom').prop('checked', true).trigger('change');
+            }
+        });
+
+        // Re-fit once late-loading layout (e.g. the navbar logo) settles
+        window.addEventListener('load', function () { resizeCanvas(); });
+        requestAnimationFrame(function () { resizeCanvas(); });
 
         $(document).keydown(function (e) {
             if ($('.modal:visible').length > 0) {
                 console.log("A modal is currently open.");
             } else {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    // Save
+                    e.preventDefault();
+                    openSaveModal();
+                    return;
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+                    // Load
+                    e.preventDefault();
+                    openMyDrawings();
+                    return;
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                     // Undo
                     undo();
                 } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
@@ -2020,7 +3030,7 @@
                     $('#export-btn').click();
                 } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
                     // Copy
-                    const dataStr = JSON.stringify(matrixData).replaceAll('"#FFFFFFFF"', '1').replaceAll('"#000000"', '0').replaceAll('"#FFFFFFCD"', '0.5').replaceAll('"#FFFFFF9B"', '0.7').replaceAll('"#FFFFFF69"', '0.3');
+                    const dataStr = encodeArtData();
                     const base64Data = b64EncodeUnicode(dataStr);
                     copyToClipboard(base64Data);
                     return;
@@ -2035,6 +3045,10 @@
                 } else if (e.key === 'f') {
                     // Fill
                     $('#fill').click();
+                    return;
+                } else if (e.key === 'k') {
+                    // Pick color (eyedropper)
+                    $('#pick').click();
                     return;
                 } else if (e.key === 'c') {
                     // Clear
@@ -2067,10 +3081,6 @@
                 } else if (e.key === '4') {
                     // Semi-Translucent
                     $('#draw-semi-translucent').click();
-                    return;
-                } else if (e.key === '5') {
-                    // Off
-                    $('#draw-clear').click();
                     return;
                 } else if (e.key === '6') {
                     // Custom
