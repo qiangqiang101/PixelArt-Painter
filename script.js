@@ -74,11 +74,11 @@ const langDB = {
     infoCreated: { en: 'Created', zh: '提交时间' },
     infoSize: { en: 'Size', zh: '大小' },
     infoCode: { en: 'Code', zh: '代码' },
-    colorForced: { en: '<span class="mdi mdi-water"></span> Forced', zh: '<span class="mdi mdi-water"></span> 强制' },
-    colorFull: { en: '<span class="mdi mdi-water"></span> Opaque', zh: '<span class="mdi mdi-water"></span> 全色' },
-    colorTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明' },
-    colorSemiTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Semi Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明+' },
-    colorOff: { en: '<span class="mdi mdi-water-outline"></span> Black', zh: '<span class="mdi mdi-water-outline"></span> 黑色' },
+    // colorForced: { en: '<span class="mdi mdi-water"></span> Forced', zh: '<span class="mdi mdi-water"></span> 强制' },
+    // colorFull: { en: '<span class="mdi mdi-water"></span> Opaque', zh: '<span class="mdi mdi-water"></span> 全色' },
+    // colorTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明' },
+    // colorSemiTranslucent: { en: '<span class="mdi mdi-water-opacity"></span> Semi Translucent', zh: '<span class="mdi mdi-water-opacity"></span> 半透明+' },
+    // colorOff: { en: '<span class="mdi mdi-water-outline"></span> Black', zh: '<span class="mdi mdi-water-outline"></span> 黑色' },
     inappropriateTextWarning: { en: 'The input contains inappropriate text.', zh: '输入包含不适当的文字。' },
     navLogin: { en: '<span class="mdi mdi-login"></span> Login', zh: '<span class="mdi mdi-login"></span> 登入' },
     navSignUp: { en: '<span class="mdi mdi-account-plus-outline"></span> Sign Up', zh: '<span class="mdi mdi-account-plus-outline"></span> 注册' },
@@ -117,10 +117,19 @@ const langDB = {
     mirror: { en: '<span class="mdi mdi-flip-to-front"></span> Mirror', zh: '<span class="mdi mdi-flip-to-front"></span> 镜像' },
     customColor: { en: '<span class="mdi mdi-palette"></span> Custom Color', zh: '<span class="mdi mdi-palette"></span> 自定义颜色' },
     custom: { en: '<span class="mdi mdi-water-plus"></span> Custom', zh: '<span class="mdi mdi-water-plus"></span> 自定义' },
+    newDrawing: { en: '<span class="mdi mdi-file-plus-outline"></span> New', zh: '<span class="mdi mdi-file-plus-outline"></span> 新建' },
+    resetMessage: { en: 'Reset the tool to a new blank drawing? Unsaved changes will be lost.', zh: '将工具重置为新的空白绘图？未保存的更改将丢失。' },
+    btnConfirm: { en: 'Confirm', zh: '确认' },
+    btnCancel: { en: 'Cancel', zh: '取消' },
+    drawFull: { en: 'Transparent (Effect shows through)', zh: '透明（效果显示）' },
+    drawTranslucent: { en: 'Translucent 1 (Dimmer effect)', zh: '半透明 1（效果较暗）' },
+    drawSemiTranslucent: { en: 'Translucent 2 (Even dimmer effect)', zh: '半透明 2（效果更暗）' },
+    drawForced: { en: 'Forced (Single Color)', zh: '强制（单色）' }
 };
 
 function changeLanguage(lang) {
     localStorage.setItem('language', lang);
+    $('body').attr('data-language', lang);
 
     switch (lang) {
         case 'chinese':
@@ -180,10 +189,14 @@ function changeLanguage(lang) {
             $('label[for="txtInfoSize"]').text(langDB.infoSize.zh);
             $('label[for="txtInfoData"]').text(langDB.infoCode.zh);
             $('#btnInfoDataCopy').text(langDB.copy.zh);
-            $('label[for="draw-forced"]').html(langDB.colorForced.zh);
-            $('label[for="draw-full"]').html(langDB.colorFull.zh);
-            $('label[for="draw-translucent"]').html(langDB.colorTranslucent.zh);
-            $('label[for="draw-semi-translucent"]').html(langDB.colorSemiTranslucent.zh);
+            // $('label[for="draw-forced"]').html(langDB.colorForced.zh);
+            // $('label[for="draw-full"]').html(langDB.colorFull.zh);
+            // $('label[for="draw-translucent"]').html(langDB.colorTranslucent.zh);
+            // $('label[for="draw-semi-translucent"]').html(langDB.colorSemiTranslucent.zh);
+            $('label[for="draw-full"]').attr('title', langDB.drawFull.zh);
+            $('label[for="draw-forced"]').attr('title', langDB.drawForced.zh);
+            $('label[for="draw-translucent"]').attr('title', langDB.drawTranslucent.zh);
+            $('label[for="draw-semi-translucent"]').attr('title', langDB.drawSemiTranslucent.zh);
             $('#btnLogin').html(langDB.navLogin.zh);
             $('#btnSignup').html(langDB.navSignUp.zh);
             $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.zh);
@@ -210,6 +223,7 @@ function changeLanguage(lang) {
             $('#ddMirror').html(langDB.mirror.zh);
             $('#cuscol-label').html(langDB.customColor.zh);
             $('label[for="draw-custom"]').html(langDB.custom.zh);
+            $('#new-btn').html(langDB.newDrawing.zh);
             break;
         default:
             $('#ddLanguage').html(langDB.language.en);
@@ -268,10 +282,14 @@ function changeLanguage(lang) {
             $('label[for="txtInfoSize"]').text(langDB.infoSize.en);
             $('label[for="txtInfoData"]').text(langDB.infoCode.en);
             $('#btnInfoDataCopy').text(langDB.copy.en);
-            $('label[for="draw-forced"]').html(langDB.colorForced.en);
-            $('label[for="draw-full"]').html(langDB.colorFull.en);
-            $('label[for="draw-translucent"]').html(langDB.colorTranslucent.en);
-            $('label[for="draw-semi-translucent"]').html(langDB.colorSemiTranslucent.en);
+            // $('label[for="draw-forced"]').html(langDB.colorForced.en);
+            // $('label[for="draw-full"]').html(langDB.colorFull.en);
+            // $('label[for="draw-translucent"]').html(langDB.colorTranslucent.en);
+            // $('label[for="draw-semi-translucent"]').html(langDB.colorSemiTranslucent.en);
+            $('label[for="draw-full"]').attr('title', langDB.drawFull.en);
+            $('label[for="draw-forced"]').attr('title', langDB.drawForced.en);
+            $('label[for="draw-translucent"]').attr('title', langDB.drawTranslucent.en);
+            $('label[for="draw-semi-translucent"]').attr('title', langDB.drawSemiTranslucent.en);
             $('#btnLogin').html(langDB.navLogin.en);
             $('#btnSignup').html(langDB.navSignUp.en);
             $('label[for="txtLoginUsername"], label[for="txtSignupUsername"]').text(langDB.username.en);
@@ -298,21 +316,18 @@ function changeLanguage(lang) {
             $('#ddMirror').html(langDB.mirror.en);
             $('#cuscol-label').html(langDB.customColor.en);
             $('label[for="draw-custom"]').html(langDB.custom.en);
+            $('#new-btn').html(langDB.newDrawing.en);
     }
-
-    $('body').attr('data-language', lang);
 };
 
 function getCorrectTranslation(lang) {
-    let body = $('body').attr('data-language');
-    switch (body) {
+    let currentLang = localStorage.getItem('language') || $('body').attr('data-language') || 'english';
+    switch (currentLang) {
         case 'chinese':
-            return langDB[lang].zh
-            break;
+            return langDB[lang].zh;
         default:
-            return langDB[lang].en
+            return langDB[lang].en;
     }
-    return null;
 }
 
 function getUrlParam(name) {

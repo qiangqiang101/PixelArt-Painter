@@ -7,7 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
     <title>SignalRGB WLED Matrix Pixel Art Painter</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?ver=16072026" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" />
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -150,7 +150,7 @@
         }
     </script>
 
-    <script src="./script.js?ver=16042026"></script>
+    <script src="./script.js?ver=16072026_v3"></script>
 </head>
 
 <body>
@@ -707,8 +707,7 @@
 
 
     <script>
-        const api = 'http://localhost:3001/api/';
-        //const api = 'https://pixelart.nolliergb.com/api/';
+        let api = 'https://pixelart.nolliergb.com/api/';
 
         const swalBS = Swal.mixin({
             // Prevent SweetAlert from toggling `height:auto` on <html>, which
@@ -942,10 +941,10 @@
                     icon: 'warning',
                     theme: 'dark',
                     title: getCorrectTranslation('oops'),
-                    text: 'Reset the tool to a new blank drawing? Unsaved changes will be lost.',
+                    text: getCorrectTranslation('resetMessage'),
                     showCancelButton: true,
-                    confirmButtonText: 'Reset',
-                    cancelButtonText: 'Cancel'
+                    confirmButtonText: getCorrectTranslation('btnConfirm'),
+                    cancelButtonText: getCorrectTranslation('btnCancel')
                 }).then(function (r) { if (r.isConfirmed) doReset(); });
             } else {
                 doReset();
