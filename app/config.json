@@ -1,6 +1,7 @@
 {
-    "host": "192.168.0.6",
-    "user": "nollie_nodejs",
-    "password": "CzufZrx5bCwRnnf96Q3a",
-    "database": "nollie_nodejs"
+    "host":  "localhost",
+    "port":  3308,
+    "user":  "root",
+    "password":  "",
+    "database":  "pixelart_dev"
 }
